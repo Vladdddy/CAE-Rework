@@ -127,6 +127,12 @@ function Dashboard() {
                                         Non iniziati
                                     </p>
                                 </div>
+
+                                {/*<GetSimulators
+                                    type="dashboard"
+                                    bond="Non iniziato"
+                                />*/}
+
                                 <p className="text-sm text-[var(--gray)] text-center mt-4">
                                     Nessun task presente
                                 </p>
@@ -137,6 +143,12 @@ function Dashboard() {
                                         Non completati
                                     </p>
                                 </div>
+
+                                {/*<GetSimulators
+                                    type="dashboard"
+                                    bond="Non completato"
+                                />*/}
+
                                 <p className="text-sm text-[var(--gray)] text-center mt-4">
                                     Nessun task presente
                                 </p>
@@ -152,6 +164,11 @@ function Dashboard() {
                                     taskInfo={""}
                                     onClick={() => handleTaskClick("Task 2")}
                                 />
+
+                                {/*<GetSimulators
+                                    type="dashboard"
+                                    bond="In corso"
+                                />*/}
                             </div>
                         </div>
                     </div>
