@@ -7,6 +7,7 @@ import SearchIcon from "../assets/icons/search.tsx";
 import Task from "../components/Task.jsx";
 import Employee from "../components/Employee.jsx";
 import DisplayModal from "../components/modals/DisplayModal.jsx";
+import GetSimulators from "../functions/Simulators.jsx";
 
 function Dashboard() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -76,24 +77,9 @@ function Dashboard() {
                                         3 task
                                     </p>
                                 </div>
-                                <div className="mt-4 text-sm text-[var(--primary)]">
-                                    <p>139#1</p>
-                                </div>
-                                <Task
-                                    taskInfo={""}
-                                    onClick={() => handleTaskClick("Task 1")}
-                                />
-                                <Task
-                                    taskInfo={""}
-                                    onClick={() => handleTaskClick("Task 2")}
-                                />
-                                <div className="mt-4 text-sm text-[var(--primary)]">
-                                    <p>FTD</p>
-                                </div>
-                                <Task
-                                    taskInfo={""}
-                                    onClick={() => handleTaskClick("Task 3")}
-                                />
+                                <p className="text-sm text-[var(--gray)] text-center mt-4">
+                                    Nessun task presente
+                                </p>
                             </div>
                             <div className="flex flex-col gap-2">
                                 <div className="flex flex-row items-center gap-2">
@@ -101,17 +87,8 @@ function Dashboard() {
                                     <p className="text-l text-[var(--black)]">
                                         Notte
                                     </p>
-                                    <p className="text-xs bg-[var(--light-primary)] text-[var(--primary)] rounded-md px-2 py-1">
-                                        1 task
-                                    </p>
                                 </div>
-                                <div className="mt-4 text-sm text-[var(--primary)]">
-                                    <p>139@#3</p>
-                                </div>
-                                <Task
-                                    taskInfo={""}
-                                    onClick={() => handleTaskClick("Task 4")}
-                                />
+                                <GetSimulators type="dashboard" bond="Notte" />
                             </div>
                         </div>
                     </div>
@@ -139,12 +116,9 @@ function Dashboard() {
                                         1 task
                                     </p>
                                 </div>
-                                <div className="mt-4 text-sm text-[var(--primary)]">
-                                    <p>Others</p>
-                                </div>
-                                <Task
-                                    taskInfo={""}
-                                    onClick={() => handleTaskClick("Task 5")}
+                                <GetSimulators
+                                    type="dashboard"
+                                    bond="Da definire"
                                 />
                             </div>
                             <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
@@ -173,9 +147,11 @@ function Dashboard() {
                                         In corso
                                     </p>
                                 </div>
-                                <p className="text-sm text-[var(--gray)] text-center mt-4">
-                                    Nessun task presente
-                                </p>
+                                {/* Example task, won't be like this */}
+                                <Task
+                                    taskInfo={""}
+                                    onClick={() => handleTaskClick("Task 2")}
+                                />
                             </div>
                         </div>
                     </div>

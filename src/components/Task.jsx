@@ -1,7 +1,6 @@
-import React from "react";
 import TaskIcon from "../assets/icons/tasks.tsx";
 
-function Task({ onClick }) {
+function Task({ onClick, title, timeOfDay, assignedTo, status }) {
     return (
         <div
             onClick={onClick}
@@ -9,9 +8,11 @@ function Task({ onClick }) {
         >
             <div className="flex flex-row items-center gap-1 mb-1">
                 <TaskIcon className="w-4" />
-                <h1 className="text-l font-semibold">Title task</h1>
+                <h1 className="text-l font-semibold">{title || "N/A"}</h1>
             </div>
-            <p className="text-sm">Diurno • Gianluca • Non iniziato</p>
+            <p className="text-sm">
+                {timeOfDay || "N/A"} • {assignedTo || "N/A"} • {status || "N/A"}
+            </p>
         </div>
     );
 }

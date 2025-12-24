@@ -104,29 +104,21 @@ function Logbook() {
                                             </button>
                                         </div>
 
-                                        <div className="flex items-center gap-4">
-                                            <p className="text-[var(--gray)] text-sm">
-                                                Visualizza:
-                                            </p>
+                                        <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
+                                            <div className="flex items-center gap-2 bg-[var(--light-primary)] text-[var(--primary)] p-2 px-4 rounded-md cursor-pointer">
+                                                <p className="text-sm">Oggi</p>
+                                            </div>
 
-                                            <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
-                                                <div className="flex items-center gap-2 bg-[var(--light-primary)] text-[var(--primary)] p-2 px-4 rounded-md cursor-pointer">
-                                                    <p className="text-sm">
-                                                        1 giorno
-                                                    </p>
-                                                </div>
+                                            <div className="flex items-center gap-2 text-[var(--black)] p-2 px-4 rounded-md cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200">
+                                                <p className="text-sm">
+                                                    1 settimana
+                                                </p>
+                                            </div>
 
-                                                <div className="flex items-center gap-2 text-[var(--black)] p-2 px-4 rounded-md cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200">
-                                                    <p className="text-sm">
-                                                        7 giorni
-                                                    </p>
-                                                </div>
-
-                                                <div className="flex items-center gap-2 text-[var(--black)] p-2 px-4 rounded-md cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200">
-                                                    <p className="text-sm">
-                                                        14 giorni
-                                                    </p>
-                                                </div>
+                                            <div className="flex items-center gap-2 text-[var(--black)] p-2 px-4 rounded-md cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200">
+                                                <p className="text-sm">
+                                                    2 settimane
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
