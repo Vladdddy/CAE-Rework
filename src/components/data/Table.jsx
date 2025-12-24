@@ -1,6 +1,6 @@
-import DayIcon from "../assets/icons/day.tsx";
-import NightIcon from "../assets/icons/night.tsx";
-import GetSimulators from "../functions/Simulators.jsx";
+import DayIcon from "../../assets/icons/day.tsx";
+import NightIcon from "../../assets/icons/night.tsx";
+import GetSimulators from "../../functions/Simulators.jsx";
 
 function Table({ type }) {
     return (

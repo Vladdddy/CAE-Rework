@@ -1,11 +1,11 @@
-import Sidebar from "../components/Sidebar.jsx";
-import Topbar from "../components/Topbar.jsx";
+import Sidebar from "../components/layout/Sidebar.jsx";
+import Topbar from "../components/layout/Topbar.jsx";
 import { useState, useEffect } from "react";
 import DayIcon from "../assets/icons/day.tsx";
 import NightIcon from "../assets/icons/night.tsx";
 import SearchIcon from "../assets/icons/search.tsx";
-import Task from "../components/Task.jsx";
-import Employee from "../components/Employee.jsx";
+import Task from "../components/data/Task.jsx";
+import Employee from "../components/data/Employee.jsx";
 import DisplayModal from "../components/modals/DisplayModal.jsx";
 import GetSimulators from "../functions/Simulators.jsx";
 

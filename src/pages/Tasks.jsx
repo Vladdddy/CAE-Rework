@@ -1,8 +1,8 @@
-import Sidebar from "../components/Sidebar.jsx";
-import Topbar from "../components/Topbar.jsx";
-import Calendar from "../components/Calendar.jsx";
+import Sidebar from "../components/layout/Sidebar.jsx";
+import Topbar from "../components/layout/Topbar.jsx";
+import Calendar from "../components/layout/Calendar.jsx";
 import DatePickerComponent from "../functions/DatePicker.jsx";
-import Table from "../components/Table.jsx";
+import Table from "../components/data/Table.jsx";
 import { useState, useEffect } from "react";
 import SearchIcon from "../assets/icons/search.tsx";
 import FilterIcon from "../assets/icons/filter.tsx";

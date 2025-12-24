@@ -1,8 +1,8 @@
 import React from "react";
-import SidebarIcon from "../assets/icons/sidebar.tsx";
-import SearchIcon from "../assets/icons/search.tsx";
-import CurrentTime from "../functions/CurrentTime.jsx";
-import AddIcon from "../assets/icons/add.tsx";
+import SidebarIcon from "../../assets/icons/sidebar.tsx";
+import SearchIcon from "../../assets/icons/search.tsx";
+import CurrentTime from "../../functions/CurrentTime.jsx";
+import AddIcon from "../../assets/icons/add.tsx";
 
 function Topbar({ isSidebarOpen, setSidebarStatus }) {
     return (
@@ -12,7 +12,7 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                     className="w-6 cursor-pointer icon"
                     onClick={() => setSidebarStatus(!isSidebarOpen)}
                 />
-                <h1 className="border-x border-[var(--separator)] px-4 text-l">
+                <h1 className="border-x border-[var(--light-primary)] px-4 text-l">
                     Benvenuto, Gianluca!
                 </h1>
                 <div className="relative w-[30vw]">

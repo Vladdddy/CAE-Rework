@@ -1,8 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
-import EditIcon from "../../assets/icons/edit.tsx";
-import DeleteIcon from "../../assets/icons/delete.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 
 function DisplayModal({ taskInfo, onClose }) {
@@ -77,17 +75,17 @@ function DisplayModal({ taskInfo, onClose }) {
 
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1 flex-wrap">
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2">
+                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
                                                 <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
                                                 <p>2025-01-23.jpg</p>
                                             </div>
 
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2">
+                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
                                                 <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
                                                 <p>2025-01-23.jpg</p>
                                             </div>
 
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2">
+                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
                                                 <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
                                                 <p>2025-01-23.jpg</p>
                                             </div>

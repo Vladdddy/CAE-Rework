@@ -1,11 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Logo from "../assets/cae-logo.png";
-import DashboardIcon from "../assets/icons/dashboard.tsx";
-import TasksIcon from "../assets/icons/tasks.tsx";
-import LogbookIcon from "../assets/icons/logbook.tsx";
-import ShiftsIcon from "../assets/icons/shifts.tsx";
-import LogoutIcon from "../assets/icons/logout.tsx";
+import Logo from "../../assets/cae-logo.png";
+import DashboardIcon from "../../assets/icons/dashboard.tsx";
+import TasksIcon from "../../assets/icons/tasks.tsx";
+import LogbookIcon from "../../assets/icons/logbook.tsx";
+import ShiftsIcon from "../../assets/icons/shifts.tsx";
+import LogoutIcon from "../../assets/icons/logout.tsx";
 
 function Sidebar(props) {
     return (

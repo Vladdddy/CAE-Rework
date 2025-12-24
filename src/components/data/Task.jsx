@@ -1,4 +1,4 @@
-import TaskIcon from "../assets/icons/tasks.tsx";
+import TaskIcon from "../../assets/icons/tasks.tsx";
 
 function Task({ onClick, title, timeOfDay, assignedTo, status }) {
     return (

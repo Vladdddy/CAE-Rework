@@ -1,6 +1,6 @@
-import DatePickerComponent from "../functions/DatePicker.jsx";
-import TasksIcon from "../assets/icons/tasks.tsx";
-import LogbookIcon from "../assets/icons/logbook.tsx";
+import DatePickerComponent from "../../functions/DatePicker.jsx";
+import TasksIcon from "../../assets/icons/tasks.tsx";
+import LogbookIcon from "../../assets/icons/logbook.tsx";
 
 function Calendar({ startDate, setStartDate, onDayClick }) {
     const today = new Date();

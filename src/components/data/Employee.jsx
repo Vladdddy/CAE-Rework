@@ -1,5 +1,5 @@
 import React from "react";
-import UserIcon from "../assets/icons/user.tsx";
+import UserIcon from "../../assets/icons/user.tsx";
 
 function Employee(props) {
     const role = props.role || "Employee";
