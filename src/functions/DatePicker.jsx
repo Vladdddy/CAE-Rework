@@ -79,7 +79,7 @@ export default function DatePickerComponent({
                 <ArrowLeftIcon className="w-6" />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-[var(--black)]">
                 <div
                     onClick={handleIconClick}
                     className="cursor-pointer text-[var(--black)]"

@@ -17,7 +17,7 @@ function DisplayModal({ taskInfo, onClose }) {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
-                    <div className="flex flex-row items-center gap-2">
+                    <div className="flex flex-row items-center gap-2 text-[var(--black)]">
                         <TaskIcon className="w-6" />
                         <h1 className="text-xl">Dettagli Task</h1>
                     </div>
@@ -74,7 +74,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                     </h3>
 
                                     <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1 flex-wrap">
+                                        <div className="flex items-center gap-1 flex-wrap text-[var(--black)]">
                                             <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
                                                 <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
                                                 <p>2025-01-23.jpg</p>
@@ -190,7 +190,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                                 </p>
                                             </div>
 
-                                            <span className="text-[var(--separator)] text-md">
+                                            <span className="text-[var(--placeholder)] text-md">
                                                 •
                                             </span>
 
@@ -240,7 +240,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                         <select
                                             name=""
                                             id=""
-                                            className="p-2 pr-10 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-none focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                            className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                         >
                                             <option value="not-started">
                                                 Non iniziato
@@ -347,7 +347,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                     Note aggiuntive:
                                 </h3>
                                 <textarea
-                                    className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-none focus:border-[var(--separator)] transition-all duration-200"
+                                    className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                                     placeholder="Inserisci note aggiuntive qui..."
                                 ></textarea>
                             </div>

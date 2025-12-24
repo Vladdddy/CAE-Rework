@@ -20,29 +20,28 @@ export default function GetSimulators({ type }) {
             >
                 {simulators.map((simulator, index) => (
                     <div
+                        key={index}
                         className={`${
                             type === "table" ? "flex flex-col gap-2" : ""
                         } `}
                     >
                         {type === "dashboard" ? (
-                            <p
-                                key={index}
-                                className="mt-4 text-sm text-[var(--primary)]"
-                            >
+                            <p className="mt-4 text-sm text-[var(--primary)]">
                                 {simulator}
                             </p>
                         ) : type === "table" ? (
-                            <p
-                                key={index}
-                                className="text-center text-[var(--primary)] bg-[var(--light-primary)] rounded-md px-2"
-                            >
+                            <p className="text-center text-[var(--primary)] bg-[var(--light-primary)] rounded-md px-2">
                                 {simulator}
                             </p>
                         ) : null}
-                        <p>{index} task</p>
+                        <p className="text-[var(--black)]">{index} task</p>
                     </div>
                 ))}
             </div>
         </>
     );
+}
+
+export function GetSimulatorsList() {
+    return ["FTD", "109FFS", "139#1", "139#3", "169", "189", "Others"];
 }

@@ -15,10 +15,28 @@
     --black: #00060f;
     --gray: #696969;
     --separator: #dddddd;
-    --white: #eeeff1;
+    --white: #f0f0f0;
+    --pure-white: #ffffff;
     --bento-bg: #fafafa;
     --red: #ff4646;
     --orange: #ff9f43;
+    --placeholder: #aaaaaa;
+}
+
+body.dark-mode {
+    --primary: hsl(217, 100%, 64%);
+    --primary-hover: hsl(217, 100%, 68%);
+    --dark-primary: hsl(0, 0%, 3%); /* #080808 - almost black */
+    --light-primary: hsl(0, 0%, 15%); /* #262626 */
+    --black: hsl(0, 0%, 95%); /* #f2f2f2 - text color */
+    --gray: hsl(0, 0%, 60%); /* #999999 */
+    --separator: hsl(0, 0%, 18%); /* #2e2e2e */
+    --white: hsl(0, 0%, 8%); /* #141414 - main bg */
+    --pure-white: hsl(0, 0%, 10%); /* #1a1a1a - cards */
+    --bento-bg: hsl(0, 0%, 9%); /* #171717 */
+    --red: hsl(0, 100%, 71%);
+    --orange: hsl(31, 100%, 65%);
+    --placeholder: hsl(0, 0%, 50%);
 }
 
 ::-webkit-scrollbar-button {
@@ -39,11 +57,12 @@
 
 body {
     overflow: hidden;
+    background: var(--pure-white);
 }
 
 .btn {
     background-color: var(--primary);
-    color: var(--white);
+    color: #fff;
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 8px;
@@ -78,11 +97,11 @@ body {
 }
 
 .gray-btn {
-    background-color: var(--separator);
+    background-color: var(--white);
     color: var(--black);
 
     &:hover {
-        background-color: #bfbfbf;
+        background-color: var(--separator);
     }
 }
 
@@ -96,4 +115,29 @@ body {
 
 .task-description {
     font-style: italic;
+}
+
+input[type="radio"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+}
+
+input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+}
+
+input[type="search"] {
+    font-size: 16px;
+    color: var(--black);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+}
+
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
 }

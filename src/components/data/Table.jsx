@@ -4,7 +4,7 @@ import GetSimulators from "../../functions/Simulators.jsx";
 
 function Table({ type }) {
     return (
-        <div className="grid grid-cols-1 gap-4 mt-4">
+        <div className="grid grid-cols-1 gap-16 mt-4">
             <div className="overflow-x-auto">
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-1 text-[var(--gray)] border-b border-[var(--light-primary)] pb-2">

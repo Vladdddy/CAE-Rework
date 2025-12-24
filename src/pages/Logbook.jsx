@@ -90,11 +90,11 @@ function Logbook() {
                                         <div className="flex items-center gap-4">
                                             <FilterIcon className="w-6 text-[var(--black)] icon cursor-pointer" />
                                             <div className="relative w-[20vw]">
-                                                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--separator)]" />
+                                                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                                                 <input
                                                     type="search"
                                                     placeholder="Cerca task"
-                                                    className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[#ffffff] w-full text-md placeholder:text-[var(--separator)] focus:outline-none focus:border-[var(--separator)]"
+                                                    className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
                                                 />
                                             </div>
 

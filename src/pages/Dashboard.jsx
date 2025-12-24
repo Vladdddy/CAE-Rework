@@ -59,17 +59,17 @@ function Dashboard() {
                             Task di oggi
                         </p>
                         <div className="relative">
-                            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--separator)]" />
+                            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                             <input
                                 type="search"
                                 placeholder="Cerca task"
-                                className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[#ffffff] w-full text-md placeholder:text-[var(--separator)] focus:outline-none focus:border-[var(--separator)]"
+                                className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
                             />
                         </div>
                         <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
                             <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
                                 <div className="flex flex-row items-center gap-2">
-                                    <DayIcon className="w-6" />
+                                    <DayIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
                                         Giorno
                                     </p>
@@ -83,7 +83,7 @@ function Dashboard() {
                             </div>
                             <div className="flex flex-col gap-2">
                                 <div className="flex flex-row items-center gap-2">
-                                    <NightIcon className="w-6" />
+                                    <NightIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
                                         Notte
                                     </p>
@@ -99,11 +99,11 @@ function Dashboard() {
                         </div>
 
                         <div className="relative">
-                            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--separator)]" />
+                            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                             <input
                                 type="search"
                                 placeholder="Cerca task"
-                                className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[#ffffff] w-full text-md placeholder:text-[var(--separator)] focus:outline-none focus:border-[var(--separator)]"
+                                className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
                             />
                         </div>
                         <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
@@ -184,23 +184,30 @@ function Dashboard() {
                                         Shift Leader
                                     </p>
                                 </div>
-                                <Employee role="Shift Leader" />
-                                <Employee role="Shift Leader" />
-                                <Employee role="Shift Leader" />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Employee role="Shift Leader" />
+                                    <Employee role="Shift Leader" />
+                                    <Employee role="Shift Leader" />
+                                    <Employee role="Shift Leader" />
+                                    <Employee role="Shift Leader" />
+                                </div>
                             </div>
                             <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
                                 <div className="flex flex-row items-center gap-2">
-                                    <DayIcon className="w-6" />
+                                    <DayIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
                                         Giorno
                                     </p>
                                 </div>
-                                <Employee role="Employee" />
-                                <Employee role="Employee" />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Employee role="Employee" />
+                                    <Employee role="Employee" />
+                                    <Employee role="Employee" />
+                                </div>
                             </div>
                             <div className="flex flex-col gap-2">
                                 <div className="flex flex-row items-center gap-2">
-                                    <NightIcon className="w-6" />
+                                    <NightIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
                                         Notte
                                     </p>

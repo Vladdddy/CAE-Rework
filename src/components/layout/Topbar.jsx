@@ -1,10 +1,42 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import SidebarIcon from "../../assets/icons/sidebar.tsx";
 import SearchIcon from "../../assets/icons/search.tsx";
 import CurrentTime from "../../functions/CurrentTime.jsx";
 import AddIcon from "../../assets/icons/add.tsx";
+import CreateModal from "../modals/CreateModal.jsx";
+import DayIcon from "../../assets/icons/day.tsx";
+import NightIcon from "../../assets/icons/night.tsx";
 
 function Topbar({ isSidebarOpen, setSidebarStatus }) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const savedMode = localStorage.getItem("darkMode");
+        return savedMode === "true";
+    });
+
+    useEffect(() => {
+        if (isDarkMode) {
+            document.body.classList.add("dark-mode");
+        } else {
+            document.body.classList.remove("dark-mode");
+        }
+    }, []);
+
+    const handleTaskClick = () => {
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+    };
+
+    const toggleDarkMode = () => {
+        const newMode = !isDarkMode;
+        setIsDarkMode(newMode);
+        localStorage.setItem("darkMode", newMode);
+        document.body.classList.toggle("dark-mode");
+    };
+
     return (
         <div className="bg-[var(--bento-bg)] text-[var(--black)] w-full h-auto p-4 flex items-center justify-between border-b border-[var(--light-primary)]">
             <div className="flex items-center justify-start gap-4">
@@ -16,19 +48,35 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                     Benvenuto, Gianluca!
                 </h1>
                 <div className="relative w-[30vw]">
-                    <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--separator)]" />
+                    <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                     <input
                         type="search"
                         placeholder="Cerca task"
-                        className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[#ffffff] w-full text-md placeholder:text-[var(--separator)] focus:outline-none focus:border-[var(--separator)]"
+                        className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
                     />
                 </div>
-                <button className="btn flex gap-2 items-center">
+                <button
+                    className="btn flex gap-2 items-center"
+                    onClick={handleTaskClick}
+                >
                     <AddIcon className="w-6" />
-                    <p>Programma task</p>
+                    <p className="">Programma task</p>
                 </button>
             </div>
+            {isDarkMode ? (
+                <DayIcon
+                    className="w-6 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] ml-auto mr-4"
+                    onClick={toggleDarkMode}
+                />
+            ) : (
+                <NightIcon
+                    className="w-6 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] ml-auto mr-4"
+                    onClick={toggleDarkMode}
+                />
+            )}
             <CurrentTime />
+
+            {isModalOpen && <CreateModal onClose={handleCloseModal} />}
         </div>
     );
 }

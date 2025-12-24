@@ -4,7 +4,7 @@ function Task({ onClick, title, timeOfDay, assignedTo, status }) {
     return (
         <div
             onClick={onClick}
-            className="flex flex-col items-start justify-between p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:bg-[var(--light-primary)] hover:border-[var(--light-primary)] hover:text-[var(--primary)] transition-all duration-200 ease-in-out cursor-pointer"
+            className="flex flex-col items-start justify-between p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:bg-[var(--light-primary)] hover:border-[var(--light-primary)] hover:text-[var(--primary)] transition-all duration-200 ease-in-out cursor-pointer text-[var(--black)]"
         >
             <div className="flex flex-row items-center gap-1 mb-1">
                 <TaskIcon className="w-4" />
