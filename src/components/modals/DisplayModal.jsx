@@ -2,6 +2,7 @@ import { useState } from "react";
 import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
+import UserIcon from "../../assets/icons/user.tsx";
 
 function DisplayModal({ taskInfo, onClose }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -63,33 +64,82 @@ function DisplayModal({ taskInfo, onClose }) {
                                     </p>
 
                                     <p className="task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="flex items-center gap-1">
+                                                <p className="text-sm text-[var(--primary)]">
+                                                    139#3
+                                                </p>
+                                            </div>
+                                        </div>
                                         Lorem ipsum dolor sit, amet consectetur
                                         adipisicing elit. Voluptas, fugiat?
+                                        <div className="flex justify-between items-center mt-4">
+                                            <div className="flex items-center gap-1 max-w-xs flex-wrap">
+                                                <UserIcon className="w-4 text-[var(--black)]" />
+                                                <div className="flex items-center gap-1">
+                                                    <p className="text-sm text-[var(--black)]">
+                                                        Gianluca
+                                                    </p>
+                                                </div>
+
+                                                <span className="text-[var(--placeholder)] text-md">
+                                                    -
+                                                </span>
+
+                                                <div className="flex items-center gap-1">
+                                                    <p className="text-sm text-[var(--black)]">
+                                                        Simone
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1">
+                                                    <p className="text-sm text-[var(--black)]">
+                                                        23/12/2025
+                                                    </p>
+
+                                                    <p className="text-sm text-[var(--black)]">
+                                                        •
+                                                    </p>
+
+                                                    <p className="text-sm text-[var(--black)]">
+                                                        Diurno
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </p>
                                 </div>
 
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-2 w-1/2">
                                     <h3 className="text-sm text-[var(--gray)]">
-                                        Allegati:
+                                        Stato
                                     </h3>
 
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1 flex-wrap text-[var(--black)]">
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
-                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
-                                                <p>2025-01-23.jpg</p>
-                                            </div>
-
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
-                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
-                                                <p>2025-01-23.jpg</p>
-                                            </div>
-
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
-                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
-                                                <p>2025-01-23.jpg</p>
-                                            </div>
-                                        </div>
+                                    <div className="relative">
+                                        <select
+                                            name=""
+                                            id=""
+                                            className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                        >
+                                            <option value="not-started">
+                                                Non iniziato
+                                            </option>
+                                            <option value="in-progress">
+                                                In corso
+                                            </option>
+                                            <option value="completed">
+                                                Completato
+                                            </option>
+                                            <option value="not-completed">
+                                                Non completato
+                                            </option>
+                                            <option value="undefined">
+                                                Da definire
+                                            </option>
+                                        </select>
+                                        <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                                     </div>
                                 </div>
 
@@ -120,7 +170,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                         <div className="flex justify-between items-center">
                                             <div className="flex flex-col gap-1 mt-4">
                                                 <h3 className="text-sm text-[var(--gray)]">
-                                                    Categoria:
+                                                    Categoria
                                                 </h3>
 
                                                 <div className="flex items-center gap-2">
@@ -134,7 +184,7 @@ function DisplayModal({ taskInfo, onClose }) {
 
                                             <div className="flex flex-col gap-1 mt-4">
                                                 <h3 className="text-sm text-[var(--gray)]">
-                                                    Sotto-Categoria:
+                                                    Sotto-Categoria
                                                 </h3>
 
                                                 <div className="flex items-center gap-2">
@@ -148,7 +198,7 @@ function DisplayModal({ taskInfo, onClose }) {
 
                                             <div className="flex flex-col gap-1 mt-4">
                                                 <h3 className="text-sm text-[var(--gray)]">
-                                                    Dettaglio Extra:
+                                                    Dettaglio Extra
                                                 </h3>
 
                                                 <div className="flex items-center gap-2">
@@ -165,100 +215,26 @@ function DisplayModal({ taskInfo, onClose }) {
 
                                 <div className="flex flex-col gap-1">
                                     <h3 className="text-sm text-[var(--gray)]">
-                                        Simulatore:
+                                        Allegati
                                     </h3>
 
                                     <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1">
-                                            <p className="text-sm text-[var(--black)]">
-                                                139#3
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-between items-center">
-                                    <div className="flex flex-col gap-1">
-                                        <h3 className="text-sm text-[var(--gray)]">
-                                            Assegnato a:
-                                        </h3>
-
-                                        <div className="flex items-center gap-2 max-w-xs flex-wrap">
-                                            <div className="flex items-center gap-1">
-                                                <p className="text-sm text-[var(--black)]">
-                                                    Gianluca
-                                                </p>
+                                        <div className="flex items-center gap-1 flex-wrap text-[var(--black)]">
+                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
+                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
+                                                <p>2025-01-23.jpg</p>
                                             </div>
 
-                                            <span className="text-[var(--placeholder)] text-md">
-                                                •
-                                            </span>
+                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
+                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
+                                                <p>2025-01-23.jpg</p>
+                                            </div>
 
-                                            <div className="flex items-center gap-1">
-                                                <p className="text-sm text-[var(--black)]">
-                                                    Simone
-                                                </p>
+                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
+                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
+                                                <p>2025-01-23.jpg</p>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-1">
-                                        <h3 className="text-sm text-[var(--gray)]">
-                                            Turno:
-                                        </h3>
-
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-1">
-                                                <p className="text-sm text-[var(--black)]">
-                                                    Diurno
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-1">
-                                        <h3 className="text-sm text-[var(--gray)]">
-                                            In data:
-                                        </h3>
-
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-1">
-                                                <p className="text-sm text-[var(--black)]">
-                                                    23/12/2025
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col gap-2 w-1/2">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        Stato:
-                                    </h3>
-
-                                    <div className="relative">
-                                        <select
-                                            name=""
-                                            id=""
-                                            className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                        >
-                                            <option value="not-started">
-                                                Non iniziato
-                                            </option>
-                                            <option value="in-progress">
-                                                In corso
-                                            </option>
-                                            <option value="completed">
-                                                Completato
-                                            </option>
-                                            <option value="not-completed">
-                                                Non completato
-                                            </option>
-                                            <option value="undefined">
-                                                Da definire
-                                            </option>
-                                        </select>
-                                        <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                                     </div>
                                 </div>
                             </div>

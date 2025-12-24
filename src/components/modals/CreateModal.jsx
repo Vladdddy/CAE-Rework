@@ -76,7 +76,7 @@ function CreateModal({ onClose }) {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
-                    <div className="flex flex-row items-center gap-2">
+                    <div className="flex flex-row items-center gap-2 text-[var(--black)]">
                         <TaskIcon className="w-6" />
                         <h1 className="text-xl">Crea task</h1>
                     </div>
@@ -93,7 +93,7 @@ function CreateModal({ onClose }) {
                         <h3 className="text-sm text-[var(--gray)]">Titolo</h3>
                         <input
                             type="text"
-                            className="w-full p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                            className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                             placeholder="Inserisci il titolo del task"
                             maxLength={200}
                         />
@@ -125,7 +125,7 @@ function CreateModal({ onClose }) {
                             <h3 className="text-sm text-[var(--gray)]">
                                 Categoria
                             </h3>
-                            <div className="relative">
+                            <div className="relative ">
                                 <select
                                     name=""
                                     id=""
@@ -133,7 +133,7 @@ function CreateModal({ onClose }) {
                                     onChange={(e) =>
                                         setSelectedCategory(e.target.value)
                                     }
-                                    className="p-2 pr-10 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                    className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                 >
                                     {Object.keys(categories).map(
                                         (category, index) => (
@@ -158,7 +158,7 @@ function CreateModal({ onClose }) {
                                 <select
                                     name=""
                                     id=""
-                                    className="p-2 pr-10 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                    className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                 >
                                     {categories[selectedCategory]?.map(
                                         (subCategory, index) => (
@@ -183,7 +183,7 @@ function CreateModal({ onClose }) {
                                 <select
                                     name=""
                                     id=""
-                                    className="p-2 pr-10 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                    className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                 >
                                     {troubleshootingDetails.map(
                                         (detail, index) => (
@@ -206,7 +206,7 @@ function CreateModal({ onClose }) {
                             <select
                                 name=""
                                 id=""
-                                className="p-2 pr-10 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                             >
                                 {simulators.map((simulator, index) => (
                                     <option key={index} value={simulator}>
@@ -222,7 +222,7 @@ function CreateModal({ onClose }) {
                         <h3 className="text-sm text-[var(--gray)]">Data</h3>
                         <input
                             type="date"
-                            className="w-full p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                            className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                             defaultValue={
                                 new Date().toISOString().split("T")[0]
                             }

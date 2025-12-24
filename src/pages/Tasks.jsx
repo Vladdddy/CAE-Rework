@@ -10,13 +10,14 @@ import TaskIcon from "../assets/icons/tasks.tsx";
 import SimulatorIcon from "../assets/icons/simulator.tsx";
 import BackIcon from "../assets/icons/back.tsx";
 import { GetTodayDate } from "../functions/CurrentTime.jsx";
+import CreateModal from "../components/modals/CreateModal.jsx";
 
 function Tasks() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
-
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [startDate, setStartDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(true);
     // eslint-disable-next-line no-unused-vars
@@ -37,6 +38,14 @@ function Tasks() {
     const handleBackToCalendar = () => {
         setShowCalendar(true);
         setSelectedDay(null);
+    };
+
+    const handleTaskClick = () => {
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
     };
 
     return (
@@ -98,7 +107,10 @@ function Tasks() {
                                                 />
                                             </div>
 
-                                            <button className="btn flex gap-2 items-center">
+                                            <button
+                                                className="btn flex gap-2 items-center"
+                                                onClick={handleTaskClick}
+                                            >
                                                 <TaskIcon className="w-6" />
                                                 <p>Aggiungi task</p>
                                             </button>
@@ -138,6 +150,8 @@ function Tasks() {
                     )}
                 </div>
             </div>
+
+            {isModalOpen && <CreateModal onClose={handleCloseModal} />}
         </section>
     );
 }

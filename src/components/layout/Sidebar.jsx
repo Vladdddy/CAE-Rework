@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Logo from "../../assets/cae-logo.png";
 import DashboardIcon from "../../assets/icons/dashboard.tsx";
@@ -6,8 +6,19 @@ import TasksIcon from "../../assets/icons/tasks.tsx";
 import LogbookIcon from "../../assets/icons/logbook.tsx";
 import ShiftsIcon from "../../assets/icons/shifts.tsx";
 import LogoutIcon from "../../assets/icons/logout.tsx";
+import LogoutModal from "../modals/LogoutModal.jsx";
 
 function Sidebar(props) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleLogoutClick = () => {
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+    };
+
     return (
         <nav
             className={`flex flex-col items-center justify-between bg-[var(--bento-bg)] h-screen p-4 border-r border-[var(--light-primary)] transition-all duration-300 ${
@@ -136,15 +147,16 @@ function Sidebar(props) {
                     </div>
                 </div>
 
-                <Link
-                    to="/logout"
-                    className={`text-[var(--red)] flex items-center justify-center transition-all duration-300 ${
+                <div
+                    className={`text-[var(--red)] flex items-center justify-center transition-all duration-300 cursor-pointer hover:text-[var(--gray)] ${
                         !props.isSidebarOpen ? "mx-auto" : ""
                     }`}
                 >
-                    <LogoutIcon className="w-6" />
-                </Link>
+                    <LogoutIcon className="w-6" onClick={handleLogoutClick} />
+                </div>
             </div>
+
+            {isModalOpen && <LogoutModal onClose={handleCloseModal} />}
         </nav>
     );
 }
