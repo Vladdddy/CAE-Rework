@@ -11,6 +11,7 @@ import SimulatorIcon from "../assets/icons/simulator.tsx";
 import BackIcon from "../assets/icons/back.tsx";
 import { GetTodayDate } from "../functions/CurrentTime.jsx";
 import CreateModal from "../components/modals/CreateModal.jsx";
+import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 
 function Tasks() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -18,6 +19,7 @@ function Tasks() {
         return saved !== null ? JSON.parse(saved) : true;
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
     const [startDate, setStartDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(true);
     // eslint-disable-next-line no-unused-vars
@@ -46,6 +48,14 @@ function Tasks() {
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+    };
+
+    const handleSimulatorClick = () => {
+        setIsSimulatorModalOpen(true);
+    };
+
+    const handleCloseSimulatorModal = () => {
+        setIsSimulatorModalOpen(false);
     };
 
     return (
@@ -117,7 +127,14 @@ function Tasks() {
 
                                             {GetTodayDate(startDate) ===
                                                 GetTodayDate(new Date()) && (
-                                                <button className="btn secondary flex gap-2 items-center">
+                                                <button
+                                                    className="btn secondary flex gap-2 items-center"
+                                                    onClick={() =>
+                                                        handleSimulatorClick(
+                                                            true
+                                                        )
+                                                    }
+                                                >
                                                     <SimulatorIcon className="w-6" />
                                                     <p>Imposta simulatore</p>
                                                 </button>
@@ -152,6 +169,9 @@ function Tasks() {
             </div>
 
             {isModalOpen && <CreateModal onClose={handleCloseModal} />}
+            {isSimulatorModalOpen && (
+                <SimulatorModal onClose={handleCloseSimulatorModal} />
+            )}
         </section>
     );
 }
