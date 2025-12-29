@@ -1,13 +1,12 @@
 export function GetTaskCountTime({ filteredTasks, time, date }) {
     const taskCount = () => {
+        // Format date with zero-padding for single-digit months/days
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const formattedDate = `${date.getFullYear()}-${month}-${day}T00:00:00.000Z`;
+
         return filteredTasks.filter((task) => {
-            return (
-                task.TIME === time &&
-                task.DATE ===
-                    `${date.getFullYear()}-${
-                        date.getMonth() + 1
-                    }-${date.getDate()}T00:00:00.000Z`
-            );
+            return task.TIME === time && task.DATE === formattedDate;
         }).length;
     };
 

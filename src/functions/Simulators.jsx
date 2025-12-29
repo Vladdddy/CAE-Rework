@@ -26,121 +26,141 @@ export function GetSimulators({ type, time, date, taskList, status }) {
 
     return (
         <>
-            {simulators.map((simulator, index) => (
-                <div key={index} className={"flex flex-col gap-2"}>
-                    {taskList || taskList.length === 0
-                        ? date
-                            ? (() => {
-                                  const filteredTasks = taskList.filter(
-                                      (task) => {
-                                          const matchesTime =
-                                              task?.TIME === time;
-                                          const matchesSimulator =
-                                              task?.SIMULATOR === simulator;
-                                          const matchesDate =
-                                              task?.DATE ===
-                                              `${date.getFullYear()}-${
-                                                  date.getMonth() + 1
-                                              }-${date.getDate()}T00:00:00.000Z`;
+            <div
+                className={`${
+                    type === "table"
+                        ? "grid grid-cols-7 gap-4 justify-start items-start gap-1"
+                        : ""
+                } `}
+            >
+                {simulators.map((simulator, index) => (
+                    <div key={index} className={"flex flex-col gap-2"}>
+                        {taskList || taskList.length === 0
+                            ? date
+                                ? (() => {
+                                      const filteredTasks = taskList.filter(
+                                          (task) => {
+                                              const matchesTime =
+                                                  task?.TIME === time;
+                                              const matchesSimulator =
+                                                  task?.SIMULATOR === simulator;
+                                              const matchesDate =
+                                                  task?.DATE ===
+                                                  `${date.getFullYear()}-${
+                                                      date.getMonth() + 1
+                                                  }-${date.getDate()}T00:00:00.000Z`;
 
-                                          return (
-                                              matchesTime &&
-                                              matchesSimulator &&
-                                              matchesDate
-                                          );
-                                      }
-                                  );
+                                              return (
+                                                  matchesTime &&
+                                                  matchesSimulator &&
+                                                  matchesDate
+                                              );
+                                          }
+                                      );
 
-                                  return filteredTasks.length > 0 ? (
-                                      <>
-                                          {type === "dashboard" && (
-                                              <p className="mt-4 text-sm text-[var(--primary)]">
-                                                  {simulator}
-                                              </p>
-                                          )}
-                                          {filteredTasks.map((task) => (
-                                              <Task
-                                                  key={task.id}
-                                                  title={task?.TITLE}
-                                                  date={formatDate(task?.DATE)}
-                                                  assignedTo={task?.ASSIGNED_TO}
-                                                  status={task?.STATUS}
-                                                  type="table"
-                                                  wholeTask={task}
-                                              />
-                                          ))}
-                                      </>
-                                  ) : null;
-                              })()
-                            : status
-                            ? (() => {
-                                  const filteredTasks = taskList.filter(
-                                      (task) => {
-                                          const matchesStatus =
-                                              task?.STATUS === status;
-                                          const matchesSimulator =
-                                              task?.SIMULATOR === simulator ||
-                                              simulator === "Others";
-                                          return (
-                                              matchesStatus && matchesSimulator
-                                          );
-                                      }
-                                  );
+                                      return filteredTasks.length > 0 ? (
+                                          <>
+                                              {type === "dashboard" && (
+                                                  <p className="mt-4 text-sm text-[var(--primary)]">
+                                                      {simulator}
+                                                  </p>
+                                              )}
+                                              {filteredTasks.map((task) => (
+                                                  <Task
+                                                      key={task.id}
+                                                      title={task?.TITLE}
+                                                      date={formatDate(
+                                                          task?.DATE
+                                                      )}
+                                                      assignedTo={
+                                                          task?.ASSIGNED_TO
+                                                      }
+                                                      status={task?.STATUS}
+                                                      type="table"
+                                                      wholeTask={task}
+                                                  />
+                                              ))}
+                                          </>
+                                      ) : null;
+                                  })()
+                                : status
+                                ? (() => {
+                                      const filteredTasks = taskList.filter(
+                                          (task) => {
+                                              const matchesStatus =
+                                                  task?.STATUS === status;
+                                              const matchesSimulator =
+                                                  task?.SIMULATOR === simulator;
+                                              return (
+                                                  matchesStatus &&
+                                                  matchesSimulator
+                                              );
+                                          }
+                                      );
 
-                                  return filteredTasks.length > 0 ? (
-                                      <>
-                                          {type === "dashboard" && (
-                                              <p className="mt-4 text-sm text-[var(--primary)]">
-                                                  {simulator}
-                                              </p>
-                                          )}
-                                          {filteredTasks.map((task) => (
-                                              <Task
-                                                  key={task.id}
-                                                  title={task?.TITLE}
-                                                  date={formatDate(task?.DATE)}
-                                                  assignedTo={task?.ASSIGNED_TO}
-                                                  status={task?.STATUS}
-                                                  type="table"
-                                                  wholeTask={task}
-                                              />
-                                          ))}
-                                      </>
-                                  ) : null;
-                              })()
-                            : (() => {
-                                  const filteredTasks = taskList.filter(
-                                      (task) => {
-                                          const matchesSimulator =
-                                              task?.SIMULATOR === simulator;
-                                          return matchesSimulator;
-                                      }
-                                  );
+                                      return filteredTasks.length > 0 ? (
+                                          <>
+                                              {type === "dashboard" && (
+                                                  <p className="mt-4 text-sm text-[var(--primary)]">
+                                                      {simulator}
+                                                  </p>
+                                              )}
+                                              {filteredTasks.map((task) => (
+                                                  <Task
+                                                      key={task.id}
+                                                      title={task?.TITLE}
+                                                      date={formatDate(
+                                                          task?.DATE
+                                                      )}
+                                                      assignedTo={
+                                                          task?.ASSIGNED_TO
+                                                      }
+                                                      status={task?.STATUS}
+                                                      type="table"
+                                                      wholeTask={task}
+                                                  />
+                                              ))}
+                                          </>
+                                      ) : null;
+                                  })()
+                                : (() => {
+                                      const filteredTasks = taskList.filter(
+                                          (task) => {
+                                              const matchesSimulator =
+                                                  task?.SIMULATOR === simulator;
+                                              return matchesSimulator;
+                                          }
+                                      );
 
-                                  return filteredTasks.length > 0 ? (
-                                      <>
-                                          {type === "dashboard" && (
-                                              <p className="mt-4 text-sm text-[var(--primary)]">
-                                                  {simulator}
-                                              </p>
-                                          )}
-                                          {filteredTasks.map((task) => (
-                                              <Task
-                                                  key={task.id}
-                                                  title={task?.TITLE}
-                                                  date={formatDate(task?.DATE)}
-                                                  assignedTo={task?.ASSIGNED_TO}
-                                                  status={task?.STATUS}
-                                                  type="table"
-                                                  wholeTask={task}
-                                              />
-                                          ))}
-                                      </>
-                                  ) : null;
-                              })()
-                        : null}
-                </div>
-            ))}
+                                      return filteredTasks.length > 0 ? (
+                                          <>
+                                              {type === "dashboard" && (
+                                                  <p className="mt-4 text-sm text-[var(--primary)]">
+                                                      {simulator}
+                                                  </p>
+                                              )}
+                                              {filteredTasks.map((task) => (
+                                                  <Task
+                                                      key={task.id}
+                                                      title={task?.TITLE}
+                                                      date={formatDate(
+                                                          task?.DATE
+                                                      )}
+                                                      assignedTo={
+                                                          task?.ASSIGNED_TO
+                                                      }
+                                                      status={task?.STATUS}
+                                                      type="table"
+                                                      wholeTask={task}
+                                                  />
+                                              ))}
+                                          </>
+                                      ) : null;
+                                  })()
+                            : null}
+                    </div>
+                ))}
+            </div>
         </>
     );
 }
@@ -152,9 +172,9 @@ export function GetSimulatorsList() {
 export function GetTableSimulators({ type, time, date, taskList }) {
     const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
 
-    const handleSimulatorClick = () => {
+    /*const handleSimulatorClick = () => {
         setIsSimulatorModalOpen(true);
-    };
+    };*/
 
     const handleCloseSimulatorModal = () => {
         setIsSimulatorModalOpen(false);
@@ -192,14 +212,15 @@ export function GetTableSimulators({ type, time, date, taskList }) {
                 {simulators.map((simulator, index) => (
                     <div key={index} className={"flex flex-col gap-2"}>
                         <div className="flex items-center gap-1">
-                            {index === 3 ? (
+                            {/* Simulatore */}
+                            {/*{index === 3 ? (
                                 <div
                                     onClick={() => handleSimulatorClick(true)}
                                     className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
                                 >
                                     <ClockIcon className="w-4 text-[#ffffff]" />
                                 </div>
-                            ) : null}
+                            ) : null}*/}
                             <p className="text-center text-[var(--primary)] bg-[var(--light-primary)] rounded-md px-2 flex-1">
                                 {simulator}
                             </p>
@@ -213,11 +234,16 @@ export function GetTableSimulators({ type, time, date, taskList }) {
                                               task?.TIME === time;
                                           const matchesSimulator =
                                               task?.SIMULATOR === simulator;
+                                          const month = String(
+                                              date.getMonth() + 1
+                                          ).padStart(2, "0");
+                                          const day = String(
+                                              date.getDate()
+                                          ).padStart(2, "0");
+                                          const formattedDate = `${date.getFullYear()}-${month}-${day}T00:00:00.000Z`;
+
                                           const matchesDate =
-                                              task?.DATE ===
-                                              `${date.getFullYear()}-${
-                                                  date.getMonth() + 1
-                                              }-${date.getDate()}T00:00:00.000Z`;
+                                              task?.DATE === formattedDate;
 
                                           return (
                                               matchesTime &&
@@ -229,11 +255,6 @@ export function GetTableSimulators({ type, time, date, taskList }) {
 
                                   return filteredTasks.length > 0 ? (
                                       <>
-                                          {type === "dashboard" && (
-                                              <p className="mt-4 text-sm text-[var(--primary)]">
-                                                  {simulator}
-                                              </p>
-                                          )}
                                           {filteredTasks.map((task) => (
                                               <Task
                                                   key={task.id}
