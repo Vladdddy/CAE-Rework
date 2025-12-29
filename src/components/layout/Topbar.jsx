@@ -6,9 +6,11 @@ import AddIcon from "../../assets/icons/add.tsx";
 import CreateModal from "../modals/CreateModal.jsx";
 import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
+import SearchModal from "../modals/SearchModal.jsx";
 
 function Topbar({ isSidebarOpen, setSidebarStatus }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedMode = localStorage.getItem("darkMode");
         return savedMode === "true";
@@ -30,6 +32,14 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
         setIsModalOpen(false);
     };
 
+    const handleSearchOpen = () => {
+        setIsSearchOpen(true);
+    };
+
+    const handleCloseSearch = () => {
+        setIsSearchOpen(false);
+    };
+
     const toggleDarkMode = () => {
         const newMode = !isDarkMode;
         setIsDarkMode(newMode);
@@ -47,7 +57,10 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                 <h1 className="border-x border-[var(--light-primary)] px-4 text-l">
                     Benvenuto, Gianluca!
                 </h1>
-                <div className="relative w-[30vw]">
+                <div
+                    className="relative w-[30vw]"
+                    onClick={() => handleSearchOpen()}
+                >
                     <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                     <input
                         type="search"
@@ -77,6 +90,8 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
             <CurrentTime />
 
             {isModalOpen && <CreateModal onClose={handleCloseModal} />}
+
+            {isSearchOpen && <SearchModal onClose={handleCloseSearch} />}
         </div>
     );
 }

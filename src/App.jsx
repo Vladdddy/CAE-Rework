@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Logbook from "./pages/Logbook";
 import Signin from "./pages/Signin";
+import Shifts from "./pages/Shifts";
 import "./App.css";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/logbook" element={<Logbook />} />
                 <Route path="/signin" element={<Signin />} />
+                <Route path="/shifts" element={<Shifts />} />
             </Routes>
         </Router>
     );
