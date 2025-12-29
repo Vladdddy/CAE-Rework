@@ -8,9 +8,19 @@ function DisplayModal({ taskInfo, onClose }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
 
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm cursor-default flex items-center justify-center z-50"
             onClick={onClose}
         >
             <div
@@ -20,7 +30,9 @@ function DisplayModal({ taskInfo, onClose }) {
                 <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
                     <div className="flex flex-row items-center gap-2 text-[var(--black)]">
                         <TaskIcon className="w-6" />
-                        <h1 className="text-xl">Dettagli Task</h1>
+                        <h1 className="text-xl">
+                            Dettagli Task #{taskInfo.ID}
+                        </h1>
                     </div>
                     <button
                         onClick={onClose}
@@ -60,35 +72,26 @@ function DisplayModal({ taskInfo, onClose }) {
                             <div className="flex flex-col gap-8 max-h-[calc(50vh-1rem)] overflow-y-auto pr-1">
                                 <div className="flex flex-col gap-2">
                                     <p className="text-xl text-[var(--black)] font-semibold">
-                                        Manutenzione {taskInfo} 139#3
+                                        {taskInfo.TITLE || "N/A"}
                                     </p>
 
                                     <p className="task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md">
                                         <div className="flex items-center gap-2 mb-2">
                                             <div className="flex items-center gap-1">
                                                 <p className="text-sm text-[var(--primary)]">
-                                                    139#3
+                                                    {taskInfo.SIMULATOR ||
+                                                        "N/A"}
                                                 </p>
                                             </div>
                                         </div>
-                                        Lorem ipsum dolor sit, amet consectetur
-                                        adipisicing elit. Voluptas, fugiat?
+                                        {taskInfo.DESCRIPTION || "N/A"}
                                         <div className="flex justify-between items-center mt-4">
                                             <div className="flex items-center gap-1 max-w-xs flex-wrap">
                                                 <UserIcon className="w-4 text-[var(--black)]" />
                                                 <div className="flex items-center gap-1">
                                                     <p className="text-sm text-[var(--black)]">
-                                                        Gianluca
-                                                    </p>
-                                                </div>
-
-                                                <span className="text-[var(--placeholder)] text-md">
-                                                    -
-                                                </span>
-
-                                                <div className="flex items-center gap-1">
-                                                    <p className="text-sm text-[var(--black)]">
-                                                        Simone
+                                                        {taskInfo.ASSIGNED_TO ||
+                                                            "N/A"}
                                                     </p>
                                                 </div>
                                             </div>
@@ -96,7 +99,9 @@ function DisplayModal({ taskInfo, onClose }) {
                                             <div className="flex items-center gap-2">
                                                 <div className="flex items-center gap-1">
                                                     <p className="text-sm text-[var(--black)]">
-                                                        23/12/2025
+                                                        {formatDate(
+                                                            taskInfo?.DATE
+                                                        ) || "N/A"}
                                                     </p>
 
                                                     <p className="text-sm text-[var(--black)]">
@@ -104,7 +109,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                                     </p>
 
                                                     <p className="text-sm text-[var(--black)]">
-                                                        Diurno
+                                                        {taskInfo.TIME || "N/A"}
                                                     </p>
                                                 </div>
                                             </div>
@@ -119,23 +124,27 @@ function DisplayModal({ taskInfo, onClose }) {
 
                                     <div className="relative">
                                         <select
+                                            defaultValue={
+                                                taskInfo?.STATUS ||
+                                                "Da definire"
+                                            }
                                             name=""
                                             id=""
                                             className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                         >
-                                            <option value="not-started">
+                                            <option value="Non iniziato">
                                                 Non iniziato
                                             </option>
-                                            <option value="in-progress">
+                                            <option value="In corso">
                                                 In corso
                                             </option>
-                                            <option value="completed">
+                                            <option value="Completato">
                                                 Completato
                                             </option>
-                                            <option value="not-completed">
+                                            <option value="Non completato">
                                                 Non completato
                                             </option>
-                                            <option value="undefined">
+                                            <option value="Da definire">
                                                 Da definire
                                             </option>
                                         </select>
@@ -167,7 +176,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                             isDetailsOpen ? "block" : "hidden"
                                         } w-full`}
                                     >
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex justify-between items-center flex-wrap gap-2">
                                             <div className="flex flex-col gap-1 mt-4">
                                                 <h3 className="text-sm text-[var(--gray)]">
                                                     Categoria
@@ -175,8 +184,9 @@ function DisplayModal({ taskInfo, onClose }) {
 
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex items-center gap-1">
-                                                        <p className="text-sm text-[var(--black)]">
-                                                            Investigation
+                                                        <p className="text-sm text-[var(--black)] truncate">
+                                                            {taskInfo?.CATEGORY ||
+                                                                "N/A"}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -189,8 +199,9 @@ function DisplayModal({ taskInfo, onClose }) {
 
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex items-center gap-1">
-                                                        <p className="text-sm text-[var(--black)]">
-                                                            SW
+                                                        <p className="text-sm text-[var(--black)] truncate">
+                                                            {taskInfo?.SUBCATEGORY ||
+                                                                "N/A"}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -203,8 +214,9 @@ function DisplayModal({ taskInfo, onClose }) {
 
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex items-center gap-1">
-                                                        <p className="text-sm text-[var(--black)]">
-                                                            SOUND
+                                                        <p className="text-sm text-[var(--black)] truncate">
+                                                            {taskInfo?.EXTRADETAIL ||
+                                                                "N/A"}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -218,24 +230,18 @@ function DisplayModal({ taskInfo, onClose }) {
                                         Allegati
                                     </h3>
 
-                                    <div className="flex items-center gap-2">
+                                    <h4 className="text-sm text-center text-[var(--gray)] italic">
+                                        Gli allegati sono in fase di sviluppo!
+                                    </h4>
+
+                                    {/*<div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1 flex-wrap text-[var(--black)]">
                                             <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
                                                 <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
                                                 <p>2025-01-23.jpg</p>
                                             </div>
-
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
-                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
-                                                <p>2025-01-23.jpg</p>
-                                            </div>
-
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
-                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
-                                                <p>2025-01-23.jpg</p>
-                                            </div>
                                         </div>
-                                    </div>
+                                    </div>*/}
                                 </div>
                             </div>
 

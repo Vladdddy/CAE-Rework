@@ -92,6 +92,7 @@ function SearchModal({ onClose }) {
                                     date={formatDate(task?.DATE)}
                                     assignedTo={task?.ASSIGNED_TO}
                                     status={task?.STATUS}
+                                    wholeTask={task}
                                 />
                             ))
                         )}

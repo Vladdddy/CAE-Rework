@@ -40,16 +40,12 @@ export default function GetSimulators({ type, bond, taskList }) {
                 className={`${
                     type === "table"
                         ? "grid grid-cols-7 gap-4 justify-start items-start gap-1"
-                        : "flex flex-col gap-2"
+                        : ""
                 } `}
             >
                 {simulators.map((simulator, index) => (
                     <div key={index} className={"flex flex-col gap-2"}>
-                        {type === "dashboard" ? (
-                            <p className="mt-4 text-sm text-[var(--primary)]">
-                                {simulator}
-                            </p>
-                        ) : type === "table" ? (
+                        {type === "table" ? (
                             <div className="flex items-center gap-1">
                                 {index === 3 ? (
                                     <div
@@ -79,14 +75,26 @@ export default function GetSimulators({ type, bond, taskList }) {
                                     return matchesTime && matchesSimulator;
                                 })
                                 .map((task) => (
-                                    <Task
+                                    <div
+                                        className="flex flex-col gap-2"
                                         key={task.id}
-                                        title={task?.TITLE}
-                                        date={formatDate(task?.DATE)}
-                                        assignedTo={task?.ASSIGNED_TO}
-                                        status={task?.STATUS}
-                                        type="table"
-                                    />
+                                    >
+                                        {type === "dashboard" && (
+                                            <p className="mt-4 text-sm text-[var(--primary)]">
+                                                {simulator}
+                                            </p>
+                                        )}
+
+                                        <Task
+                                            key={task.id}
+                                            title={task?.TITLE}
+                                            date={formatDate(task?.DATE)}
+                                            assignedTo={task?.ASSIGNED_TO}
+                                            status={task?.STATUS}
+                                            type="table"
+                                            wholeTask={task}
+                                        />
+                                    </div>
                                 ))
                         )}
                     </div>

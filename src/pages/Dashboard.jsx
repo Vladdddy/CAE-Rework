@@ -4,9 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import DayIcon from "../assets/icons/day.tsx";
 import NightIcon from "../assets/icons/night.tsx";
 import SearchIcon from "../assets/icons/search.tsx";
-import Task from "../components/data/Task.jsx";
 import Employee from "../components/data/Employee.jsx";
-import DisplayModal from "../components/modals/DisplayModal.jsx";
 import GetSimulators from "../functions/Simulators.jsx";
 import { useTasks } from "../components/data/provider/useTasks";
 
@@ -15,8 +13,6 @@ function Dashboard() {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedTask, setSelectedTask] = useState(null);
 
     const { tasks, loading } = useTasks();
     const [searchQuery, setSearchQuery] = useState("");
@@ -34,16 +30,6 @@ function Dashboard() {
                 task.STATUS?.toLowerCase().includes(query)
         );
     }, [tasks, searchQuery]);
-
-    const handleTaskClick = (taskInfo) => {
-        setSelectedTask(taskInfo);
-        setIsModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setSelectedTask(null);
-    };
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -193,16 +179,6 @@ function Dashboard() {
                                         In corso
                                     </p>
                                 </div>
-                                {/* Example task, won't be like this */}
-                                <Task
-                                    taskInfo={""}
-                                    onClick={() => handleTaskClick("Task 2")}
-                                />
-
-                                {/*<GetSimulators
-                                    type="dashboard"
-                                    bond="In corso"
-                                />*/}
                             </div>
                         </div>
                     </div>
@@ -254,13 +230,6 @@ function Dashboard() {
                     </div>
                 </div>
             </div>
-
-            {isModalOpen && (
-                <DisplayModal
-                    taskInfo={selectedTask}
-                    onClose={handleCloseModal}
-                />
-            )}
         </section>
     );
 }
