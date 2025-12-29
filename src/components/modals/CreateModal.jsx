@@ -6,11 +6,25 @@ import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
+import { useTasks } from "../data/provider/useTasks.js";
 
 function CreateModal({ onClose }) {
+    const { addTask } = useTasks();
     const [selectedCategory, setSelectedCategory] = useState("Routine Task");
     const [selectedRadio, setSelectedRadio] = useState("Diurno");
     const [selectedAssignees, setSelectedAssignees] = useState([]);
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [selectedSubCategory, setSelectedSubCategory] = useState("PM");
+    const [selectedDetail, setSelectedDetail] = useState("VISUAL");
+    const [selectedDate, setSelectedDate] = useState(
+        new Date().toISOString().split("T")[0]
+    );
+
+    const simulators = GetSimulatorsList();
+    const [selectedSimulator, setSelectedSimulator] = useState(
+        simulators[0] || ""
+    );
 
     const handleRadioChange = (event) => {
         setSelectedRadio(event.target.value);
@@ -22,6 +36,29 @@ function CreateModal({ onClose }) {
                 ? prev.filter((item) => item !== name)
                 : [...prev, name]
         );
+    };
+
+    const handleSubmit = async () => {
+        // Validate required fields
+        if (!title.trim()) {
+            return;
+        }
+
+        const newTask = {
+            title: title,
+            description: description,
+            category: selectedCategory,
+            subcategory: selectedSubCategory,
+            extradetail: selectedDetail,
+            simulator: selectedSimulator,
+            date: selectedDate,
+            time: selectedRadio,
+            assigned_to: selectedAssignees.join(", "),
+            status: "Da definire",
+        };
+
+        await addTask(newTask);
+        onClose();
     };
 
     const categories = {
@@ -64,8 +101,6 @@ function CreateModal({ onClose }) {
         "OTHERS",
     ];
 
-    const simulators = GetSimulatorsList();
-
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
@@ -93,9 +128,12 @@ function CreateModal({ onClose }) {
                         <h3 className="text-sm text-[var(--gray)]">Titolo</h3>
                         <input
                             type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                             placeholder="Inserisci il titolo del task"
                             maxLength={200}
+                            required
                         />
                     </div>
 
@@ -104,8 +142,11 @@ function CreateModal({ onClose }) {
                             Descrizione
                         </h3>
                         <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
                             className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                             placeholder="Inserisci note aggiuntive qui..."
+                            required
                         ></textarea>
                     </div>
 
@@ -158,6 +199,10 @@ function CreateModal({ onClose }) {
                                 <select
                                     name=""
                                     id=""
+                                    value={selectedSubCategory}
+                                    onChange={(e) =>
+                                        setSelectedSubCategory(e.target.value)
+                                    }
                                     className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                 >
                                     {categories[selectedCategory]?.map(
@@ -183,6 +228,10 @@ function CreateModal({ onClose }) {
                                 <select
                                     name=""
                                     id=""
+                                    value={selectedDetail}
+                                    onChange={(e) =>
+                                        setSelectedDetail(e.target.value)
+                                    }
                                     className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                 >
                                     {troubleshootingDetails.map(
@@ -206,6 +255,10 @@ function CreateModal({ onClose }) {
                             <select
                                 name=""
                                 id=""
+                                value={selectedSimulator}
+                                onChange={(e) =>
+                                    setSelectedSimulator(e.target.value)
+                                }
                                 className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                             >
                                 {simulators.map((simulator, index) => (
@@ -222,10 +275,9 @@ function CreateModal({ onClose }) {
                         <h3 className="text-sm text-[var(--gray)]">Data</h3>
                         <input
                             type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
                             className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                            defaultValue={
-                                new Date().toISOString().split("T")[0]
-                            }
                         />
                     </div>
 
@@ -495,7 +547,7 @@ function CreateModal({ onClose }) {
                         Chiudi
                     </button>
 
-                    <button className="btn" onClick={onClose}>
+                    <button className="btn" onClick={handleSubmit}>
                         <p>Salva</p>
                     </button>
                 </div>

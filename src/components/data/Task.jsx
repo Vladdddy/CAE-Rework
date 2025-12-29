@@ -30,7 +30,7 @@ function Task({ title, date, assignedTo, status, type, wholeTask }) {
                         </h1>
                     </div>
                     <p className="text-xs text-[var(--gray)]">
-                        {assignedTo || "N/A"} • {date || "N/A"} •{" "}
+                        {assignedTo || "Nessuno"} • {date || "N/A"} •{" "}
                         {status || "N/A"}
                     </p>
                 </>

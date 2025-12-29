@@ -29,7 +29,26 @@ export const TaskProvider = ({ children }) => {
     };
 
     const addTask = async (newTask) => {
-        // API call then update state
+        try {
+            const response = await fetch("http://localhost:3000/tasks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ task: newTask }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error("Failed to add task:", errorData);
+                throw new Error("Failed to add task");
+            }
+            const savedTask = await response.json();
+            newTask.id = savedTask.id;
+        } catch (err) {
+            setError(err.message);
+        }
+
         setTasks((prev) => [...prev, newTask]);
     };
 

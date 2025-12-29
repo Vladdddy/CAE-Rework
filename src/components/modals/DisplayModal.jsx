@@ -91,7 +91,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                                 <div className="flex items-center gap-1">
                                                     <p className="text-sm text-[var(--black)]">
                                                         {taskInfo.ASSIGNED_TO ||
-                                                            "N/A"}
+                                                            "Nessuno"}
                                                     </p>
                                                 </div>
                                             </div>
