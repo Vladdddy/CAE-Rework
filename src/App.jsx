@@ -8,6 +8,7 @@ import {
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Logbook from "./pages/Logbook";
+import Signin from "./pages/Signin";
 import "./App.css";
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/logbook" element={<Logbook />} />
+                <Route path="/signin" element={<Signin />} />
             </Routes>
         </Router>
     );
