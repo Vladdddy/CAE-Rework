@@ -2,7 +2,7 @@ import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import GetSimulators from "../../functions/Simulators.jsx";
 
-function Table({ type }) {
+function Table({ type, loading, taskList }) {
     return (
         <div className="grid grid-cols-1 gap-16 mt-4">
             <div className="overflow-x-auto">
@@ -27,7 +27,17 @@ function Table({ type }) {
                     </div>
 
                     <div className="max-h-[calc(80vh-20rem)] overflow-y-auto pr-1">
-                        <GetSimulators type="table" bond="Giorno" />
+                        {loading ? (
+                            <div className="text-center text-sm text-[var(--gray)] py-4">
+                                Caricamento...
+                            </div>
+                        ) : (
+                            <GetSimulators
+                                type="table"
+                                bond="Diurno"
+                                taskList={taskList}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
@@ -40,7 +50,17 @@ function Table({ type }) {
                     </div>
 
                     <div className="max-h-[calc(80vh-20rem)] overflow-y-auto pr-1">
-                        <GetSimulators type="table" bond="Notte" />
+                        {loading ? (
+                            <div className="text-center text-sm text-[var(--gray)] py-4">
+                                Caricamento...
+                            </div>
+                        ) : (
+                            <GetSimulators
+                                type="table"
+                                bond="Notturno"
+                                taskList={taskList}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

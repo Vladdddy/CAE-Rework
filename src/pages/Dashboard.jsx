@@ -1,6 +1,6 @@
 import Sidebar from "../components/layout/Sidebar.jsx";
 import Topbar from "../components/layout/Topbar.jsx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DayIcon from "../assets/icons/day.tsx";
 import NightIcon from "../assets/icons/night.tsx";
 import SearchIcon from "../assets/icons/search.tsx";
@@ -8,6 +8,7 @@ import Task from "../components/data/Task.jsx";
 import Employee from "../components/data/Employee.jsx";
 import DisplayModal from "../components/modals/DisplayModal.jsx";
 import GetSimulators from "../functions/Simulators.jsx";
+import { useTasks } from "../components/data/provider/useTasks";
 
 function Dashboard() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -16,6 +17,23 @@ function Dashboard() {
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
+
+    const { tasks, loading } = useTasks();
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredTasks = useMemo(() => {
+        if (!searchQuery.trim()) return tasks;
+
+        const query = searchQuery.toLowerCase();
+
+        return tasks.filter(
+            (task) =>
+                task.TITLE?.toLowerCase().includes(query) ||
+                task.DESCRIPTION?.toLowerCase().includes(query) ||
+                task.ASSIGNED_TO?.toLowerCase().includes(query) ||
+                task.STATUS?.toLowerCase().includes(query)
+        );
+    }, [tasks, searchQuery]);
 
     const handleTaskClick = (taskInfo) => {
         setSelectedTask(taskInfo);
@@ -26,18 +44,6 @@ function Dashboard() {
         setIsModalOpen(false);
         setSelectedTask(null);
     };
-
-    /*const testApi = async () => {
-        const response = await fetch("http://localhost:3000/test");
-
-        if (response.ok) {
-            console.log(response);
-        }
-    };
-
-    useEffect(() => {
-        testApi();
-    }, []);*/
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -61,6 +67,8 @@ function Dashboard() {
                         <div className="relative">
                             <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                             <input
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 type="search"
                                 placeholder="Cerca task"
                                 className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
@@ -74,12 +82,23 @@ function Dashboard() {
                                         Giorno
                                     </p>
                                     <p className="text-xs bg-[var(--light-primary)] text-[var(--primary)] rounded-md px-2 py-1">
-                                        3 task
+                                        {filteredTasks.length} task
                                     </p>
                                 </div>
-                                <p className="text-sm text-[var(--gray)] text-center mt-4">
-                                    Nessun task presente
-                                </p>
+
+                                <div className="flex flex-col gap-1 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                                    {loading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard"
+                                            bond="Diurno"
+                                            taskList={filteredTasks}
+                                        />
+                                    )}
+                                </div>
                             </div>
                             <div className="flex flex-col gap-2">
                                 <div className="flex flex-row items-center gap-2">
@@ -87,8 +106,23 @@ function Dashboard() {
                                     <p className="text-l text-[var(--black)]">
                                         Notte
                                     </p>
+                                    <p className="text-xs bg-[var(--light-primary)] text-[var(--primary)] rounded-md px-2 py-1">
+                                        {filteredTasks.length} task
+                                    </p>
                                 </div>
-                                <GetSimulators type="dashboard" bond="Notte" />
+                                <div className="flex flex-col gap-1 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                                    {loading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard"
+                                            bond="Notturno"
+                                            taskList={filteredTasks}
+                                        />
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -1,8 +1,9 @@
 import ClockIcon from "../assets/icons/shifts.tsx";
 import { useState } from "react";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
+import Task from "../components/data/Task.jsx";
 
-export default function GetSimulators({ type }) {
+export default function GetSimulators({ type, bond, taskList }) {
     const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
 
     const handleSimulatorClick = () => {
@@ -11,6 +12,16 @@ export default function GetSimulators({ type }) {
 
     const handleCloseSimulatorModal = () => {
         setIsSimulatorModalOpen(false);
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
     };
 
     const simulators = [
@@ -33,12 +44,7 @@ export default function GetSimulators({ type }) {
                 } `}
             >
                 {simulators.map((simulator, index) => (
-                    <div
-                        key={index}
-                        className={`${
-                            type === "table" ? "flex flex-col gap-2" : ""
-                        } `}
-                    >
+                    <div key={index} className={"flex flex-col gap-2"}>
                         {type === "dashboard" ? (
                             <p className="mt-4 text-sm text-[var(--primary)]">
                                 {simulator}
@@ -60,7 +66,29 @@ export default function GetSimulators({ type }) {
                                 </p>
                             </div>
                         ) : null}
-                        <p className="text-[var(--black)]">{index} task</p>
+                        {!taskList || taskList.length === 0 ? (
+                            <div className="text-center text-sm text-[var(--gray)] py-4">
+                                Nessuna task trovata
+                            </div>
+                        ) : (
+                            taskList
+                                .filter((task) => {
+                                    const matchesTime = task?.TIME === bond;
+                                    const matchesSimulator =
+                                        task?.SIMULATOR === simulator;
+                                    return matchesTime && matchesSimulator;
+                                })
+                                .map((task) => (
+                                    <Task
+                                        key={task.id}
+                                        title={task?.TITLE}
+                                        date={formatDate(task?.DATE)}
+                                        assignedTo={task?.ASSIGNED_TO}
+                                        status={task?.STATUS}
+                                        type="table"
+                                    />
+                                ))
+                        )}
                     </div>
                 ))}
 

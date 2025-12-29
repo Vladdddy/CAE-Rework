@@ -3,7 +3,7 @@ import Topbar from "../components/layout/Topbar.jsx";
 import Calendar from "../components/layout/Calendar.jsx";
 import DatePickerComponent from "../functions/DatePicker.jsx";
 import Table from "../components/data/Table.jsx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import SearchIcon from "../assets/icons/search.tsx";
 import FilterIcon from "../assets/icons/filter.tsx";
 import TaskIcon from "../assets/icons/tasks.tsx";
@@ -12,6 +12,7 @@ import BackIcon from "../assets/icons/back.tsx";
 import { GetTodayDate } from "../functions/CurrentTime.jsx";
 import CreateModal from "../components/modals/CreateModal.jsx";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
+import { useTasks } from "../components/data/provider/useTasks";
 
 function Tasks() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -57,6 +58,23 @@ function Tasks() {
     const handleCloseSimulatorModal = () => {
         setIsSimulatorModalOpen(false);
     };
+
+    const { tasks, loading } = useTasks();
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredTasks = useMemo(() => {
+        if (!searchQuery.trim()) return tasks;
+
+        const query = searchQuery.toLowerCase();
+
+        return tasks.filter(
+            (task) =>
+                task.TITLE?.toLowerCase().includes(query) ||
+                task.DESCRIPTION?.toLowerCase().includes(query) ||
+                task.ASSIGNED_TO?.toLowerCase().includes(query) ||
+                task.STATUS?.toLowerCase().includes(query)
+        );
+    }, [tasks, searchQuery]);
 
     return (
         <section className="flex h-screen">
@@ -111,6 +129,12 @@ function Tasks() {
                                             <div className="relative w-[20vw]">
                                                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                                                 <input
+                                                    value={searchQuery}
+                                                    onChange={(e) =>
+                                                        setSearchQuery(
+                                                            e.target.value
+                                                        )
+                                                    }
                                                     type="search"
                                                     placeholder="Cerca task"
                                                     className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
@@ -160,7 +184,11 @@ function Tasks() {
                                         </div>
                                     </div>
 
-                                    <Table type="tasks" />
+                                    <Table
+                                        type="tasks"
+                                        loading={loading}
+                                        taskList={filteredTasks}
+                                    />
                                 </div>
                             </div>
                         </>
