@@ -1,8 +1,10 @@
 import DatePickerComponent from "../../functions/DatePicker.jsx";
 import TasksIcon from "../../assets/icons/tasks.tsx";
 import LogbookIcon from "../../assets/icons/logbook.tsx";
+import { useTasks } from "../data/provider/useTasks";
 
 function Calendar({ startDate, setStartDate, onDayClick }) {
+    const { tasks, loading } = useTasks();
     const today = new Date();
     const isCurrentMonth =
         startDate.getMonth() === today.getMonth() &&
@@ -101,19 +103,88 @@ function Calendar({ startDate, setStartDate, onDayClick }) {
                                         </h1>
 
                                         <div className="flex items-center justify-between w-full gap-1">
-                                            <div
-                                                className={`flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]`}
-                                            >
-                                                <TasksIcon className="w-4" />
-                                                <p className="text-xs">3</p>
-                                            </div>
+                                            {tasks.filter((task) => {
+                                                const taskDate = new Date(
+                                                    task.DATE
+                                                );
+                                                return (
+                                                    taskDate.getDate() ===
+                                                        day &&
+                                                    taskDate.getMonth() ===
+                                                        startDate.getMonth() &&
+                                                    taskDate.getFullYear() ===
+                                                        startDate.getFullYear()
+                                                );
+                                            }).length > 0 ? (
+                                                <div
+                                                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]`}
+                                                >
+                                                    <TasksIcon className="w-4" />
+                                                    <p className="text-xs">
+                                                        {loading ? (
+                                                            <div className="text-center text-sm text-[var(--gray)] py-4">
+                                                                Caricamento...
+                                                            </div>
+                                                        ) : (
+                                                            tasks.filter(
+                                                                (task) => {
+                                                                    const taskDate =
+                                                                        new Date(
+                                                                            task.DATE
+                                                                        );
+                                                                    return (
+                                                                        taskDate.getDate() ===
+                                                                            day &&
+                                                                        taskDate.getMonth() ===
+                                                                            startDate.getMonth() &&
+                                                                        taskDate.getFullYear() ===
+                                                                            startDate.getFullYear()
+                                                                    );
+                                                                }
+                                                            ).length
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            ) : null}
 
-                                            <div
-                                                className={`flex items-center gap-1 rounded-md p-1 text-[var(--gray)] bg-[var(--separator)]`}
-                                            >
-                                                <LogbookIcon className="w-4" />
-                                                <p className="text-xs">2</p>
-                                            </div>
+                                            {/*Logbook implementation*/}
+                                            {/*{tasks.filter((task) => {
+                                                const taskDate = new Date(
+                                                    task.DATE
+                                                );
+                                                return (
+                                                    taskDate.getDate() === day &&
+                                                    taskDate.getMonth() === startDate.getMonth() &&
+                                                    taskDate.getFullYear() === startDate.getFullYear()
+                                                );
+                                            }).length > 0 ? (
+                                                <div
+                                                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--gray)] bg-[var(--separator)]`}
+                                                >
+                                                    <LogbookIcon className="w-4" />
+                                                    <p className="text-xs">
+                                                        {loading ? (
+                                                            <div className="text-center text-sm text-[var(--gray)] py-4">
+                                                                Caricamento...
+                                                            </div>
+                                                        ) : (
+                                                            tasks.filter(
+                                                                (task) => {
+                                                                    const taskDate =
+                                                                        new Date(
+                                                                            task.DATE
+                                                                        );
+                                                                    return (
+                                                                        taskDate.getDate() === day &&
+                                                                        taskDate.getMonth() === startDate.getMonth() &&
+                                                                        taskDate.getFullYear() === startDate.getFullYear()
+                                                                    );
+                                                                }
+                                                            ).length
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            ) : null}*/}
                                         </div>
                                     </div>
                                 ) : (

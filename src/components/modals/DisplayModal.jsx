@@ -75,7 +75,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                         {taskInfo.TITLE || "N/A"}
                                     </p>
 
-                                    <p className="task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md">
+                                    <div className="task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md">
                                         <div className="flex items-center gap-2 mb-2">
                                             <div className="flex items-center gap-1">
                                                 <p className="text-sm text-[var(--primary)]">
@@ -114,7 +114,7 @@ function DisplayModal({ taskInfo, onClose }) {
                                                 </div>
                                             </div>
                                         </div>
-                                    </p>
+                                    </div>
                                 </div>
 
                                 <div className="flex flex-col gap-2 w-1/2">

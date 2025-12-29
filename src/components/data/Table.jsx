@@ -1,8 +1,9 @@
 import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
-import GetSimulators from "../../functions/Simulators.jsx";
+import { GetTableSimulators } from "../../functions/Simulators.jsx";
+import { GetTaskCountTime } from "../../functions/TaskLength.jsx";
 
-function Table({ type, loading, taskList }) {
+function Table({ type, loading, taskList, date }) {
     return (
         <div className="grid grid-cols-1 gap-16 mt-4">
             <div className="overflow-x-auto">
@@ -12,12 +13,14 @@ function Table({ type, loading, taskList }) {
                         <h1 className="text-md">Giorno</h1>
                         {type === "tasks" ? (
                             <>
-                                <span className="text-xs bg-[var(--light-primary)] text-[var(--primary)] rounded-md px-2 py-1">
-                                    3 task
-                                </span>
-                                <span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
+                                <GetTaskCountTime
+                                    filteredTasks={taskList}
+                                    time="Diurno"
+                                    date={date}
+                                />
+                                {/*<span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
                                     2 logbook
-                                </span>
+                                </span>*/}
                             </>
                         ) : (
                             <span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
@@ -32,9 +35,10 @@ function Table({ type, loading, taskList }) {
                                 Caricamento...
                             </div>
                         ) : (
-                            <GetSimulators
+                            <GetTableSimulators
                                 type="table"
-                                bond="Diurno"
+                                time="Diurno"
+                                date={date}
                                 taskList={taskList}
                             />
                         )}
@@ -47,6 +51,22 @@ function Table({ type, loading, taskList }) {
                     <div className="flex items-center gap-1 text-[var(--gray)] border-b border-[var(--light-primary)] pb-2">
                         <NightIcon className="w-6" />
                         <h1 className="text-md">Notte</h1>
+                        {type === "tasks" ? (
+                            <>
+                                <GetTaskCountTime
+                                    filteredTasks={taskList}
+                                    time="Notturno"
+                                    date={date}
+                                />
+                                {/*<span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
+                                    2 logbook
+                                </span>*/}
+                            </>
+                        ) : (
+                            <span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
+                                2 logbook
+                            </span>
+                        )}
                     </div>
 
                     <div className="max-h-[calc(80vh-20rem)] overflow-y-auto pr-1">
@@ -55,9 +75,10 @@ function Table({ type, loading, taskList }) {
                                 Caricamento...
                             </div>
                         ) : (
-                            <GetSimulators
+                            <GetTableSimulators
                                 type="table"
-                                bond="Notturno"
+                                time="Notturno"
+                                date={date}
                                 taskList={taskList}
                             />
                         )}

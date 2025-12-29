@@ -188,6 +188,7 @@ function Tasks() {
                                         type="tasks"
                                         loading={loading}
                                         taskList={filteredTasks}
+                                        date={startDate}
                                     />
                                 </div>
                             </div>
