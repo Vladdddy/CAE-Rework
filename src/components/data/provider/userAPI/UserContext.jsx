@@ -139,6 +139,35 @@ export const UserProvider = ({ children }) => {
         }
     };
 
+    const register = async (username, password, selectedRole) => {
+        console.log("Registering with", { username });
+
+        try {
+            const response = await fetch(
+                "http://localhost:3000/users/register",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password,
+                        role: selectedRole,
+                    }),
+                }
+            );
+
+            if (!response.ok) throw new Error("Registration failed");
+            console.log("Registration successful for", username);
+
+            return { success: true };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem("token");
         setCurrentUsername("Guest");
@@ -188,6 +217,7 @@ export const UserProvider = ({ children }) => {
                 updateUser,
                 deleteUser,
                 login,
+                register,
                 logout,
                 validateToken,
             }}

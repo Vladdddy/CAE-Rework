@@ -293,7 +293,7 @@ function Dashboard() {
                             <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
                                 <div className="flex flex-row items-center gap-2">
                                     <p className="text-l text-[var(--black)]">
-                                        Shift Leader
+                                        Shift Leader presenti
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">

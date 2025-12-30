@@ -10,6 +10,7 @@ import Tasks from "./pages/Tasks";
 import Logbook from "./pages/Logbook";
 import Signin from "./pages/Signin";
 import Shifts from "./pages/Shifts";
+import Register from "./pages/Register";
 import { TaskProvider } from "./components/data/provider/taskAPI/TaskContext.jsx";
 import { UserProvider } from "./components/data/provider/userAPI/UserContext.jsx";
 import "./App.css";
@@ -25,12 +26,6 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const PublicRoute = ({ children }) => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-        return <Navigate to="/dashboard" replace />;
-    }
-
     return children;
 };
 
@@ -73,6 +68,14 @@ function App() {
                             element={
                                 <PublicRoute>
                                     <Signin />
+                                </PublicRoute>
+                            }
+                        />
+                        <Route
+                            path="/register"
+                            element={
+                                <PublicRoute>
+                                    <Register />
                                 </PublicRoute>
                             }
                         />

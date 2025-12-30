@@ -6,6 +6,7 @@ import DashboardIcon from "../../assets/icons/dashboard.tsx";
 import TasksIcon from "../../assets/icons/tasks.tsx";
 import LogbookIcon from "../../assets/icons/logbook.tsx";
 import ShiftsIcon from "../../assets/icons/shifts.tsx";
+import AddUserIcon from "../../assets/icons/addUser.tsx";
 import LogoutIcon from "../../assets/icons/logout.tsx";
 import LogoutModal from "../modals/LogoutModal.jsx";
 
@@ -131,6 +132,34 @@ function Sidebar(props) {
                             Shifts
                         </p>
                     </Link>
+                    {(currentUserRole === "Admin" ||
+                        currentUserRole === "Shift Leader") && (
+                        <Link
+                            to="/register"
+                            className={`flex flex-row items-center gap-2 transition-all duration-300 ${
+                                props.active === "register"
+                                    ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
+                                          !props.isSidebarOpen
+                                              ? "px-2"
+                                              : "pr-8 pl-2 w-48"
+                                      } py-2`
+                                    : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                            } ${
+                                !props.isSidebarOpen ? "p-2 justify-center" : ""
+                            }`}
+                        >
+                            <AddUserIcon className={`w-6`} />
+                            <p
+                                className={`transition-opacity duration-300 ${
+                                    props.isSidebarOpen
+                                        ? "opacity-100"
+                                        : "opacity-0 hidden"
+                                }`}
+                            >
+                                Aggiungi Utente
+                            </p>
+                        </Link>
+                    )}
                 </div>
             </div>
 
@@ -147,7 +176,21 @@ function Sidebar(props) {
                     </div>
                     <div className="flex flex-col gap-0">
                         <p className="text-sm text-[var(--black)]">
-                            {currentUsername}
+                            {currentUsername
+                                .split(".")[0]
+                                .charAt(0)
+                                .toUpperCase() +
+                                currentUsername.split(".")[0].slice(1)}
+                            {currentUsername.split(".")[1] && (
+                                <>
+                                    {" "}
+                                    {currentUsername
+                                        .split(".")[1]
+                                        .charAt(0)
+                                        .toUpperCase() +
+                                        currentUsername.split(".")[1].slice(1)}
+                                </>
+                            )}
                         </p>
                         <p className="text-xs text-[var(--gray)]">
                             {currentUserRole}

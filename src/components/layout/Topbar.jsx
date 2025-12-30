@@ -80,7 +80,10 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                     onClick={() => setSidebarStatus(!isSidebarOpen)}
                 />
                 <h1 className="border-x border-[var(--light-primary)] px-4 text-l">
-                    Benvenuto, {currentUsername}!
+                    Benvenuto,{" "}
+                    {currentUsername.split(".")[0].charAt(0).toUpperCase() +
+                        currentUsername.split(".")[0].slice(1)}
+                    !
                 </h1>
                 <div
                     className="relative w-[30vw]"
