@@ -1,32 +1,48 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
+import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
-import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import { useTasks } from "../data/provider/useTasks.js";
 
-function CreateModal({ onClose, onSuccess }) {
-    const { addTask } = useTasks();
-    const [selectedCategory, setSelectedCategory] = useState("Routine Task");
-    const [selectedStatus, setSelectedStatus] = useState("Da definire");
-    const [selectedRadio, setSelectedRadio] = useState("Diurno");
-    const [selectedAssignees, setSelectedAssignees] = useState([]);
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [selectedSubCategory, setSelectedSubCategory] = useState("PM");
-    const [selectedDetail, setSelectedDetail] = useState("VISUAL");
+function ModifyModal({ onClose, onSuccess, task }) {
+    const [selectedCategory, setSelectedCategory] = useState(
+        task.CATEGORY || "Routine Task"
+    );
+    const [selectedStatus, setSelectedStatus] = useState(
+        task.STATUS || "Da definire"
+    );
+    const [selectedRadio, setSelectedRadio] = useState(task.TIME || "Diurno");
+    const [selectedAssignees, setSelectedAssignees] = useState(
+        task.ASSIGNED_TO
+            ? typeof task.ASSIGNED_TO === "string"
+                ? task.ASSIGNED_TO.split(", ").filter((name) => name.trim())
+                : task.ASSIGNED_TO
+            : []
+    );
+    const [title, setTitle] = useState(task.TITLE || "");
+    const [description, setDescription] = useState(task.DESCRIPTION || "");
+    const [selectedSubCategory, setSelectedSubCategory] = useState(
+        task.SUBCATEGORY || "PM"
+    );
+    const [selectedDetail, setSelectedDetail] = useState(
+        task.EXTRADETAIL || "VISUAL"
+    );
     const [selectedDate, setSelectedDate] = useState(
-        new Date().toISOString().split("T")[0]
+        task.DATE
+            ? task.DATE.split("T")[0]
+            : new Date().toISOString().split("T")[0]
     );
     const [titleError, setTitleError] = useState(false);
 
     const simulators = GetSimulatorsList();
     const [selectedSimulator, setSelectedSimulator] = useState(
-        simulators[0] || ""
+        task.SIMULATOR || simulators[0]
     );
+    const { updateTask } = useTasks();
 
     const handleRadioChange = (event) => {
         setSelectedRadio(event.target.value);
@@ -40,15 +56,16 @@ function CreateModal({ onClose, onSuccess }) {
         );
     };
 
-    const handleSubmit = async () => {
-        // Validate required fields
+    const handleModify = async () => {
+        console.log(`Modifying task with ID: ${task.ID}`);
+
         if (!title.trim()) {
             setTitleError(true);
             return;
         }
 
         setTitleError(false);
-        const newTask = {
+        const modifiedTask = {
             title: title,
             description: description,
             category: selectedCategory,
@@ -58,19 +75,21 @@ function CreateModal({ onClose, onSuccess }) {
             date: selectedDate,
             time: selectedRadio,
             assigned_to: selectedAssignees.join(", ") || null,
-            status: selectedStatus || "Da definire",
+            status: selectedStatus,
         };
 
-        console.log("New Task:", newTask);
+        const result = await updateTask(task.ID, modifiedTask);
 
-        const result = await addTask(newTask);
+        console.log("Passing modified task:", modifiedTask);
+
         onClose();
+
         if (onSuccess) {
             onSuccess(
                 result.success,
                 result.success
-                    ? "Hai creato la task con successo"
-                    : "Errore durante la creazione della task"
+                    ? "Hai modificato la task con successo"
+                    : "Errore durante la modifica della task"
             );
         }
     };
@@ -124,7 +143,7 @@ function CreateModal({ onClose, onSuccess }) {
                 <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
                     <div className="flex flex-row items-center gap-2 text-[var(--black)]">
                         <TaskIcon className="w-6" />
-                        <h1 className="text-xl">Crea task</h1>
+                        <h1 className="text-xl">Modifica task #{task.ID}</h1>
                     </div>
                     <button
                         onClick={onClose}
@@ -174,20 +193,6 @@ function CreateModal({ onClose, onSuccess }) {
                             required
                         ></textarea>
                     </div>
-
-                    {/*<div className="flex flex-col gap-1">
-                        <h3 className="text-sm text-[var(--gray)]">Allegati</h3>
-
-                        
-                        <input
-                            type="file"
-                            name=""
-                            id=""
-                            multiple
-                            className="border border-[var(--light-primary)] rounded-md p-2 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] hover:border-[var(--separator)] transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-md file:bg-[var(--primary)] file:text-[#ffffff] file:cursor-pointer hover:file:bg-[var(--primary-hover)]"
-                        />
-                        
-                    </div>*/}
 
                     <div className="flex flex-col gap-1 w-1/2">
                         <h3 className="text-sm text-[var(--gray)]">Stato</h3>
@@ -244,7 +249,6 @@ function CreateModal({ onClose, onSuccess }) {
                                 <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                             </div>
                         </div>
-
                         <div className="flex flex-col gap-1">
                             <h3 className="text-sm text-[var(--gray)]">
                                 Sotto-Categoria
@@ -601,8 +605,8 @@ function CreateModal({ onClose, onSuccess }) {
                         Chiudi
                     </button>
 
-                    <button className="btn" onClick={handleSubmit}>
-                        <p>Salva</p>
+                    <button className="btn" onClick={handleModify}>
+                        <p>Salva modifiche</p>
                     </button>
                 </div>
             </div>
@@ -610,4 +614,4 @@ function CreateModal({ onClose, onSuccess }) {
     );
 }
 
-export default CreateModal;
+export default ModifyModal;

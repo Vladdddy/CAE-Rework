@@ -4,11 +4,13 @@ import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/useTasks.js";
+import ModifyModal from "./ModifyModal.jsx";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [isModifyOpen, setIsModifyOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
-    const { deleteTask } = useTasks();
+    const { deleteTask, fetchTasks } = useTasks();
 
     const handleDelete = async () => {
         console.log(`Deleting task with ID: ${taskInfo.ID}`);
@@ -32,6 +34,25 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         const month = date.getMonth() + 1;
         const year = date.getFullYear();
         return `${day}/${month}/${year}`;
+    };
+
+    const handleModify = () => {
+        setIsModifyOpen(true);
+    };
+
+    const handleCloseModify = () => {
+        setIsModifyOpen(false);
+    };
+
+    const handleModifyPopup = async () => {
+        if (onSuccess) {
+            await fetchTasks();
+            const result = { success: true };
+            onSuccess(
+                result.success,
+                `Task "${taskInfo.TITLE}" modificata con successo`
+            );
+        }
     };
 
     return (
@@ -276,7 +297,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     >
                                         Chiudi
                                     </button>
-                                    <button className="btn flex items-center gap-1">
+                                    <button
+                                        className="btn flex items-center gap-1"
+                                        onClick={handleModify}
+                                    >
                                         <p>Modifica</p>
                                     </button>
                                 </div>
@@ -371,6 +395,14 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     )}
                 </div>
             </div>
+
+            {isModifyOpen && (
+                <ModifyModal
+                    onClose={handleCloseModify}
+                    onSuccess={handleModifyPopup}
+                    task={taskInfo}
+                />
+            )}
         </div>
     );
 }

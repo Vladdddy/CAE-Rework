@@ -5,14 +5,16 @@ import DoneIcon from "../../assets/icons/done.tsx";
 function Popup({ type, message }) {
     return (
         <>
-            <div className="fixed inset-0 flex items-start justify-center z-50 pt-16 pointer-events-none">
+            <div className="fixed inset-0 flex items-start justify-center z-100 pt-16 pointer-events-none">
                 {type === "success" ? (
                     <div
                         className="flex items-center gap-2 text-[var(--green)] bg-[#32de8420] rounded-xl p-4 max-w-lg w-full mx-4 pointer-events-auto animate-slideDown backdrop-blur-md"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <DoneIcon className="w-6" />
-                        <p>{message || "Operazione completata con successo"}</p>
+                        <p className="text-sm">
+                            {message || "Operazione completata con successo"}
+                        </p>
                     </div>
                 ) : type === "error" ? (
                     <div
@@ -20,7 +22,9 @@ function Popup({ type, message }) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <CloseIcon className="w-6" />
-                        <p>{message || "Errore durante l'operazione"}</p>
+                        <p className="text-sm">
+                            {message || "Errore durante l'operazione"}
+                        </p>
                     </div>
                 ) : (
                     <div
@@ -28,7 +32,9 @@ function Popup({ type, message }) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <CloseIcon className="w-6" />
-                        <p>Qualcosa è andato storto, riprova</p>
+                        <p className="text-sm">
+                            Qualcosa è andato storto, riprova
+                        </p>
                     </div>
                 )}
             </div>

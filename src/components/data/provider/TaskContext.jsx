@@ -54,10 +54,27 @@ export const TaskProvider = ({ children }) => {
     };
 
     const updateTask = async (id, updatedTask) => {
-        // API call then update state
-        setTasks((prev) =>
-            prev.map((task) => (task.id === id ? updatedTask : task))
-        );
+        console.log("Updating task with ID:", id, "with data:", updatedTask);
+        try {
+            const response = await fetch(`http://localhost:3000/tasks/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ task: updatedTask, id: id }),
+            });
+
+            if (!response.ok) throw new Error("Failed to update task");
+            setTasks((prev) =>
+                prev.map((task) =>
+                    task.id === id ? { ...updatedTask, id } : task
+                )
+            );
+            return { success: true };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
     };
 
     const deleteTask = async (id) => {
