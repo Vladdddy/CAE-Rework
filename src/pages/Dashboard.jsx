@@ -1,5 +1,6 @@
 import Sidebar from "../components/layout/Sidebar.jsx";
 import Topbar from "../components/layout/Topbar.jsx";
+import Popup from "../components/modals/Popup.jsx";
 import { useState, useEffect, useMemo } from "react";
 import DayIcon from "../assets/icons/day.tsx";
 import NightIcon from "../assets/icons/night.tsx";
@@ -12,14 +13,17 @@ import {
 } from "../functions/TaskLength.jsx";
 
 function Dashboard() {
+    const { tasks, loading, fetchTasks } = useTasks();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
 
-    const { tasks, loading } = useTasks();
     const [searchQuery, setSearchQuery] = useState("");
     const [searchQueryOverview, setSearchQueryOverview] = useState("");
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupType, setPopupType] = useState("success");
+    const [popupMessage, setPopupMessage] = useState("");
 
     const filteredTasks = useMemo(() => {
         if (!searchQuery.trim()) return tasks;
@@ -52,6 +56,23 @@ function Dashboard() {
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
+
+    const handleDeleteSuccess = async (isSuccess, message) => {
+        if (isSuccess) {
+            await fetchTasks();
+        }
+        setPopupType(isSuccess ? "success" : "error");
+        setPopupMessage(
+            message ||
+                (isSuccess
+                    ? "Operazione completata con successo"
+                    : "Errore durante l'operazione")
+        );
+        setShowPopup(true);
+        setTimeout(() => {
+            setShowPopup(false);
+        }, 2000);
+    };
 
     return (
         <section className="flex">
@@ -92,7 +113,7 @@ function Dashboard() {
                                     />
                                 </div>
 
-                                <div className="flex flex-col gap-1 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                                <div className="flex flex-col gap-1">
                                     {loading ? (
                                         <div className="text-center text-sm text-[var(--gray)] py-4">
                                             Caricamento...
@@ -103,6 +124,9 @@ function Dashboard() {
                                             time="Diurno"
                                             date={new Date()}
                                             taskList={filteredTasks}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
                                         />
                                     )}
                                 </div>
@@ -119,7 +143,7 @@ function Dashboard() {
                                         date={new Date()}
                                     />
                                 </div>
-                                <div className="flex flex-col gap-1 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                                <div className="flex flex-col gap-1">
                                     {loading ? (
                                         <div className="text-center text-sm text-[var(--gray)] py-4">
                                             Caricamento...
@@ -130,6 +154,9 @@ function Dashboard() {
                                             time="Notturno"
                                             date={new Date()}
                                             taskList={filteredTasks}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
                                         />
                                     )}
                                 </div>
@@ -175,6 +202,7 @@ function Dashboard() {
                                         type="dashboard"
                                         status="Da definire"
                                         taskList={filteredTasksOverview}
+                                        onDeleteSuccess={handleDeleteSuccess}
                                     />
                                 )}
                             </div>
@@ -198,6 +226,7 @@ function Dashboard() {
                                         type="dashboard"
                                         status="Non completato"
                                         taskList={filteredTasksOverview}
+                                        onDeleteSuccess={handleDeleteSuccess}
                                     />
                                 )}
                             </div>
@@ -222,6 +251,7 @@ function Dashboard() {
                                         type="dashboard"
                                         status="Non iniziato"
                                         taskList={filteredTasksOverview}
+                                        onDeleteSuccess={handleDeleteSuccess}
                                     />
                                 )}
                             </div>
@@ -245,6 +275,7 @@ function Dashboard() {
                                         type="dashboard"
                                         status="In corso"
                                         taskList={filteredTasksOverview}
+                                        onDeleteSuccess={handleDeleteSuccess}
                                     />
                                 )}
                             </div>
@@ -298,6 +329,7 @@ function Dashboard() {
                     </div>
                 </div>
             </div>
+            {showPopup && <Popup type={popupType} message={popupMessage} />}
         </section>
     );
 }

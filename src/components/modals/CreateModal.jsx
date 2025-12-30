@@ -8,9 +8,10 @@ import UserIcon from "../../assets/icons/user.tsx";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import { useTasks } from "../data/provider/useTasks.js";
 
-function CreateModal({ onClose }) {
+function CreateModal({ onClose, onSuccess }) {
     const { addTask } = useTasks();
     const [selectedCategory, setSelectedCategory] = useState("Routine Task");
+    const [selectedStatus, setSelectedStatus] = useState("Da definire");
     const [selectedRadio, setSelectedRadio] = useState("Diurno");
     const [selectedAssignees, setSelectedAssignees] = useState([]);
     const [title, setTitle] = useState("");
@@ -20,6 +21,7 @@ function CreateModal({ onClose }) {
     const [selectedDate, setSelectedDate] = useState(
         new Date().toISOString().split("T")[0]
     );
+    const [titleError, setTitleError] = useState(false);
 
     const simulators = GetSimulatorsList();
     const [selectedSimulator, setSelectedSimulator] = useState(
@@ -41,9 +43,11 @@ function CreateModal({ onClose }) {
     const handleSubmit = async () => {
         // Validate required fields
         if (!title.trim()) {
+            setTitleError(true);
             return;
         }
 
+        setTitleError(false);
         const newTask = {
             title: title,
             description: description,
@@ -53,12 +57,22 @@ function CreateModal({ onClose }) {
             simulator: selectedSimulator,
             date: selectedDate,
             time: selectedRadio,
-            assigned_to: selectedAssignees.join(", "),
-            status: "Da definire",
+            assigned_to: selectedAssignees.join(", ") || null,
+            status: selectedStatus || "Da definire",
         };
 
-        await addTask(newTask);
+        console.log("New Task:", newTask);
+
+        const result = await addTask(newTask);
         onClose();
+        if (onSuccess) {
+            onSuccess(
+                result.success,
+                result.success
+                    ? "Hai creato la task con successo"
+                    : "Errore durante la creazione della task"
+            );
+        }
     };
 
     const categories = {
@@ -125,16 +139,30 @@ function CreateModal({ onClose }) {
 
                 <div className="flex flex-col gap-8 max-h-[calc(60vh-1rem)] overflow-y-auto pr-1">
                     <div className="flex flex-col gap-1">
-                        <h3 className="text-sm text-[var(--gray)]">Titolo</h3>
+                        <h3 className="text-sm text-[var(--gray)]">Titolo*</h3>
                         <input
                             type="text"
                             value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                            onChange={(e) => {
+                                setTitle(e.target.value);
+                                if (titleError && e.target.value.trim()) {
+                                    setTitleError(false);
+                                }
+                            }}
+                            className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 ${
+                                titleError
+                                    ? "border border-[var(--red)] focus:border-[var(--red)]"
+                                    : "border border-[var(--light-primary)] focus:border-[var(--separator)]"
+                            }`}
                             placeholder="Inserisci il titolo del task"
                             maxLength={200}
                             required
                         />
+                        {titleError && (
+                            <p className="text-[var(--red)] text-sm mt-1">
+                                Il titolo è obbligatorio
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-1">
@@ -159,6 +187,32 @@ function CreateModal({ onClose }) {
                             multiple
                             className="border border-[var(--light-primary)] rounded-md p-2 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] hover:border-[var(--separator)] transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-md file:bg-[var(--primary)] file:text-[#ffffff] file:cursor-pointer hover:file:bg-[var(--primary-hover)]"
                         />
+                    </div>
+
+                    <div className="flex flex-col gap-1 w-1/2">
+                        <h3 className="text-sm text-[var(--gray)]">Stato</h3>
+                        <div className="relative ">
+                            <select
+                                name=""
+                                id=""
+                                value={selectedStatus}
+                                onChange={(e) =>
+                                    setSelectedStatus(e.target.value)
+                                }
+                                className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                            >
+                                <option value="Da definire">Da definire</option>
+                                <option value="In corso">In corso</option>
+                                <option value="Completato">Completato</option>
+                                <option value="Non completato">
+                                    Non completato
+                                </option>
+                                <option value="Non iniziato">
+                                    Non iniziato
+                                </option>
+                            </select>
+                            <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                        </div>
                     </div>
 
                     <div className="flex flex-row gap-4 justify-between items-center">

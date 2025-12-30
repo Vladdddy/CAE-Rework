@@ -3,7 +3,14 @@ import { useState } from "react";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Task from "../components/data/Task.jsx";
 
-export function GetSimulators({ type, time, date, taskList, status }) {
+export function GetSimulators({
+    type,
+    time,
+    date,
+    taskList,
+    status,
+    onDeleteSuccess,
+}) {
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
 
@@ -78,6 +85,9 @@ export function GetSimulators({ type, time, date, taskList, status }) {
                                                       status={task?.STATUS}
                                                       type="table"
                                                       wholeTask={task}
+                                                      onDeleteSuccess={
+                                                          onDeleteSuccess
+                                                      }
                                                   />
                                               ))}
                                           </>
@@ -118,6 +128,9 @@ export function GetSimulators({ type, time, date, taskList, status }) {
                                                       status={task?.STATUS}
                                                       type="table"
                                                       wholeTask={task}
+                                                      onDeleteSuccess={
+                                                          onDeleteSuccess
+                                                      }
                                                   />
                                               ))}
                                           </>
@@ -152,6 +165,9 @@ export function GetSimulators({ type, time, date, taskList, status }) {
                                                       status={task?.STATUS}
                                                       type="table"
                                                       wholeTask={task}
+                                                      onDeleteSuccess={
+                                                          onDeleteSuccess
+                                                      }
                                                   />
                                               ))}
                                           </>
@@ -169,7 +185,13 @@ export function GetSimulatorsList() {
     return ["FTD", "109FFS", "139#1", "139#3", "169", "189", "Others"];
 }
 
-export function GetTableSimulators({ type, time, date, taskList }) {
+export function GetTableSimulators({
+    type,
+    time,
+    date,
+    taskList,
+    onDeleteSuccess,
+}) {
     const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
 
     /*const handleSimulatorClick = () => {
@@ -264,6 +286,9 @@ export function GetTableSimulators({ type, time, date, taskList }) {
                                                   status={task?.STATUS}
                                                   type="table"
                                                   wholeTask={task}
+                                                  onDeleteSuccess={
+                                                      onDeleteSuccess
+                                                  }
                                               />
                                           ))}
                                       </>

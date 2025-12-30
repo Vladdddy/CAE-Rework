@@ -12,15 +12,20 @@ import BackIcon from "../assets/icons/back.tsx";
 import { GetTodayDate } from "../functions/CurrentTime.jsx";
 import CreateModal from "../components/modals/CreateModal.jsx";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
+import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/useTasks";
 
 function Tasks() {
+    const { tasks, loading, fetchTasks } = useTasks();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupType, setPopupType] = useState("success");
+    const [popupMessage, setPopupMessage] = useState("");
     const [startDate, setStartDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(true);
     // eslint-disable-next-line no-unused-vars
@@ -51,6 +56,23 @@ function Tasks() {
         setIsModalOpen(false);
     };
 
+    const handleSuccess = async (isSuccess, message) => {
+        if (isSuccess) {
+            await fetchTasks();
+        }
+        setPopupType(isSuccess ? "success" : "error");
+        setPopupMessage(
+            message ||
+                (isSuccess
+                    ? "Hai creato la task con successo"
+                    : "Errore durante la creazione della task")
+        );
+        setShowPopup(true);
+        setTimeout(() => {
+            setShowPopup(false);
+        }, 2000);
+    };
+
     const handleSimulatorClick = () => {
         setIsSimulatorModalOpen(true);
     };
@@ -59,7 +81,6 @@ function Tasks() {
         setIsSimulatorModalOpen(false);
     };
 
-    const { tasks, loading } = useTasks();
     const [searchQuery, setSearchQuery] = useState("");
 
     const filteredTasks = useMemo(() => {
@@ -189,6 +210,7 @@ function Tasks() {
                                         loading={loading}
                                         taskList={filteredTasks}
                                         date={startDate}
+                                        onDeleteSuccess={handleSuccess}
                                     />
                                 </div>
                             </div>
@@ -197,10 +219,16 @@ function Tasks() {
                 </div>
             </div>
 
-            {isModalOpen && <CreateModal onClose={handleCloseModal} />}
+            {isModalOpen && (
+                <CreateModal
+                    onClose={handleCloseModal}
+                    onSuccess={handleSuccess}
+                />
+            )}
             {isSimulatorModalOpen && (
                 <SimulatorModal onClose={handleCloseSimulatorModal} />
             )}
+            {showPopup && <Popup type={popupType} message={popupMessage} />}
         </section>
     );
 }

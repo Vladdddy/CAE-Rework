@@ -19,6 +19,7 @@
     --pure-white: #ffffff;
     --bento-bg: #fafafa;
     --red: #ff4646;
+    --green: #32de84;
     --orange: #ff9f43;
     --placeholder: #aaaaaa;
 }
@@ -26,15 +27,16 @@
 body.dark-mode {
     --primary: hsl(217, 100%, 64%);
     --primary-hover: hsl(217, 100%, 68%);
-    --dark-primary: hsl(0, 0%, 3%); /* #080808 - almost black */
-    --light-primary: hsl(0, 0%, 15%); /* #262626 */
-    --black: hsl(0, 0%, 95%); /* #f2f2f2 - text color */
-    --gray: hsl(0, 0%, 60%); /* #999999 */
-    --separator: hsl(0, 0%, 18%); /* #2e2e2e */
-    --white: hsl(0, 0%, 8%); /* #141414 - main bg */
-    --pure-white: hsl(0, 0%, 10%); /* #1a1a1a - cards */
-    --bento-bg: hsl(0, 0%, 9%); /* #171717 */
+    --dark-primary: hsl(0, 0%, 3%);
+    --light-primary: hsl(0, 0%, 15%);
+    --black: hsl(0, 0%, 95%);
+    --gray: hsl(0, 0%, 60%);
+    --separator: hsl(0, 0%, 18%);
+    --white: hsl(0, 0%, 8%);
+    --pure-white: hsl(0, 0%, 10%);
+    --bento-bg: hsl(0, 0%, 9%);
     --red: hsl(0, 100%, 71%);
+    --green: hsl(145, 63%, 49%);
     --orange: hsl(31, 100%, 65%);
     --placeholder: hsl(0, 0%, 50%);
 }
@@ -148,4 +150,19 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 body.dark-mode input[type="time"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slideDown {
+    animation: slideDown 0.3s ease-out;
 }

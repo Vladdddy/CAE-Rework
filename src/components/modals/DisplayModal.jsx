@@ -3,10 +3,26 @@ import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
+import { useTasks } from "../data/provider/useTasks.js";
 
-function DisplayModal({ taskInfo, onClose }) {
+function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
+    const { deleteTask } = useTasks();
+
+    const handleDelete = async () => {
+        console.log(`Deleting task with ID: ${taskInfo.ID}`);
+
+        const result = await deleteTask(taskInfo.ID);
+        onClose();
+
+        if (onSuccess) {
+            onSuccess(
+                result.success,
+                `Task "${taskInfo.TITLE}" eliminata con successo`
+            );
+        }
+    };
 
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -246,7 +262,12 @@ function DisplayModal({ taskInfo, onClose }) {
                             </div>
 
                             <div className="flex items-center justify-between border-t border-[var(--light-primary)] pt-4 mt-4">
-                                <button className="btn delete">Elimina</button>
+                                <button
+                                    className="btn delete"
+                                    onClick={() => handleDelete()}
+                                >
+                                    Elimina
+                                </button>
 
                                 <div className="flex gap-1">
                                     <button

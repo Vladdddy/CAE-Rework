@@ -7,10 +7,16 @@ import CreateModal from "../modals/CreateModal.jsx";
 import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import SearchModal from "../modals/SearchModal.jsx";
+import Popup from "../modals/Popup.jsx";
+import { useTasks } from "../data/provider/useTasks";
 
 function Topbar({ isSidebarOpen, setSidebarStatus }) {
+    const { fetchTasks } = useTasks();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupType, setPopupType] = useState("success");
+    const [popupMessage, setPopupMessage] = useState("");
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedMode = localStorage.getItem("darkMode");
         return savedMode === "true";
@@ -30,6 +36,23 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+    };
+
+    const handleSuccess = async (isSuccess, message) => {
+        if (isSuccess) {
+            await fetchTasks();
+        }
+        setPopupType(isSuccess ? "success" : "error");
+        setPopupMessage(
+            message ||
+                (isSuccess
+                    ? "Hai creato la task con successo"
+                    : "Errore durante la creazione della task")
+        );
+        setShowPopup(true);
+        setTimeout(() => {
+            setShowPopup(false);
+        }, 2000);
     };
 
     const handleSearchOpen = () => {
@@ -91,9 +114,16 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
             )}
             <CurrentTime />
 
-            {isModalOpen && <CreateModal onClose={handleCloseModal} />}
+            {isModalOpen && (
+                <CreateModal
+                    onClose={handleCloseModal}
+                    onSuccess={handleSuccess}
+                />
+            )}
 
             {isSearchOpen && <SearchModal onClose={handleCloseSearch} />}
+
+            {showPopup && <Popup type={popupType} message={popupMessage} />}
         </div>
     );
 }

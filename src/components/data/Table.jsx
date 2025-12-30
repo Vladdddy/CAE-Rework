@@ -3,7 +3,7 @@ import NightIcon from "../../assets/icons/night.tsx";
 import { GetTableSimulators } from "../../functions/Simulators.jsx";
 import { GetTaskCountTime } from "../../functions/TaskLength.jsx";
 
-function Table({ type, loading, taskList, date }) {
+function Table({ type, loading, taskList, date, onDeleteSuccess }) {
     return (
         <div className="grid grid-cols-1 gap-16 mt-4">
             <div className="overflow-x-auto">
@@ -40,6 +40,7 @@ function Table({ type, loading, taskList, date }) {
                                 time="Diurno"
                                 date={date}
                                 taskList={taskList}
+                                onDeleteSuccess={onDeleteSuccess}
                             />
                         )}
                     </div>
@@ -80,6 +81,7 @@ function Table({ type, loading, taskList, date }) {
                                 time="Notturno"
                                 date={date}
                                 taskList={taskList}
+                                onDeleteSuccess={onDeleteSuccess}
                             />
                         )}
                     </div>

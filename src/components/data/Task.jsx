@@ -2,7 +2,15 @@ import TaskIcon from "../../assets/icons/tasks.tsx";
 import DisplayModal from "../modals/DisplayModal.jsx";
 import { useState } from "react";
 
-function Task({ title, date, assignedTo, status, type, wholeTask }) {
+function Task({
+    title,
+    date,
+    assignedTo,
+    status,
+    type,
+    wholeTask,
+    onDeleteSuccess,
+}) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
 
@@ -53,6 +61,7 @@ function Task({ title, date, assignedTo, status, type, wholeTask }) {
                 <DisplayModal
                     taskInfo={selectedTask}
                     onClose={handleCloseModal}
+                    onSuccess={onDeleteSuccess}
                 />
             )}
         </div>

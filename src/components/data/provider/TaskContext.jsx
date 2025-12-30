@@ -45,11 +45,12 @@ export const TaskProvider = ({ children }) => {
             }
             const savedTask = await response.json();
             newTask.id = savedTask.id;
+            setTasks((prev) => [...prev, newTask]);
+            return { success: true };
         } catch (err) {
             setError(err.message);
+            return { success: false, error: err.message };
         }
-
-        setTasks((prev) => [...prev, newTask]);
     };
 
     const updateTask = async (id, updatedTask) => {
@@ -60,8 +61,18 @@ export const TaskProvider = ({ children }) => {
     };
 
     const deleteTask = async (id) => {
-        // API call then update state
-        setTasks((prev) => prev.filter((task) => task.id !== id));
+        try {
+            const response = await fetch(`http://localhost:3000/tasks/${id}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) throw new Error("Failed to delete task");
+            setTasks((prev) => prev.filter((task) => task.id !== id));
+            return { success: true };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
     };
 
     return (
