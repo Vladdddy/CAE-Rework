@@ -13,7 +13,7 @@ import { GetTodayDate } from "../functions/CurrentTime.jsx";
 import CreateModal from "../components/modals/CreateModal.jsx";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
-import { useTasks } from "../components/data/provider/useTasks";
+import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 
 function Tasks() {
     const { tasks, loading, fetchTasks } = useTasks();

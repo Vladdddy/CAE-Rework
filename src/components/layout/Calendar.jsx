@@ -1,7 +1,7 @@
 import DatePickerComponent from "../../functions/DatePicker.jsx";
 import TasksIcon from "../../assets/icons/tasks.tsx";
 import LogbookIcon from "../../assets/icons/logbook.tsx";
-import { useTasks } from "../data/provider/useTasks";
+import { useTasks } from "../data/provider/taskAPI/useTasks";
 
 function Calendar({ startDate, setStartDate, onDayClick }) {
     const { tasks, loading } = useTasks();

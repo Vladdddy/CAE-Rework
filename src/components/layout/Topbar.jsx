@@ -8,7 +8,7 @@ import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import SearchModal from "../modals/SearchModal.jsx";
 import Popup from "../modals/Popup.jsx";
-import { useTasks } from "../data/provider/useTasks";
+import { useTasks } from "../data/provider/taskAPI/useTasks";
 
 function Topbar({ isSidebarOpen, setSidebarStatus }) {
     const { fetchTasks } = useTasks();

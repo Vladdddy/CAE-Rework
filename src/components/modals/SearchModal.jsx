@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import SearchIcon from "../../assets/icons/search.tsx";
 import ArrowIcon from "../../assets/icons/arrow-left.tsx";
 import Task from "../data/Task.jsx";
-import { useTasks } from "../data/provider/useTasks";
+import { useTasks } from "../data/provider/taskAPI/useTasks";
 
 function SearchModal({ onClose }) {
     const { tasks, loading } = useTasks();

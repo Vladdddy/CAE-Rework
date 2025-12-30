@@ -6,8 +6,8 @@ import DayIcon from "../assets/icons/day.tsx";
 import NightIcon from "../assets/icons/night.tsx";
 import SearchIcon from "../assets/icons/search.tsx";
 import { GetSimulators } from "../functions/Simulators.jsx";
-import { useTasks } from "../components/data/provider/useTasks";
-import { useUsers } from "../components/data/provider/useUsers";
+import { useTasks } from "../components/data/provider/taskAPI/useTasks";
+import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import {
     GetTaskCountTime,
     GetTaskCountStatus,

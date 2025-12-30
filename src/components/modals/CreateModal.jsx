@@ -6,7 +6,7 @@ import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
-import { useTasks } from "../data/provider/useTasks.js";
+import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 
 function CreateModal({ onClose, onSuccess }) {
     const { addTask } = useTasks();

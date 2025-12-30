@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useUsers } from "../data/provider/userAPI/useUsers";
 import Logo from "../../assets/cae-logo.png";
 import DashboardIcon from "../../assets/icons/dashboard.tsx";
 import TasksIcon from "../../assets/icons/tasks.tsx";
@@ -10,6 +11,7 @@ import LogoutModal from "../modals/LogoutModal.jsx";
 
 function Sidebar(props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { currentUsername, currentUserRole } = useUsers();
 
     const handleLogoutClick = () => {
         setIsModalOpen(true);
@@ -139,11 +141,17 @@ function Sidebar(props) {
                     }`}
                 >
                     <div className="flex items-center justify-center text-[var(--primary)] text-xl w-10 h-10 bg-[var(--light-primary)] rounded-full">
-                        G
+                        {currentUsername
+                            ? currentUsername.charAt(0).toUpperCase()
+                            : "?"}
                     </div>
                     <div className="flex flex-col gap-0">
-                        <p className="text-sm text-[var(--black)]">Gianluca</p>
-                        <p className="text-xs text-[var(--gray)]">Admin</p>
+                        <p className="text-sm text-[var(--black)]">
+                            {currentUsername || "User"}
+                        </p>
+                        <p className="text-xs text-[var(--gray)]">
+                            {currentUserRole || "N/A"}
+                        </p>
                     </div>
                 </div>
 

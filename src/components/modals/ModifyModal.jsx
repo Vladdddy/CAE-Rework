@@ -6,7 +6,7 @@ import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
-import { useTasks } from "../data/provider/useTasks.js";
+import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 
 function ModifyModal({ onClose, onSuccess, task }) {
     const [selectedCategory, setSelectedCategory] = useState(

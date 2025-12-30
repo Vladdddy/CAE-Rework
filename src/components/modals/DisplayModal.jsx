@@ -3,7 +3,7 @@ import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
-import { useTasks } from "../data/provider/useTasks.js";
+import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 import ModifyModal from "./ModifyModal.jsx";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
