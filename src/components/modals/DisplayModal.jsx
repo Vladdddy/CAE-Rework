@@ -10,7 +10,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isModifyOpen, setIsModifyOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
-    const { deleteTask, fetchTasks } = useTasks();
+    const { deleteTask, fetchTasks, updateTask } = useTasks();
 
     const handleDelete = async () => {
         console.log(`Deleting task with ID: ${taskInfo.ID}`);
@@ -52,6 +52,32 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                 result.success,
                 `Task "${taskInfo.TITLE}" modificata con successo`
             );
+        }
+    };
+
+    const handleStatusChange = async (e) => {
+        const newStatus = e.target.value;
+
+        const updatedTaskData = {
+            title: taskInfo.TITLE,
+            description: taskInfo.DESCRIPTION,
+            category: taskInfo.CATEGORY,
+            subcategory: taskInfo.SUBCATEGORY,
+            extradetail: taskInfo.EXTRADETAIL,
+            simulator: taskInfo.SIMULATOR,
+            date: taskInfo.DATE,
+            time: taskInfo.TIME,
+            assigned_to: taskInfo.ASSIGNED_TO,
+            status: newStatus,
+        };
+
+        const result = await updateTask(taskInfo.ID, updatedTaskData);
+
+        if (result.success) {
+            await fetchTasks();
+            if (onSuccess) {
+                onSuccess(true, `Stato aggiornato a "${newStatus}"`);
+            }
         }
     };
 
@@ -165,6 +191,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 taskInfo?.STATUS ||
                                                 "Da definire"
                                             }
+                                            onChange={handleStatusChange}
                                             name=""
                                             id=""
                                             className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
