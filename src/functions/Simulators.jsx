@@ -83,7 +83,7 @@ export function GetSimulators({
                                                           task?.ASSIGNED_TO
                                                       }
                                                       status={task?.STATUS}
-                                                      type="table"
+                                                      type="dashboard"
                                                       wholeTask={task}
                                                       onDeleteSuccess={
                                                           onDeleteSuccess
@@ -126,7 +126,7 @@ export function GetSimulators({
                                                           task?.ASSIGNED_TO
                                                       }
                                                       status={task?.STATUS}
-                                                      type="table"
+                                                      type="dashboard"
                                                       wholeTask={task}
                                                       onDeleteSuccess={
                                                           onDeleteSuccess
@@ -163,7 +163,7 @@ export function GetSimulators({
                                                           task?.ASSIGNED_TO
                                                       }
                                                       status={task?.STATUS}
-                                                      type="table"
+                                                      type="dashboard"
                                                       wholeTask={task}
                                                       onDeleteSuccess={
                                                           onDeleteSuccess

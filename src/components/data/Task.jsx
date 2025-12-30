@@ -1,7 +1,6 @@
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import DisplayModal from "../modals/DisplayModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
-import UserIcon from "../../assets/icons/user.tsx";
 import { useState } from "react";
 
 function Task({ title, date, status, type, wholeTask, onDeleteSuccess }) {
@@ -25,23 +24,22 @@ function Task({ title, date, status, type, wholeTask, onDeleteSuccess }) {
         >
             {type === "table" ? (
                 <>
-                    <div className="flex flex-row items-center gap-1 mb-1 w-full">
+                    <div className="flex flex-row items-center gap-1 mb-2 w-full">
                         <TaskIcon className="w-4 flex-shrink-0" />
                         <h1 className="text-sm font-semibold truncate">
                             {title || "N/A"}
                         </h1>
                     </div>
 
-                    <div className="flex flex-row justify-between gap-1 w-full">
-                        <div className="flex items-center gap-1 max-w-xs flex-wrap truncate flex-1">
-                            <UserIcon className="w-4 text-[var(--gray)]" />
+                    <div className="flex flex-col justify-between gap-2 w-full">
+                        <div className="flex items-center gap-1 flex-wrap truncate flex-1">
                             <Splitter
                                 taskInfo={wholeTask}
                                 style="text-xs text-[var(--gray)]"
                             />
                         </div>
 
-                        <div className="flex flex-row items-center gap-1 flex-1 justify-end flex-wrap">
+                        <div className="flex flex-row items-center gap-1 flex-1 flex-wrap">
                             <p className="text-xs text-[var(--gray)]">
                                 {date || "N/A"}
                             </p>
@@ -54,7 +52,7 @@ function Task({ title, date, status, type, wholeTask, onDeleteSuccess }) {
                 </>
             ) : (
                 <>
-                    <div className="flex flex-row items-center gap-1 mb-1 w-full">
+                    <div className="flex flex-row items-center gap-1 mb-2 w-full">
                         <TaskIcon className="w-4 flex-shrink-0" />
                         <h1 className="text-l font-semibold truncate">
                             {title || "N/A"}
@@ -63,7 +61,6 @@ function Task({ title, date, status, type, wholeTask, onDeleteSuccess }) {
 
                     <div className="flex flex-row justify-between gap-1 w-full">
                         <div className="flex items-center gap-1 max-w-xs flex-wrap truncate flex-1">
-                            <UserIcon className="w-4 text-[var(--gray)]" />
                             <Splitter
                                 taskInfo={wholeTask}
                                 style="text-xs text-[var(--gray)]"
