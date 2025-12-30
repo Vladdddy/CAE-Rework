@@ -7,9 +7,11 @@ import NightIcon from "../../assets/icons/night.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
+import { useUsers } from "../data/provider/userAPI/useUsers.js";
 
 function CreateModal({ onClose, onSuccess }) {
     const { addTask } = useTasks();
+    const { users } = useUsers();
     const [selectedCategory, setSelectedCategory] = useState("Routine Task");
     const [selectedStatus, setSelectedStatus] = useState("Da definire");
     const [selectedRadio, setSelectedRadio] = useState("Diurno");
@@ -396,202 +398,57 @@ function CreateModal({ onClose, onSuccess }) {
                             Assegnatario/i
                         </h3>
                         <div className="grid grid-cols-3 gap-2 border border-[var(--light-primary)] rounded-md p-2">
-                            <div
-                                onClick={() => handleCheckboxChange("Mario1")}
-                                className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                    selectedAssignees.includes("Mario1")
-                                        ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                        : "text-[var(--black)]"
-                                }`}
-                            >
-                                <input
-                                    type="checkbox"
-                                    name=""
-                                    id="Mario1"
-                                    checked={selectedAssignees.includes(
-                                        "Mario1"
-                                    )}
-                                    onChange={() =>
-                                        handleCheckboxChange("Mario1")
+                            {users.map((user) => (
+                                <div
+                                    key={user.Username}
+                                    onClick={() =>
+                                        handleCheckboxChange(user.Username)
                                     }
-                                    className="hidden"
-                                />
-                                <UserIcon className="w-6" />
-                                <label
-                                    className="cursor-pointer"
-                                    htmlFor="Mario1"
+                                    className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
+                                        selectedAssignees.includes(
+                                            user.Username
+                                        )
+                                            ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                            : "text-[var(--black)]"
+                                    }`}
                                 >
-                                    Mario
-                                </label>
-                            </div>
-                            <div
-                                onClick={() => handleCheckboxChange("Mario2")}
-                                className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                    selectedAssignees.includes("Mario2")
-                                        ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                        : "text-[var(--black)]"
-                                }`}
-                            >
-                                <input
-                                    type="checkbox"
-                                    name=""
-                                    id="Mario2"
-                                    checked={selectedAssignees.includes(
-                                        "Mario2"
-                                    )}
-                                    onChange={() =>
-                                        handleCheckboxChange("Mario2")
-                                    }
-                                    className="hidden"
-                                />
-                                <UserIcon className="w-6" />
-                                <label
-                                    className="cursor-pointer"
-                                    htmlFor="Mario2"
-                                >
-                                    Mario
-                                </label>
-                            </div>
-                            <div
-                                onClick={() => handleCheckboxChange("Mario3")}
-                                className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                    selectedAssignees.includes("Mario3")
-                                        ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                        : "text-[var(--black)]"
-                                }`}
-                            >
-                                <input
-                                    type="checkbox"
-                                    name=""
-                                    id="Mario3"
-                                    checked={selectedAssignees.includes(
-                                        "Mario3"
-                                    )}
-                                    onChange={() =>
-                                        handleCheckboxChange("Mario3")
-                                    }
-                                    className="hidden"
-                                />
-                                <UserIcon className="w-6" />
-                                <label
-                                    className="cursor-pointer"
-                                    htmlFor="Mario3"
-                                >
-                                    Mario
-                                </label>
-                            </div>
-                            <div
-                                onClick={() => handleCheckboxChange("Mario4")}
-                                className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                    selectedAssignees.includes("Mario4")
-                                        ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                        : "text-[var(--black)]"
-                                }`}
-                            >
-                                <input
-                                    type="checkbox"
-                                    name=""
-                                    id="Mario4"
-                                    checked={selectedAssignees.includes(
-                                        "Mario4"
-                                    )}
-                                    onChange={() =>
-                                        handleCheckboxChange("Mario4")
-                                    }
-                                    className="hidden"
-                                />
-                                <UserIcon className="w-6" />
-                                <label
-                                    className="cursor-pointer"
-                                    htmlFor="Mario4"
-                                >
-                                    Mario
-                                </label>
-                            </div>
-                            <div
-                                onClick={() => handleCheckboxChange("Mario5")}
-                                className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                    selectedAssignees.includes("Mario5")
-                                        ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                        : "text-[var(--black)]"
-                                }`}
-                            >
-                                <input
-                                    type="checkbox"
-                                    name=""
-                                    id="Mario5"
-                                    checked={selectedAssignees.includes(
-                                        "Mario5"
-                                    )}
-                                    onChange={() =>
-                                        handleCheckboxChange("Mario5")
-                                    }
-                                    className="hidden"
-                                />
-                                <UserIcon className="w-6" />
-                                <label
-                                    className="cursor-pointer"
-                                    htmlFor="Mario5"
-                                >
-                                    Mario
-                                </label>
-                            </div>
-                            <div
-                                onClick={() => handleCheckboxChange("Mario6")}
-                                className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                    selectedAssignees.includes("Mario6")
-                                        ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                        : "text-[var(--black)]"
-                                }`}
-                            >
-                                <input
-                                    type="checkbox"
-                                    name=""
-                                    id="Mario6"
-                                    checked={selectedAssignees.includes(
-                                        "Mario6"
-                                    )}
-                                    onChange={() =>
-                                        handleCheckboxChange("Mario6")
-                                    }
-                                    className="hidden"
-                                />
-                                <UserIcon className="w-6" />
-                                <label
-                                    className="cursor-pointer"
-                                    htmlFor="Mario6"
-                                >
-                                    Mario
-                                </label>
-                            </div>
-                            <div
-                                onClick={() => handleCheckboxChange("Mario7")}
-                                className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                    selectedAssignees.includes("Mario7")
-                                        ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                        : "text-[var(--black)]"
-                                }`}
-                            >
-                                <input
-                                    type="checkbox"
-                                    name=""
-                                    id="Mario7"
-                                    checked={selectedAssignees.includes(
-                                        "Mario7"
-                                    )}
-                                    onChange={() =>
-                                        handleCheckboxChange("Mario7")
-                                    }
-                                    className="hidden"
-                                />
-                                <UserIcon className="w-6" />
-                                <label
-                                    className="cursor-pointer"
-                                    htmlFor="Mario7"
-                                >
-                                    Mario
-                                </label>
-                            </div>
+                                    <input
+                                        type="checkbox"
+                                        name=""
+                                        id={user.Username}
+                                        checked={selectedAssignees.includes(
+                                            user.Username
+                                        )}
+                                        onChange={() =>
+                                            handleCheckboxChange(user.Username)
+                                        }
+                                        className="hidden"
+                                    />
+                                    <UserIcon className="w-6" />
+                                    <label
+                                        className="cursor-pointer truncate"
+                                        htmlFor={user.Username}
+                                    >
+                                        {user.Username.split(".")[0]
+                                            .charAt(0)
+                                            .toUpperCase() +
+                                            user.Username.split(".")[0].slice(
+                                                1
+                                            )}
+                                        {user.Username.split(".")[1] && (
+                                            <>
+                                                {" "}
+                                                {user.Username.split(".")[1]
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    user.Username.split(
+                                                        "."
+                                                    )[1].slice(1)}
+                                            </>
+                                        )}
+                                    </label>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

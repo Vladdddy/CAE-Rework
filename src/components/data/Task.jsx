@@ -1,16 +1,10 @@
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import DisplayModal from "../modals/DisplayModal.jsx";
+import Splitter from "../../functions/SplitAssignedTo.jsx";
+import UserIcon from "../../assets/icons/user.tsx";
 import { useState } from "react";
 
-function Task({
-    title,
-    date,
-    assignedTo,
-    status,
-    type,
-    wholeTask,
-    onDeleteSuccess,
-}) {
+function Task({ title, date, status, type, wholeTask, onDeleteSuccess }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
 
@@ -37,10 +31,26 @@ function Task({
                             {title || "N/A"}
                         </h1>
                     </div>
-                    <p className="text-xs text-[var(--gray)]">
-                        {assignedTo || "Nessuno"} • {date || "N/A"} •{" "}
-                        {status || "N/A"}
-                    </p>
+
+                    <div className="flex flex-row justify-between gap-1 w-full">
+                        <div className="flex items-center gap-1 max-w-xs flex-wrap truncate flex-1">
+                            <UserIcon className="w-4 text-[var(--gray)]" />
+                            <Splitter
+                                taskInfo={wholeTask}
+                                style="text-xs text-[var(--gray)]"
+                            />
+                        </div>
+
+                        <div className="flex flex-row items-center gap-1 flex-1 justify-end flex-wrap">
+                            <p className="text-xs text-[var(--gray)]">
+                                {date || "N/A"}
+                            </p>
+                            <p className="text-xs text-[var(--gray)]">•</p>
+                            <p className="text-xs text-[var(--gray)]">
+                                {status || "N/A"}
+                            </p>
+                        </div>
+                    </div>
                 </>
             ) : (
                 <>
@@ -50,10 +60,26 @@ function Task({
                             {title || "N/A"}
                         </h1>
                     </div>
-                    <p className="text-sm text-[var(--gray)]">
-                        {assignedTo || "N/A"} • {date || "N/A"} •{" "}
-                        {status || "N/A"}
-                    </p>
+
+                    <div className="flex flex-row justify-between gap-1 w-full">
+                        <div className="flex items-center gap-1 max-w-xs flex-wrap truncate flex-1">
+                            <UserIcon className="w-4 text-[var(--gray)]" />
+                            <Splitter
+                                taskInfo={wholeTask}
+                                style="text-xs text-[var(--gray)]"
+                            />
+                        </div>
+
+                        <div className="flex flex-row items-center gap-1 flex-1 justify-end flex-wrap">
+                            <p className="text-xs text-[var(--gray)]">
+                                {date || "N/A"}
+                            </p>
+                            <p className="text-xs text-[var(--gray)]">•</p>
+                            <p className="text-xs text-[var(--gray)]">
+                                {status || "N/A"}
+                            </p>
+                        </div>
+                    </div>
                 </>
             )}
 

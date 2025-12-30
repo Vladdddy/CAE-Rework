@@ -5,6 +5,7 @@ import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 import ModifyModal from "./ModifyModal.jsx";
+import Splitter from "../../functions/SplitAssignedTo.jsx";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -151,12 +152,11 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         <div className="flex justify-between items-center mt-4">
                                             <div className="flex items-center gap-1 max-w-xs flex-wrap">
                                                 <UserIcon className="w-4 text-[var(--black)]" />
-                                                <div className="flex items-center gap-1">
-                                                    <p className="text-sm text-[var(--black)]">
-                                                        {taskInfo.ASSIGNED_TO ||
-                                                            "Nessuno"}
-                                                    </p>
-                                                </div>
+                                                <Splitter
+                                                    taskInfo={taskInfo}
+                                                    style="text-xs text-[var(--black)]"
+                                                    div="flex items-center gap-1 max-w-xs flex-wrap"
+                                                />
                                             </div>
 
                                             <div className="flex items-center gap-2">

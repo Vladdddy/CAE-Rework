@@ -311,11 +311,7 @@ function Dashboard() {
                                                 <Employee
                                                     key={user.ID}
                                                     role={user.Role}
-                                                    name={
-                                                        user.Username.split(
-                                                            "."
-                                                        )[0]
-                                                    }
+                                                    name={user.Username}
                                                     shortName={user.Username?.substring(
                                                         0,
                                                         2

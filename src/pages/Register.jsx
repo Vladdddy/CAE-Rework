@@ -16,7 +16,7 @@ function Register() {
     const [surname, setSurname] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const { register } = useUsers();
+    const { register, fetchUsers } = useUsers();
     const [loginError, setLoginError] = useState(false);
     const [invalidCredentials, setInvalidCredentials] = useState(false);
     const [selectedRole, setSelectedRole] = useState("Employee");
@@ -47,6 +47,7 @@ function Register() {
         const result = await register(username, password, selectedRole);
 
         if (result.success) {
+            await fetchUsers();
             navigate("/dashboard");
         } else {
             setInvalidCredentials(true);

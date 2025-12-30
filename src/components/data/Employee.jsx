@@ -2,9 +2,9 @@ import React from "react";
 import UserIcon from "../../assets/icons/user.tsx";
 
 function Employee(props) {
-    const role = props.role || "Employee";
-    const name = props.name || "Unknown";
-    const shortName = props.shortName || "??";
+    const role = props.role;
+    const name = props.name;
+    //const shortName = props.shortName || "??";
 
     return (
         <div
@@ -15,11 +15,21 @@ function Employee(props) {
                         : "border-[var(--light-primary)] bg-[var(--white)] text-[var(--black)]"
                 }`}
         >
-            <div className="flex flex-row items-center justify-start gap-2">
+            <div className="flex flex-row items-center justify-start gap-2 w-full">
                 <UserIcon className="w-6" />
-                <h1 className="text-l">{name}</h1>
+                <h1 className="text-l truncate ">
+                    {name.split(".")[0].charAt(0).toUpperCase() +
+                        name.split(".")[0].slice(1)}
+                    {name.split(".")[1] && (
+                        <>
+                            {" "}
+                            {name.split(".")[1].charAt(0).toUpperCase() +
+                                name.split(".")[1].slice(1)}
+                        </>
+                    )}
+                </h1>
             </div>
-            <p className="text-sm">{shortName}</p>
+            {/*<p className="text-sm">{shortName}</p>*/}
         </div>
     );
 }
