@@ -7,13 +7,16 @@ import NightIcon from "../assets/icons/night.tsx";
 import SearchIcon from "../assets/icons/search.tsx";
 import { GetSimulators } from "../functions/Simulators.jsx";
 import { useTasks } from "../components/data/provider/useTasks";
+import { useUsers } from "../components/data/provider/useUsers";
 import {
     GetTaskCountTime,
     GetTaskCountStatus,
 } from "../functions/TaskLength.jsx";
+import Employee from "../components/data/Employee.jsx";
 
 function Dashboard() {
     const { tasks, loading, fetchTasks } = useTasks();
+    const { users, loading: usersLoading } = useUsers();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -294,11 +297,41 @@ function Dashboard() {
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {/*<Employee role="Shift Leader" />*/}
+                                    {usersLoading ? (
+                                        <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        users
+                                            .filter(
+                                                (user) =>
+                                                    user.Role === "Shift Leader"
+                                            )
+                                            .map((user) => (
+                                                <Employee
+                                                    key={user.ID}
+                                                    role={user.Role}
+                                                    name={
+                                                        user.Username.split(
+                                                            "."
+                                                        )[0]
+                                                    }
+                                                    shortName={user.Username?.substring(
+                                                        0,
+                                                        2
+                                                    ).toUpperCase()}
+                                                />
+                                            ))
+                                    )}
                                 </div>
-                                <p className="text-sm text-[var(--gray)] text-center mt-4">
-                                    Nessun tecnico presente
-                                </p>
+                                {!usersLoading &&
+                                    users.filter(
+                                        (user) => user.Role === "Shift Leader"
+                                    ).length === 0 && (
+                                        <p className="text-sm text-[var(--gray)] text-center mt-4">
+                                            Nessun tecnico presente
+                                        </p>
+                                    )}
                             </div>
                             <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
                                 <div className="flex flex-row items-center gap-2">
@@ -308,11 +341,41 @@ function Dashboard() {
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {/*<Employee role="Employee" />*/}
+                                    {usersLoading ? (
+                                        <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        users
+                                            .filter(
+                                                (user) =>
+                                                    user.Role === "Employee"
+                                            )
+                                            .map((user) => (
+                                                <Employee
+                                                    key={user.ID}
+                                                    role={user.Role}
+                                                    name={
+                                                        user.Username.split(
+                                                            "."
+                                                        )[0]
+                                                    }
+                                                    shortName={user.Username?.substring(
+                                                        0,
+                                                        2
+                                                    ).toUpperCase()}
+                                                />
+                                            ))
+                                    )}
                                 </div>
-                                <p className="text-sm text-[var(--gray)] text-center mt-4">
-                                    Nessun tecnico presente
-                                </p>
+                                {!usersLoading &&
+                                    users.filter(
+                                        (user) => user.Role === "Employee"
+                                    ).length === 0 && (
+                                        <p className="text-sm text-[var(--gray)] text-center mt-4">
+                                            Nessun tecnico presente
+                                        </p>
+                                    )}
                             </div>
                             <div className="flex flex-col gap-2">
                                 <div className="flex flex-row items-center gap-2">
@@ -321,9 +384,41 @@ function Dashboard() {
                                         Notte
                                     </p>
                                 </div>
-                                <p className="text-sm text-[var(--gray)] text-center mt-4">
-                                    Nessun tecnico presente
-                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {usersLoading ? (
+                                        <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        users
+                                            .filter(
+                                                (user) => user.Role === "Admin"
+                                            )
+                                            .map((user) => (
+                                                <Employee
+                                                    key={user.ID}
+                                                    role={user.Role}
+                                                    name={
+                                                        user.Username.split(
+                                                            "."
+                                                        )[0]
+                                                    }
+                                                    shortName={user.Username?.substring(
+                                                        0,
+                                                        2
+                                                    ).toUpperCase()}
+                                                />
+                                            ))
+                                    )}
+                                </div>
+                                {!usersLoading &&
+                                    users.filter(
+                                        (user) => user.Role === "Admin"
+                                    ).length === 0 && (
+                                        <p className="text-sm text-[var(--gray)] text-center mt-4">
+                                            Nessun tecnico presente
+                                        </p>
+                                    )}
                             </div>
                         </div>
                     </div>

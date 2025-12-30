@@ -3,6 +3,8 @@ import UserIcon from "../../assets/icons/user.tsx";
 
 function Employee(props) {
     const role = props.role || "Employee";
+    const name = props.name || "Unknown";
+    const shortName = props.shortName || "??";
 
     return (
         <div
@@ -15,9 +17,9 @@ function Employee(props) {
         >
             <div className="flex flex-row items-center justify-start gap-2">
                 <UserIcon className="w-6" />
-                <h1 className="text-l">Gianluca</h1>
+                <h1 className="text-l">{name}</h1>
             </div>
-            <p className="text-sm">OP</p>
+            <p className="text-sm">{shortName}</p>
         </div>
     );
 }
