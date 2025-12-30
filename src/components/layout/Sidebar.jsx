@@ -29,7 +29,7 @@ function Sidebar(props) {
                 <img
                     className={`${
                         !props.isSidebarOpen ? "w-12" : "w-20"
-                    } mx-auto transition-all duration-300`}
+                    } mx-auto mt-4 transition-all duration-300`}
                     src={Logo}
                     alt="Logo"
                 />
