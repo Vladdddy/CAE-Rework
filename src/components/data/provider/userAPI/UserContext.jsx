@@ -13,6 +13,18 @@ export const UserProvider = ({ children }) => {
         fetchUsers();
     }, []);
 
+    // Validate token and load user info on mount
+    useEffect(() => {
+        const loadUserFromToken = async () => {
+            const result = await validateToken();
+            if (result && result.user) {
+                setCurrentUsername(result.user.username);
+                setCurrentUserRole(result.user.role);
+            }
+        };
+        loadUserFromToken();
+    }, []);
+
     const fetchUsers = async () => {
         try {
             setLoading(true);
@@ -129,8 +141,8 @@ export const UserProvider = ({ children }) => {
 
     const logout = () => {
         localStorage.removeItem("token");
-        setCurrentUsername(null);
-        setCurrentUserRole(null);
+        setCurrentUsername("Guest");
+        setCurrentUserRole("Employee");
     };
 
     const validateToken = async () => {
@@ -154,11 +166,12 @@ export const UserProvider = ({ children }) => {
                 return false;
             }
 
-            return true;
+            const data = await response.json();
+            return data; // Return user data from backend
         } catch (err) {
             localStorage.removeItem("token");
             setError(err.message);
-            return { success: false, error: err.message };
+            return false;
         }
     };
 

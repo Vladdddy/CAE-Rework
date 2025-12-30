@@ -9,6 +9,7 @@ import NightIcon from "../../assets/icons/night.tsx";
 import SearchModal from "../modals/SearchModal.jsx";
 import Popup from "../modals/Popup.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
+import { useUsers } from "../data/provider/userAPI/useUsers";
 
 function Topbar({ isSidebarOpen, setSidebarStatus }) {
     const { fetchTasks } = useTasks();
@@ -21,6 +22,7 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
         const savedMode = localStorage.getItem("darkMode");
         return savedMode === "true";
     });
+    const { currentUsername } = useUsers();
 
     useEffect(() => {
         if (isDarkMode) {
@@ -78,7 +80,7 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                     onClick={() => setSidebarStatus(!isSidebarOpen)}
                 />
                 <h1 className="border-x border-[var(--light-primary)] px-4 text-l">
-                    Benvenuto, Gianluca!
+                    Benvenuto, {currentUsername}!
                 </h1>
                 <div
                     className="relative w-[30vw]"

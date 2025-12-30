@@ -147,10 +147,10 @@ function Sidebar(props) {
                     </div>
                     <div className="flex flex-col gap-0">
                         <p className="text-sm text-[var(--black)]">
-                            {currentUsername || "User"}
+                            {currentUsername}
                         </p>
                         <p className="text-xs text-[var(--gray)]">
-                            {currentUserRole || "N/A"}
+                            {currentUserRole}
                         </p>
                     </div>
                 </div>
