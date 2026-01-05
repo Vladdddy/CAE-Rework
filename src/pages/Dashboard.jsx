@@ -384,7 +384,8 @@ function Dashboard() {
                                     ) : (
                                         users
                                             .filter(
-                                                (user) => user.Role === "Admin"
+                                                (user) =>
+                                                    user.Role === "Employee"
                                             )
                                             .map((user) => (
                                                 <Employee
@@ -401,7 +402,7 @@ function Dashboard() {
                                 </div>
                                 {!usersLoading &&
                                     users.filter(
-                                        (user) => user.Role === "Admin"
+                                        (user) => user.Role === "Employee"
                                     ).length === 0 && (
                                         <p className="text-sm text-[var(--gray)] text-center mt-4">
                                             Nessun tecnico presente
