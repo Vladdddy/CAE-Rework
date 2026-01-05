@@ -84,8 +84,13 @@ function Tasks() {
 
     const handleExportPDF = () => {
         try {
+            const tasksExported = exportTasksToPDF(tasks, startDate);
             setPopupType("success");
-            setPopupMessage(`PDF esportato con successo!`);
+            setPopupMessage(
+                `PDF esportato con successo! (${tasksExported} task${
+                    tasksExported !== 1 ? "s" : ""
+                })`
+            );
             setShowPopup(true);
             setTimeout(() => {
                 setShowPopup(false);
