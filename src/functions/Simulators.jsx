@@ -51,11 +51,19 @@ export function GetSimulators({
                                                   task?.TIME === time;
                                               const matchesSimulator =
                                                   task?.SIMULATOR === simulator;
+
+                                              // Properly format the date with zero-padding
+                                              const year = date.getFullYear();
+                                              const month = String(
+                                                  date.getMonth() + 1
+                                              ).padStart(2, "0");
+                                              const day = String(
+                                                  date.getDate()
+                                              ).padStart(2, "0");
+                                              const expectedDate = `${year}-${month}-${day}T00:00:00.000Z`;
+
                                               const matchesDate =
-                                                  task?.DATE ===
-                                                  `${date.getFullYear()}-${
-                                                      date.getMonth() + 1
-                                                  }-${date.getDate()}T00:00:00.000Z`;
+                                                  task?.DATE === expectedDate;
 
                                               return (
                                                   matchesTime &&

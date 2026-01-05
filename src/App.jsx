@@ -13,6 +13,7 @@ import Shifts from "./pages/Shifts";
 import Register from "./pages/Register";
 import { TaskProvider } from "./components/data/provider/taskAPI/TaskContext.jsx";
 import { UserProvider } from "./components/data/provider/userAPI/UserContext.jsx";
+import { NoteProvider } from "./components/data/provider/noteAPI/NoteContext.jsx";
 import "./App.css";
 
 const ProtectedRoute = ({ children }) => {
@@ -31,66 +32,68 @@ const PublicRoute = ({ children }) => {
 
 function App() {
     return (
-        <UserProvider>
-            <TaskProvider>
-                <Router>
-                    <Routes>
-                        <Route
-                            path="/"
-                            element={<Navigate to="/dashboard" replace />}
-                        />
-                        <Route
-                            path="/dashboard"
-                            element={
-                                <ProtectedRoute>
-                                    <Dashboard />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/tasks"
-                            element={
-                                <ProtectedRoute>
-                                    <Tasks />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/logbook"
-                            element={
-                                <ProtectedRoute>
-                                    <Logbook />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/signin"
-                            element={
-                                <PublicRoute>
-                                    <Signin />
-                                </PublicRoute>
-                            }
-                        />
-                        <Route
-                            path="/register"
-                            element={
-                                <PublicRoute>
-                                    <Register />
-                                </PublicRoute>
-                            }
-                        />
-                        <Route
-                            path="/shifts"
-                            element={
-                                <ProtectedRoute>
-                                    <Shifts />
-                                </ProtectedRoute>
-                            }
-                        />
-                    </Routes>
-                </Router>
-            </TaskProvider>
-        </UserProvider>
+        <NoteProvider>
+            <UserProvider>
+                <TaskProvider>
+                    <Router>
+                        <Routes>
+                            <Route
+                                path="/"
+                                element={<Navigate to="/dashboard" replace />}
+                            />
+                            <Route
+                                path="/dashboard"
+                                element={
+                                    <ProtectedRoute>
+                                        <Dashboard />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/tasks"
+                                element={
+                                    <ProtectedRoute>
+                                        <Tasks />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/logbook"
+                                element={
+                                    <ProtectedRoute>
+                                        <Logbook />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/signin"
+                                element={
+                                    <PublicRoute>
+                                        <Signin />
+                                    </PublicRoute>
+                                }
+                            />
+                            <Route
+                                path="/register"
+                                element={
+                                    <PublicRoute>
+                                        <Register />
+                                    </PublicRoute>
+                                }
+                            />
+                            <Route
+                                path="/shifts"
+                                element={
+                                    <ProtectedRoute>
+                                        <Shifts />
+                                    </ProtectedRoute>
+                                }
+                            />
+                        </Routes>
+                    </Router>
+                </TaskProvider>
+            </UserProvider>
+        </NoteProvider>
     );
 }
 

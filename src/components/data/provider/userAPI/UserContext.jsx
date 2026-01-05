@@ -5,6 +5,7 @@ export const UserProvider = ({ children }) => {
     const [users, setUsers] = useState([]);
     const [currentUsername, setCurrentUsername] = useState("Guest");
     const [currentUserRole, setCurrentUserRole] = useState("Employee");
+    const [currentUserId, setCurrentUserId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -20,6 +21,7 @@ export const UserProvider = ({ children }) => {
             if (result && result.user) {
                 setCurrentUsername(result.user.username);
                 setCurrentUserRole(result.user.role);
+                setCurrentUserId(result.user.id);
             }
         };
         loadUserFromToken();
@@ -130,6 +132,7 @@ export const UserProvider = ({ children }) => {
             if (data.user) {
                 setCurrentUsername(data.user?.username);
                 setCurrentUserRole(data.user?.role);
+                setCurrentUserId(data.user?.id);
             }
 
             return { success: true, data };
@@ -172,6 +175,7 @@ export const UserProvider = ({ children }) => {
         localStorage.removeItem("token");
         setCurrentUsername("Guest");
         setCurrentUserRole("Employee");
+        setCurrentUserId(null);
     };
 
     const validateToken = async () => {
@@ -210,6 +214,7 @@ export const UserProvider = ({ children }) => {
                 users,
                 currentUsername,
                 currentUserRole,
+                currentUserId,
                 loading,
                 error,
                 fetchUsers,

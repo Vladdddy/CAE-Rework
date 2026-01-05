@@ -29,7 +29,7 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                         )}
                     </div>
 
-                    <div className="max-h-[calc(80vh-20rem)] overflow-y-auto pr-1">
+                    <div className="max-h-[calc(80vh-16rem)] overflow-y-auto pr-1">
                         {loading ? (
                             <div className="text-center text-sm text-[var(--gray)] py-4">
                                 Caricamento...

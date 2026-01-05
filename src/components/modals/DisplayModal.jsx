@@ -4,6 +4,8 @@ import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
+import { useNotes } from "../data/provider/noteAPI/useNotes.js";
+import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import ModifyModal from "./ModifyModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
 
@@ -11,7 +13,36 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isModifyOpen, setIsModifyOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
+    const [noteDescription, setNoteDescription] = useState("");
     const { deleteTask, fetchTasks, updateTask } = useTasks();
+    const { notes, fetchNotes, createNote } = useNotes();
+    const { users, currentUserId } = useUsers();
+
+    const getUsernameById = (userId) => {
+        const user = users.find((u) => u.ID === userId);
+        if (!user || !user.Username) return "N/A";
+
+        const parts = user.Username.split(".");
+        const firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        const lastNameInitial = parts[1]
+            ? parts[1].charAt(0).toUpperCase()
+            : "";
+
+        return lastNameInitial ? `${firstName} ${lastNameInitial}` : firstName;
+    };
+
+    const formatDateTime = (dateTimeString) => {
+        if (!dateTimeString) return "N/A";
+
+        const date = new Date(dateTimeString);
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+
+        return `${day}/${month}/${year} • ${hours}:${minutes}`;
+    };
 
     const handleDelete = async () => {
         console.log(`Deleting task with ID: ${taskInfo.ID}`);
@@ -20,6 +51,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         onClose();
 
         if (onSuccess) {
+            await fetchTasks();
+
             onSuccess(
                 result.success,
                 `Task "${taskInfo.TITLE}" eliminata con successo`
@@ -82,6 +115,29 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         }
     };
 
+    const handleSaveNote = async () => {
+        if (!noteDescription.trim()) {
+            return;
+        }
+
+        const result = await createNote(
+            taskInfo.ID,
+            currentUserId,
+            noteDescription
+        );
+
+        if (result.success) {
+            setNoteDescription("");
+            if (onSuccess) {
+                onSuccess(true, "Nota salvata con successo");
+            }
+        } else {
+            if (onSuccess) {
+                onSuccess(false, "Errore nel salvataggio della nota");
+            }
+        }
+    };
+
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm cursor-default flex items-center justify-center z-50"
@@ -125,7 +181,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     ? "bg-[var(--light-primary)] text-[var(--primary)]"
                                     : "text-[var(--black)] hover:bg-[var(--light-primary)]"
                             }`}
-                            onClick={() => setActiveTab("note")}
+                            onClick={() => {
+                                setActiveTab("note");
+                                fetchNotes(taskInfo.ID);
+                            }}
                         >
                             <p className="text-sm">Note aggiuntive</p>
                         </div>
@@ -338,62 +397,35 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     {activeTab === "note" && (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-8 max-h-[calc(40vh-4rem)] overflow-y-auto pr-1">
-                                <div className="flex justify-between gap-4">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        Simone:
-                                    </h3>
-                                    <p className="task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md">
-                                        Lorem ipsum dolor sit, amet consectetur
-                                        adipisicing elit. Necessitatibus
-                                        delectus harum odit iusto ab in tempore
-                                        laudantium dolorem, facere tempora.
-                                        <span className="flex justify-end text-xs text-[var(--black)] mt-2">
-                                            17/12/2025 • 18:19
-                                        </span>
+                                {notes && notes.length > 0 ? (
+                                    [...notes].reverse().map((note) => (
+                                        <div
+                                            key={note.ID}
+                                            className="flex justify-between gap-4"
+                                        >
+                                            <h3 className="text-sm text-[var(--gray)] truncate w-20">
+                                                {getUsernameById(
+                                                    note.CREATEDBY
+                                                )}
+                                                :
+                                            </h3>
+                                            <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
+                                                <p className="break-words whitespace-pre-wrap">
+                                                    {note.DESCRIPTION}
+                                                </p>
+                                                <span className="flex justify-end text-xs text-[var(--black)] mt-2">
+                                                    {formatDateTime(
+                                                        note.CREATEDDATE
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-center text-sm text-[var(--gray)] italic">
+                                        Nessuna nota disponibile per questa task
                                     </p>
-                                </div>
-
-                                <div className="flex justify-between gap-4">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        Mario:
-                                    </h3>
-                                    <p className="task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md">
-                                        Lorem ipsum dolor sit, amet consectetur
-                                        adipisicing elit.
-                                        <span className="flex justify-end text-xs text-[var(--black)] mt-2">
-                                            17/12/2025 • 17:31
-                                        </span>
-                                    </p>
-                                </div>
-
-                                <div className="flex justify-between gap-4">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        Marco:
-                                    </h3>
-                                    <p className="task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md">
-                                        Lorem ipsum dolor sit, amet consectetur
-                                        adipisicing elit.
-                                        <span className="flex justify-end text-xs text-[var(--black)] mt-2">
-                                            15/12/2025 • 11:25
-                                        </span>
-                                    </p>
-                                </div>
-
-                                <div className="flex justify-between gap-4">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        Gianluca:
-                                    </h3>
-                                    <p className="task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md">
-                                        Lorem ipsum dolor sit, amet consectetur
-                                        adipisicing elit. Lorem ipsum dolor sit,
-                                        amet consectetur adipisicing elit. Lorem
-                                        ipsum dolor sit, amet consectetur
-                                        adipisicing elit.
-                                        <span className="flex justify-end text-xs text-[var(--black)] mt-2">
-                                            11/12/2025 • 9:39
-                                        </span>
-                                    </p>
-                                </div>
+                                )}
                             </div>
 
                             <div className="flex flex-col gap-2 border-t border-[var(--light-primary)] pt-4">
@@ -403,6 +435,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 <textarea
                                     className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                                     placeholder="Inserisci note aggiuntive qui..."
+                                    value={noteDescription}
+                                    onChange={(e) =>
+                                        setNoteDescription(e.target.value)
+                                    }
                                 ></textarea>
                             </div>
 
@@ -414,7 +450,11 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     Chiudi
                                 </button>
 
-                                <button className="btn">
+                                <button
+                                    className="btn"
+                                    onClick={handleSaveNote}
+                                    disabled={!noteDescription.trim()}
+                                >
                                     <p>Salva nota</p>
                                 </button>
                             </div>
