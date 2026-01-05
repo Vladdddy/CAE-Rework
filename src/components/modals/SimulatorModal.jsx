@@ -40,7 +40,10 @@ function SimulatorModal({
                 </div>
 
                 <div className="flex flex-col gap-8 max-h-[calc(80vh-1rem)] overflow-y-auto pr-1">
-                    <div className="flex flex-col gap-1">
+                    <h1 className="text-md text-center text-[var(--gray)] mt-8">
+                        Questa funzione è in fase di sviluppo.
+                    </h1>
+                    {/* <div className="flex flex-col gap-1">
                         <h3 className="text-sm text-[var(--gray)]">
                             Simulatore
                         </h3>
@@ -117,7 +120,7 @@ function SimulatorModal({
                             </select>
                             <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                         </div>
-                    </div>
+                    </div> */}
 
                     <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
                         <button className="btn gray-btn" onClick={onClose}>

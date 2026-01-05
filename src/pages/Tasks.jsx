@@ -14,6 +14,7 @@ import CreateModal from "../components/modals/CreateModal.jsx";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
+import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 
 function Tasks() {
     const { tasks, loading, fetchTasks } = useTasks();
@@ -81,6 +82,25 @@ function Tasks() {
         setIsSimulatorModalOpen(false);
     };
 
+    const handleExportPDF = () => {
+        try {
+            setPopupType("success");
+            setPopupMessage(`PDF esportato con successo!`);
+            setShowPopup(true);
+            setTimeout(() => {
+                setShowPopup(false);
+            }, 2000);
+        } catch (error) {
+            console.error("Errore durante l'esportazione del PDF:", error);
+            setPopupType("error");
+            setPopupMessage("Errore durante l'esportazione del PDF");
+            setShowPopup(true);
+            setTimeout(() => {
+                setShowPopup(false);
+            }, 2000);
+        }
+    };
+
     const [searchQuery, setSearchQuery] = useState("");
 
     const filteredTasks = useMemo(() => {
@@ -133,7 +153,10 @@ function Tasks() {
                                     />
                                 </div>
 
-                                <button className="btn secondary">
+                                <button
+                                    className="btn secondary"
+                                    onClick={handleExportPDF}
+                                >
                                     Export PDF
                                 </button>
                             </div>
@@ -170,7 +193,7 @@ function Tasks() {
                                                 <p>Aggiungi task</p>
                                             </button>
 
-                                            {GetTodayDate(startDate) ===
+                                            {/* {GetTodayDate(startDate) ===
                                                 GetTodayDate(new Date()) && (
                                                 <button
                                                     className="btn secondary flex gap-2 items-center"
@@ -183,10 +206,10 @@ function Tasks() {
                                                     <SimulatorIcon className="w-6" />
                                                     <p>Imposta simulatore</p>
                                                 </button>
-                                            )}
+                                            )} */}
                                         </div>
 
-                                        <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
+                                        {/* <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
                                             <div className="flex items-center gap-2 bg-[var(--light-primary)] text-[var(--primary)] p-2 px-4 rounded-md cursor-pointer">
                                                 <p className="text-sm">Oggi</p>
                                             </div>
@@ -202,7 +225,7 @@ function Tasks() {
                                                     2 settimane
                                                 </p>
                                             </div>
-                                        </div>
+                                        </div> */}
                                     </div>
 
                                     <Table

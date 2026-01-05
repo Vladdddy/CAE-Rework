@@ -17,16 +17,16 @@ function Logbook() {
         return saved !== null ? JSON.parse(saved) : true;
     });
 
-    const [startDate, setStartDate] = useState(new Date());
+    /* const [startDate, setStartDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(true);
     // eslint-disable-next-line no-unused-vars
-    const [selectedDay, setSelectedDay] = useState(null);
+    const [selectedDay, setSelectedDay] = useState(null); */
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
 
-    const handleDayClick = (day) => {
+    /* const handleDayClick = (day) => {
         setSelectedDay(day);
         setShowCalendar(false);
         const newDate = new Date(startDate);
@@ -37,7 +37,7 @@ function Logbook() {
     const handleBackToCalendar = () => {
         setShowCalendar(true);
         setSelectedDay(null);
-    };
+    }; */
 
     return (
         <section className="flex h-screen">
@@ -49,7 +49,11 @@ function Logbook() {
                     setSidebarStatus={setSidebarStatus}
                 />
 
-                <div className="flex-1 overflow-y-auto">
+                <h1 className="text-xl text-center text-[var(--gray)] mt-32">
+                    La pagina Logbook è in fase di sviluppo.
+                </h1>
+
+                {/* <div className="flex-1 overflow-y-auto">
                     {showCalendar ? (
                         <Calendar
                             startDate={startDate}
@@ -128,7 +132,7 @@ function Logbook() {
                             </div>
                         </>
                     )}
-                </div>
+                </div> */}
             </div>
         </section>
     );
