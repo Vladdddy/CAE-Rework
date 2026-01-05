@@ -186,7 +186,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 fetchNotes(taskInfo.ID);
                             }}
                         >
-                            <p className="text-sm">Note aggiuntive</p>
+                            <p className="text-sm">Note aggiunte</p>
                         </div>
                     </div>
 
@@ -430,11 +430,11 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
                             <div className="flex flex-col gap-2 border-t border-[var(--light-primary)] pt-4">
                                 <h3 className="text-sm text-[var(--gray)]">
-                                    Note aggiuntive:
+                                    Aggiungi Nota
                                 </h3>
                                 <textarea
                                     className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                    placeholder="Inserisci note aggiuntive qui..."
+                                    placeholder="Inserisci il testo della nota qui..."
                                     value={noteDescription}
                                     onChange={(e) =>
                                         setNoteDescription(e.target.value)
