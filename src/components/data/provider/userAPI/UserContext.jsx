@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { UserContext } from "./userContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export const UserProvider = ({ children }) => {
     const [users, setUsers] = useState([]);
     const [currentUsername, setCurrentUsername] = useState("Guest");
@@ -31,7 +33,7 @@ export const UserProvider = ({ children }) => {
         try {
             setLoading(true);
 
-            const response = await fetch("http://localhost:3000/users");
+            const response = await fetch(`${API_URL}/users`);
 
             if (!response.ok) throw new Error("Failed to fetch users");
             const data = await response.json();
@@ -46,7 +48,7 @@ export const UserProvider = ({ children }) => {
 
     const addUser = async (newUser) => {
         try {
-            const response = await fetch("http://localhost:3000/users", {
+            const response = await fetch(`${API_URL}/users`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -72,7 +74,7 @@ export const UserProvider = ({ children }) => {
     const updateUser = async (id, updatedUser) => {
         console.log("Updating user with ID:", id, "with data:", updatedUser);
         try {
-            const response = await fetch(`http://localhost:3000/users/${id}`, {
+            const response = await fetch(`${API_URL}/users/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -95,7 +97,7 @@ export const UserProvider = ({ children }) => {
 
     const deleteUser = async (id) => {
         try {
-            const response = await fetch(`http://localhost:3000/users/${id}`, {
+            const response = await fetch(`${API_URL}/users/${id}`, {
                 method: "DELETE",
             });
 
@@ -112,7 +114,7 @@ export const UserProvider = ({ children }) => {
         console.log("Logging in with", { username });
 
         try {
-            const response = await fetch("http://localhost:3000/users/login", {
+            const response = await fetch(`${API_URL}/users/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -146,20 +148,17 @@ export const UserProvider = ({ children }) => {
         console.log("Registering with", { username });
 
         try {
-            const response = await fetch(
-                "http://localhost:3000/users/register",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password,
-                        role: selectedRole,
-                    }),
-                }
-            );
+            const response = await fetch(`${API_URL}/users/register`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username,
+                    password,
+                    role: selectedRole,
+                }),
+            });
 
             if (!response.ok) throw new Error("Registration failed");
             console.log("Registration successful for", username);
@@ -183,15 +182,12 @@ export const UserProvider = ({ children }) => {
         if (!token) return false;
 
         try {
-            const response = await fetch(
-                "http://localhost:3000/users/validate",
-                {
-                    method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await fetch(`${API_URL}/users/validate`, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
             if (!response.ok) {
                 // Token is invalid or expired

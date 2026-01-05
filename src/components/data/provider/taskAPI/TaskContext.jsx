@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { TaskContext } from "./taskContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export const TaskProvider = ({ children }) => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ export const TaskProvider = ({ children }) => {
         try {
             setLoading(true);
 
-            const response = await fetch("http://localhost:3000/tasks");
+            const response = await fetch(`${API_URL}/tasks`);
 
             if (!response.ok) throw new Error("Failed to fetch tasks");
             const data = await response.json();
@@ -30,7 +32,7 @@ export const TaskProvider = ({ children }) => {
 
     const addTask = async (newTask) => {
         try {
-            const response = await fetch("http://localhost:3000/tasks", {
+            const response = await fetch(`${API_URL}/tasks`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -56,7 +58,7 @@ export const TaskProvider = ({ children }) => {
     const updateTask = async (id, updatedTask) => {
         console.log("Updating task with ID:", id, "with data:", updatedTask);
         try {
-            const response = await fetch(`http://localhost:3000/tasks/${id}`, {
+            const response = await fetch(`${API_URL}/tasks/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -79,7 +81,7 @@ export const TaskProvider = ({ children }) => {
 
     const deleteTask = async (id) => {
         try {
-            const response = await fetch(`http://localhost:3000/tasks/${id}`, {
+            const response = await fetch(`${API_URL}/tasks/${id}`, {
                 method: "DELETE",
             });
 

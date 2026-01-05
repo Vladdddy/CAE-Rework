@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { NoteContext } from "./noteContext";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export const NoteProvider = ({ children }) => {
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -13,7 +15,7 @@ export const NoteProvider = ({ children }) => {
         try {
             setLoading(true);
 
-            const response = await fetch(`http://localhost:3000/notes/${id}`);
+            const response = await fetch(`${API_URL}/notes/${id}`);
             if (!response.ok) throw new Error("Failed to fetch notes");
             const data = await response.json();
 
@@ -28,20 +30,17 @@ export const NoteProvider = ({ children }) => {
     const createNote = async (taskId, userId, description) => {
         console.log("Creating note for task ID:", taskId);
         try {
-            const response = await fetch(
-                `http://localhost:3000/notes/${taskId}`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        createdBy: userId,
-                        description: description,
-                        createdTime: new Date().toISOString(),
-                    }),
-                }
-            );
+            const response = await fetch(`${API_URL}/notes/${taskId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    createdBy: userId,
+                    description: description,
+                    createdTime: new Date().toISOString(),
+                }),
+            });
 
             if (!response.ok) throw new Error("Failed to create note");
             const data = await response.json();
