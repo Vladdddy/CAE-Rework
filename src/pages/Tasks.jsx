@@ -16,6 +16,8 @@ import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
+import ArrowRightIcon from "../assets/icons/arrow-right.tsx";
+import { GetSimulatorsList } from "../functions/Simulators.jsx";
 
 function Tasks() {
     const { tasks, loading, fetchTasks } = useTasks();
@@ -30,9 +32,14 @@ function Tasks() {
     const [popupMessage, setPopupMessage] = useState("");
     const [startDate, setStartDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(true);
+    const [selectedAssignees, setSelectedAssignees] = useState("");
     // eslint-disable-next-line no-unused-vars
     const [selectedDay, setSelectedDay] = useState(null);
-    const { currentUserRole } = useUsers();
+    const [selectedStatus, setSelectedStatus] = useState("");
+    const { currentUserRole, users } = useUsers();
+    const [showFilters, setShowFilters] = useState(false);
+    const simulators = GetSimulatorsList();
+    const [selectedSimulator, setSelectedSimulator] = useState("");
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -108,21 +115,52 @@ function Tasks() {
         }
     };
 
+    const showFiltersFunction = () => {
+        setShowFilters(!showFilters);
+    };
+
     const [searchQuery, setSearchQuery] = useState("");
 
     const filteredTasks = useMemo(() => {
-        if (!searchQuery.trim()) return tasks;
+        let result = tasks;
 
-        const query = searchQuery.toLowerCase();
+        // Apply filter selections
+        if (selectedSimulator) {
+            result = result.filter(
+                (task) => task.SIMULATOR === selectedSimulator,
+            );
+        }
 
-        return tasks.filter(
-            (task) =>
-                task.TITLE?.toLowerCase().includes(query) ||
-                task.DESCRIPTION?.toLowerCase().includes(query) ||
-                task.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                task.STATUS?.toLowerCase().includes(query),
-        );
-    }, [tasks, searchQuery]);
+        if (selectedAssignees) {
+            result = result.filter(
+                (task) => task.ASSIGNED_TO === selectedAssignees,
+            );
+        }
+
+        if (selectedStatus) {
+            result = result.filter((task) => task.STATUS === selectedStatus);
+        }
+
+        // Apply search query
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(
+                (task) =>
+                    task.TITLE?.toLowerCase().includes(query) ||
+                    task.DESCRIPTION?.toLowerCase().includes(query) ||
+                    task.ASSIGNED_TO?.toLowerCase().includes(query) ||
+                    task.STATUS?.toLowerCase().includes(query),
+            );
+        }
+
+        return result;
+    }, [
+        tasks,
+        searchQuery,
+        selectedSimulator,
+        selectedAssignees,
+        selectedStatus,
+    ]);
 
     return (
         <section className="flex h-screen">
@@ -176,7 +214,10 @@ function Tasks() {
 
                                     <div className="flex items-center w-full justify-between gap-4">
                                         <div className="flex items-center gap-4">
-                                            <FilterIcon className="w-6 text-[var(--black)] icon cursor-pointer" />
+                                            <FilterIcon
+                                                className="w-6 text-[var(--black)] icon cursor-pointer"
+                                                onClick={showFiltersFunction}
+                                            />
                                             <div className="relative w-[20vw]">
                                                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                                                 <input
@@ -242,6 +283,159 @@ function Tasks() {
                                             </div>
                                         </div> */}
                                     </div>
+
+                                    {showFilters && (
+                                        <div className="flex flex-row gap-4">
+                                            <div className="flex flex-col gap-1 w-full">
+                                                <h3 className="text-sm text-[var(--gray)]">
+                                                    Stato
+                                                </h3>
+
+                                                <div className="relative">
+                                                    <select
+                                                        name=""
+                                                        id=""
+                                                        value={selectedStatus}
+                                                        onChange={(e) => {
+                                                            setSelectedStatus(
+                                                                e.target.value,
+                                                            );
+                                                        }}
+                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="">
+                                                            ...
+                                                        </option>
+                                                        <option value="Non iniziato">
+                                                            Non iniziato
+                                                        </option>
+                                                        <option value="In corso">
+                                                            In corso
+                                                        </option>
+                                                        <option value="Completato">
+                                                            Completato
+                                                        </option>
+                                                        <option value="Non completato">
+                                                            Non completato
+                                                        </option>
+                                                        <option value="Da definire">
+                                                            Da definire
+                                                        </option>
+                                                    </select>
+                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col gap-1 w-full">
+                                                <h3 className="text-sm text-[var(--gray)]">
+                                                    Simulatore
+                                                </h3>
+                                                <div className="relative">
+                                                    <select
+                                                        name=""
+                                                        id=""
+                                                        value={
+                                                            selectedSimulator
+                                                        }
+                                                        onChange={(e) => {
+                                                            setSelectedSimulator(
+                                                                e.target.value,
+                                                            );
+                                                        }}
+                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="">
+                                                            ...
+                                                        </option>
+                                                        {simulators.map(
+                                                            (
+                                                                simulator,
+                                                                index,
+                                                            ) => (
+                                                                <option
+                                                                    key={index}
+                                                                    value={
+                                                                        simulator
+                                                                    }
+                                                                >
+                                                                    {simulator}
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </select>
+                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col gap-1 w-full">
+                                                <h3 className="text-sm text-[var(--gray)]">
+                                                    Assegnatario
+                                                </h3>
+                                                <div className="relative">
+                                                    <select
+                                                        name=""
+                                                        id=""
+                                                        value={
+                                                            selectedAssignees
+                                                        }
+                                                        onChange={(e) => {
+                                                            setSelectedAssignees(
+                                                                e.target.value,
+                                                            );
+                                                        }}
+                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="">
+                                                            ...
+                                                        </option>
+                                                        {users.map(
+                                                            (user, index) => (
+                                                                <option
+                                                                    key={index}
+                                                                    value={
+                                                                        user.Username
+                                                                    }
+                                                                >
+                                                                    {user.Username.split(
+                                                                        ".",
+                                                                    )[0]
+                                                                        .charAt(
+                                                                            0,
+                                                                        )
+                                                                        .toUpperCase() +
+                                                                        user.Username.split(
+                                                                            ".",
+                                                                        )[0].slice(
+                                                                            1,
+                                                                        )}
+                                                                    {user.Username.split(
+                                                                        ".",
+                                                                    )[1] && (
+                                                                        <>
+                                                                            {" "}
+                                                                            {user.Username.split(
+                                                                                ".",
+                                                                            )[1]
+                                                                                .charAt(
+                                                                                    0,
+                                                                                )
+                                                                                .toUpperCase() +
+                                                                                user.Username.split(
+                                                                                    ".",
+                                                                                )[1].slice(
+                                                                                    1,
+                                                                                )}
+                                                                        </>
+                                                                    )}
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </select>
+                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <Table
                                         type="tasks"
