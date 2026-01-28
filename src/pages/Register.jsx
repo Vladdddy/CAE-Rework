@@ -162,6 +162,11 @@ function Register() {
                         )}
                     </div>
 
+                    <div className="flex flex-row gap-1 items-center">
+                        <h3 className="text-sm text-[var(--gray)]">Utente:</h3>
+                        <p className="text-sm text-[var(--black)]">{`${name.toLowerCase()}.${surname.toLowerCase()}`}</p>
+                    </div>
+
                     <div className="flex flex-col w-full gap-2 mt-4">
                         <button
                             className="btn"
