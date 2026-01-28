@@ -193,16 +193,6 @@ function Sidebar(props) {
                                 .charAt(0)
                                 .toUpperCase() +
                                 currentUsername.split(".")[0].slice(1)}
-                            {currentUsername.split(".")[1] && (
-                                <>
-                                    {" "}
-                                    {currentUsername
-                                        .split(".")[1]
-                                        .charAt(0)
-                                        .toUpperCase() +
-                                        currentUsername.split(".")[1].slice(1)}
-                                </>
-                            )}
                         </p>
                         <p className="text-xs text-[var(--gray)]">
                             {currentUserRole}
