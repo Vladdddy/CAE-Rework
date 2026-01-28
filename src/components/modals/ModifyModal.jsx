@@ -8,13 +8,14 @@ import NightIcon from "../../assets/icons/night.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
+import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 
 function ModifyModal({ onClose, onSuccess, task }) {
     const [selectedCategory, setSelectedCategory] = useState(
-        task.CATEGORY || "Routine Task"
+        task.CATEGORY || "Routine Task",
     );
     const [selectedStatus, setSelectedStatus] = useState(
-        task.STATUS || "Da definire"
+        task.STATUS || "Da definire",
     );
     const [selectedRadio, setSelectedRadio] = useState(task.TIME || "Diurno");
     const [selectedAssignees, setSelectedAssignees] = useState(
@@ -22,29 +23,31 @@ function ModifyModal({ onClose, onSuccess, task }) {
             ? typeof task.ASSIGNED_TO === "string"
                 ? task.ASSIGNED_TO.split(", ").filter((name) => name.trim())
                 : task.ASSIGNED_TO
-            : []
+            : [],
     );
     const [title, setTitle] = useState(task.TITLE || "");
     const [description, setDescription] = useState(task.DESCRIPTION || "");
     const [selectedSubCategory, setSelectedSubCategory] = useState(
-        task.SUBCATEGORY || "PM"
+        task.SUBCATEGORY || "PM",
     );
     const [selectedDetail, setSelectedDetail] = useState(
-        task.EXTRADETAIL || "VISUAL"
+        task.EXTRADETAIL || "VISUAL",
     );
     const [selectedDate, setSelectedDate] = useState(
         task.DATE
             ? task.DATE.split("T")[0]
-            : new Date().toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
     );
     const [titleError, setTitleError] = useState(false);
-
+    const { createNote } = useNotes();
+    // eslint-disable-next-line no-unused-vars
+    const [noteDescription, setNoteDescription] = useState("");
     const simulators = GetSimulatorsList();
     const [selectedSimulator, setSelectedSimulator] = useState(
-        task.SIMULATOR || simulators[0]
+        task.SIMULATOR || simulators[0],
     );
     const { updateTask } = useTasks();
-    const { users } = useUsers();
+    const { users, currentUserId } = useUsers();
 
     const handleRadioChange = (event) => {
         setSelectedRadio(event.target.value);
@@ -54,7 +57,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
         setSelectedAssignees((prev) =>
             prev.includes(name)
                 ? prev.filter((item) => item !== name)
-                : [...prev, name]
+                : [...prev, name],
         );
     };
 
@@ -82,6 +85,18 @@ function ModifyModal({ onClose, onSuccess, task }) {
 
         const result = await updateTask(task.ID, modifiedTask);
 
+        if (result.success) {
+            const changedTaskNote = await createNote(
+                task.ID,
+                currentUserId,
+                "Ha modificato la task",
+            );
+
+            if (changedTaskNote.success) {
+                setNoteDescription("");
+            }
+        }
+
         console.log("Passing modified task:", modifiedTask);
 
         onClose();
@@ -91,7 +106,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
                 result.success,
                 result.success
                     ? "Hai modificato la task con successo"
-                    : "Errore durante la modifica della task"
+                    : "Errore durante la modifica della task",
             );
         }
     };
@@ -245,7 +260,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
                                             >
                                                 {category}
                                             </option>
-                                        )
+                                        ),
                                     )}
                                 </select>
                                 <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
@@ -273,7 +288,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
                                             >
                                                 {subCategory}
                                             </option>
-                                        )
+                                        ),
                                     )}
                                 </select>
                                 <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
@@ -299,7 +314,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
                                             <option key={index} value={detail}>
                                                 {detail}
                                             </option>
-                                        )
+                                        ),
                                     )}
                                 </select>
                                 <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
@@ -410,7 +425,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
                                     }
                                     className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
                                         selectedAssignees.includes(
-                                            user.Username
+                                            user.Username,
                                         )
                                             ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
                                             : "text-[var(--black)]"
@@ -421,7 +436,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
                                         name=""
                                         id={user.Username}
                                         checked={selectedAssignees.includes(
-                                            user.Username
+                                            user.Username,
                                         )}
                                         onChange={() =>
                                             handleCheckboxChange(user.Username)
@@ -437,7 +452,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
                                             .charAt(0)
                                             .toUpperCase() +
                                             user.Username.split(".")[0].slice(
-                                                1
+                                                1,
                                             )}
                                         {user.Username.split(".")[1] && (
                                             <>
@@ -446,7 +461,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
                                                     .charAt(0)
                                                     .toUpperCase() +
                                                     user.Username.split(
-                                                        "."
+                                                        ".",
                                                     )[1].slice(1)}
                                             </>
                                         )}
