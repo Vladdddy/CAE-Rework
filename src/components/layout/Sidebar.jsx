@@ -66,29 +66,35 @@ function Sidebar(props) {
                             Dashboard
                         </p>
                     </Link>
-                    <Link
-                        to="/tasks"
-                        className={`flex flex-row items-center gap-2 transition-all duration-300 ${
-                            props.active === "tasks"
-                                ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
-                                      !props.isSidebarOpen
-                                          ? "px-2"
-                                          : "pr-8 pl-2 w-48"
-                                  } py-2`
-                                : "p-2 hover:bg-[var(--light-primary)] rounded-md"
-                        } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
-                    >
-                        <TasksIcon className="w-6 " />
-                        <p
-                            className={`transition-opacity duration-300 ${
-                                props.isSidebarOpen
-                                    ? "opacity-100"
-                                    : "opacity-0 hidden"
-                            }`}
-                        >
-                            Tasks
-                        </p>
-                    </Link>
+                    {(currentUserRole === "Admin" ||
+                        currentUserRole === "Shift Leader") && (
+                        <>
+                            <Link
+                                to="/tasks"
+                                className={`flex flex-row items-center gap-2 transition-all duration-300 ${
+                                    props.active === "tasks"
+                                        ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
+                                              !props.isSidebarOpen
+                                                  ? "px-2"
+                                                  : "pr-8 pl-2 w-48"
+                                          } py-2`
+                                        : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                                } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
+                            >
+                                <TasksIcon className="w-6 " />
+                                <p
+                                    className={`transition-opacity duration-300 ${
+                                        props.isSidebarOpen
+                                            ? "opacity-100"
+                                            : "opacity-0 hidden"
+                                    }`}
+                                >
+                                    Tasks
+                                </p>
+                            </Link>
+                        </>
+                    )}
+
                     <Link
                         to="/logbook"
                         className={`flex flex-row items-center gap-2 transition-all duration-300 ${

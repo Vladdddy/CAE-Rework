@@ -14,6 +14,7 @@ import CreateModal from "../components/modals/CreateModal.jsx";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
+import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 
 function Tasks() {
@@ -23,7 +24,7 @@ function Tasks() {
         return saved !== null ? JSON.parse(saved) : true;
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
+    //const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
     const [popupType, setPopupType] = useState("success");
     const [popupMessage, setPopupMessage] = useState("");
@@ -31,6 +32,7 @@ function Tasks() {
     const [showCalendar, setShowCalendar] = useState(true);
     // eslint-disable-next-line no-unused-vars
     const [selectedDay, setSelectedDay] = useState(null);
+    const { currentUserRole } = useUsers();
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -66,7 +68,7 @@ function Tasks() {
             message ||
                 (isSuccess
                     ? "Hai creato la task con successo"
-                    : "Errore durante la creazione della task")
+                    : "Errore durante la creazione della task"),
         );
         setShowPopup(true);
         setTimeout(() => {
@@ -74,13 +76,13 @@ function Tasks() {
         }, 2000);
     };
 
-    const handleSimulatorClick = () => {
+    /*const handleSimulatorClick = () => {
         setIsSimulatorModalOpen(true);
-    };
+    };*/
 
-    const handleCloseSimulatorModal = () => {
+    /*const handleCloseSimulatorModal = () => {
         setIsSimulatorModalOpen(false);
-    };
+    };*/
 
     const handleExportPDF = () => {
         try {
@@ -89,7 +91,7 @@ function Tasks() {
             setPopupMessage(
                 `PDF esportato con successo! (${tasksExported} task${
                     tasksExported !== 1 ? "s" : ""
-                })`
+                })`,
             );
             setShowPopup(true);
             setTimeout(() => {
@@ -118,7 +120,7 @@ function Tasks() {
                 task.TITLE?.toLowerCase().includes(query) ||
                 task.DESCRIPTION?.toLowerCase().includes(query) ||
                 task.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                task.STATUS?.toLowerCase().includes(query)
+                task.STATUS?.toLowerCase().includes(query),
         );
     }, [tasks, searchQuery]);
 
@@ -181,7 +183,7 @@ function Tasks() {
                                                     value={searchQuery}
                                                     onChange={(e) =>
                                                         setSearchQuery(
-                                                            e.target.value
+                                                            e.target.value,
                                                         )
                                                     }
                                                     type="search"
@@ -190,13 +192,21 @@ function Tasks() {
                                                 />
                                             </div>
 
-                                            <button
-                                                className="btn flex gap-2 items-center"
-                                                onClick={handleTaskClick}
-                                            >
-                                                <TaskIcon className="w-6" />
-                                                <p>Aggiungi task</p>
-                                            </button>
+                                            {(currentUserRole === "Admin" ||
+                                                currentUserRole ===
+                                                    "Shift Leader") && (
+                                                <>
+                                                    <button
+                                                        className="btn flex gap-2 items-center"
+                                                        onClick={
+                                                            handleTaskClick
+                                                        }
+                                                    >
+                                                        <TaskIcon className="w-6" />
+                                                        <p>Aggiungi task</p>
+                                                    </button>
+                                                </>
+                                            )}
 
                                             {/* {GetTodayDate(startDate) ===
                                                 GetTodayDate(new Date()) && (
@@ -253,9 +263,9 @@ function Tasks() {
                     onSuccess={handleSuccess}
                 />
             )}
-            {isSimulatorModalOpen && (
+            {/*isSimulatorModalOpen && (
                 <SimulatorModal onClose={handleCloseSimulatorModal} />
-            )}
+            )*/}
             {showPopup && <Popup type={popupType} message={popupMessage} />}
         </section>
     );

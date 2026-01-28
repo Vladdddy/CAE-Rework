@@ -22,7 +22,7 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
         const savedMode = localStorage.getItem("darkMode");
         return savedMode === "true";
     });
-    const { currentUsername } = useUsers();
+    const { currentUsername, currentUserRole } = useUsers();
 
     useEffect(() => {
         if (isDarkMode) {
@@ -49,7 +49,7 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
             message ||
                 (isSuccess
                     ? "Hai creato la task con successo"
-                    : "Errore durante la creazione della task")
+                    : "Errore durante la creazione della task"),
         );
         setShowPopup(true);
         setTimeout(() => {
@@ -98,13 +98,18 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                         className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
                     />
                 </div>
-                <button
-                    className="btn flex gap-2 items-center"
-                    onClick={handleTaskClick}
-                >
-                    <AddIcon className="w-6" />
-                    <p className="">Programma task</p>
-                </button>
+                {(currentUserRole === "Admin" ||
+                    currentUserRole === "Shift Leader") && (
+                    <>
+                        <button
+                            className="btn flex gap-2 items-center"
+                            onClick={handleTaskClick}
+                        >
+                            <AddIcon className="w-6" />
+                            <p className="">Programma task</p>
+                        </button>
+                    </>
+                )}
             </div>
             {isDarkMode ? (
                 <DayIcon

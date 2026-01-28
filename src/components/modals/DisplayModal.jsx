@@ -17,6 +17,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const { deleteTask, fetchTasks, updateTask } = useTasks();
     const { notes, fetchNotes, createNote } = useNotes();
     const { users, currentUserId } = useUsers();
+    const { currentUserRole } = useUsers();
 
     const getUsernameById = (userId) => {
         const user = users.find((u) => u.ID === userId);
@@ -55,7 +56,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
             onSuccess(
                 result.success,
-                `Task "${taskInfo.TITLE}" eliminata con successo`
+                `Task "${taskInfo.TITLE}" eliminata con successo`,
             );
         }
     };
@@ -84,7 +85,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             const result = { success: true };
             onSuccess(
                 result.success,
-                `Task "${taskInfo.TITLE}" modificata con successo`
+                `Task "${taskInfo.TITLE}" modificata con successo`,
             );
         }
     };
@@ -109,6 +110,18 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
         if (result.success) {
             await fetchTasks();
+
+            const changeStatusNote = await createNote(
+                taskInfo.ID,
+                currentUserId,
+                "Stato modificato da " +
+                    `"${taskInfo.STATUS}" a "${newStatus}"`,
+            );
+
+            if (changeStatusNote.success) {
+                setNoteDescription("");
+            }
+
             if (onSuccess) {
                 onSuccess(true, `Stato aggiornato a "${newStatus}"`);
             }
@@ -123,7 +136,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         const result = await createNote(
             taskInfo.ID,
             currentUserId,
-            noteDescription
+            noteDescription,
         );
 
         if (result.success) {
@@ -222,7 +235,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 <div className="flex items-center gap-1">
                                                     <p className="text-sm text-[var(--black)]">
                                                         {formatDate(
-                                                            taskInfo?.DATE
+                                                            taskInfo?.DATE,
                                                         ) || "N/A"}
                                                     </p>
 
@@ -369,26 +382,32 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                             </div>
 
                             <div className="flex items-center justify-between border-t border-[var(--light-primary)] pt-4 mt-4">
-                                <button
-                                    className="btn delete"
-                                    onClick={() => handleDelete()}
-                                >
-                                    Elimina
-                                </button>
+                                {(currentUserRole === "Admin" ||
+                                    currentUserRole === "Shift Leader") && (
+                                    <button
+                                        className="btn delete"
+                                        onClick={() => handleDelete()}
+                                    >
+                                        Elimina
+                                    </button>
+                                )}
 
-                                <div className="flex gap-1">
+                                <div className="flex gap-1 ml-auto">
                                     <button
                                         className="btn gray-btn"
                                         onClick={onClose}
                                     >
                                         Chiudi
                                     </button>
-                                    <button
-                                        className="btn flex items-center gap-1"
-                                        onClick={handleModify}
-                                    >
-                                        <p>Modifica</p>
-                                    </button>
+                                    {(currentUserRole === "Admin" ||
+                                        currentUserRole === "Shift Leader") && (
+                                        <button
+                                            className="btn flex items-center gap-1"
+                                            onClick={handleModify}
+                                        >
+                                            <p>Modifica</p>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </>
@@ -405,7 +424,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         >
                                             <h3 className="text-sm text-[var(--gray)] truncate w-20">
                                                 {getUsernameById(
-                                                    note.CREATEDBY
+                                                    note.CREATEDBY,
                                                 )}
                                                 :
                                             </h3>
@@ -415,7 +434,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 </p>
                                                 <span className="flex justify-end text-xs text-[var(--black)] mt-2">
                                                     {formatDateTime(
-                                                        note.CREATEDDATE
+                                                        note.CREATEDDATE,
                                                     )}
                                                 </span>
                                             </div>
