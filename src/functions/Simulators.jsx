@@ -55,10 +55,10 @@ export function GetSimulators({
                                               // Properly format the date with zero-padding
                                               const year = date.getFullYear();
                                               const month = String(
-                                                  date.getMonth() + 1
+                                                  date.getMonth() + 1,
                                               ).padStart(2, "0");
                                               const day = String(
-                                                  date.getDate()
+                                                  date.getDate(),
                                               ).padStart(2, "0");
                                               const expectedDate = `${year}-${month}-${day}T00:00:00.000Z`;
 
@@ -70,7 +70,7 @@ export function GetSimulators({
                                                   matchesSimulator &&
                                                   matchesDate
                                               );
-                                          }
+                                          },
                                       );
 
                                       return filteredTasks.length > 0 ? (
@@ -85,7 +85,7 @@ export function GetSimulators({
                                                       key={task.id}
                                                       title={task?.TITLE}
                                                       date={formatDate(
-                                                          task?.DATE
+                                                          task?.DATE,
                                                       )}
                                                       assignedTo={
                                                           task?.ASSIGNED_TO
@@ -102,85 +102,87 @@ export function GetSimulators({
                                       ) : null;
                                   })()
                                 : status
-                                ? (() => {
-                                      const filteredTasks = taskList.filter(
-                                          (task) => {
-                                              const matchesStatus =
-                                                  task?.STATUS === status;
-                                              const matchesSimulator =
-                                                  task?.SIMULATOR === simulator;
-                                              return (
-                                                  matchesStatus &&
-                                                  matchesSimulator
-                                              );
-                                          }
-                                      );
+                                  ? (() => {
+                                        const filteredTasks = taskList.filter(
+                                            (task) => {
+                                                const matchesStatus =
+                                                    task?.STATUS === status;
+                                                const matchesSimulator =
+                                                    task?.SIMULATOR ===
+                                                    simulator;
+                                                return (
+                                                    matchesStatus &&
+                                                    matchesSimulator
+                                                );
+                                            },
+                                        );
 
-                                      return filteredTasks.length > 0 ? (
-                                          <>
-                                              {type === "dashboard" && (
-                                                  <p className="mt-4 text-sm text-[var(--primary)]">
-                                                      {simulator}
-                                                  </p>
-                                              )}
-                                              {filteredTasks.map((task) => (
-                                                  <Task
-                                                      key={task.id}
-                                                      title={task?.TITLE}
-                                                      date={formatDate(
-                                                          task?.DATE
-                                                      )}
-                                                      assignedTo={
-                                                          task?.ASSIGNED_TO
-                                                      }
-                                                      status={task?.STATUS}
-                                                      type="dashboard"
-                                                      wholeTask={task}
-                                                      onDeleteSuccess={
-                                                          onDeleteSuccess
-                                                      }
-                                                  />
-                                              ))}
-                                          </>
-                                      ) : null;
-                                  })()
-                                : (() => {
-                                      const filteredTasks = taskList.filter(
-                                          (task) => {
-                                              const matchesSimulator =
-                                                  task?.SIMULATOR === simulator;
-                                              return matchesSimulator;
-                                          }
-                                      );
+                                        return filteredTasks.length > 0 ? (
+                                            <>
+                                                {type === "dashboard" && (
+                                                    <p className="mt-4 text-sm text-[var(--primary)]">
+                                                        {simulator}
+                                                    </p>
+                                                )}
+                                                {filteredTasks.map((task) => (
+                                                    <Task
+                                                        key={task.id}
+                                                        title={task?.TITLE}
+                                                        date={formatDate(
+                                                            task?.DATE,
+                                                        )}
+                                                        assignedTo={
+                                                            task?.ASSIGNED_TO
+                                                        }
+                                                        status={task?.STATUS}
+                                                        type="dashboard"
+                                                        wholeTask={task}
+                                                        onDeleteSuccess={
+                                                            onDeleteSuccess
+                                                        }
+                                                    />
+                                                ))}
+                                            </>
+                                        ) : null;
+                                    })()
+                                  : (() => {
+                                        const filteredTasks = taskList.filter(
+                                            (task) => {
+                                                const matchesSimulator =
+                                                    task?.SIMULATOR ===
+                                                    simulator;
+                                                return matchesSimulator;
+                                            },
+                                        );
 
-                                      return filteredTasks.length > 0 ? (
-                                          <>
-                                              {type === "dashboard" && (
-                                                  <p className="mt-4 text-sm text-[var(--primary)]">
-                                                      {simulator}
-                                                  </p>
-                                              )}
-                                              {filteredTasks.map((task) => (
-                                                  <Task
-                                                      key={task.id}
-                                                      title={task?.TITLE}
-                                                      date={formatDate(
-                                                          task?.DATE
-                                                      )}
-                                                      assignedTo={
-                                                          task?.ASSIGNED_TO
-                                                      }
-                                                      status={task?.STATUS}
-                                                      type="dashboard"
-                                                      wholeTask={task}
-                                                      onDeleteSuccess={
-                                                          onDeleteSuccess
-                                                      }
-                                                  />
-                                              ))}
-                                          </>
-                                      ) : null;
-                                  })()
+                                        return filteredTasks.length > 0 ? (
+                                            <>
+                                                {type === "dashboard" && (
+                                                    <p className="mt-4 text-sm text-[var(--primary)]">
+                                                        {simulator}
+                                                    </p>
+                                                )}
+                                                {filteredTasks.map((task) => (
+                                                    <Task
+                                                        key={task.id}
+                                                        title={task?.TITLE}
+                                                        date={formatDate(
+                                                            task?.DATE,
+                                                        )}
+                                                        assignedTo={
+                                                            task?.ASSIGNED_TO
+                                                        }
+                                                        status={task?.STATUS}
+                                                        type="dashboard"
+                                                        wholeTask={task}
+                                                        onDeleteSuccess={
+                                                            onDeleteSuccess
+                                                        }
+                                                    />
+                                                ))}
+                                            </>
+                                        ) : null;
+                                    })()
                             : null}
                     </div>
                 ))}
@@ -243,14 +245,14 @@ export function GetTableSimulators({
                     <div key={index} className={"flex flex-col gap-2"}>
                         <div className="flex items-center gap-1">
                             {/* Simulatore */}
-                            {/*{index === 3 ? (
+                            {/*index === 3 ? (
                                 <div
                                     onClick={() => handleSimulatorClick(true)}
                                     className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
                                 >
                                     <ClockIcon className="w-4 text-[#ffffff]" />
                                 </div>
-                            ) : null}*/}
+                            ) : null*/}
                             <p className="text-center text-[var(--primary)] bg-[var(--light-primary)] rounded-md px-2 flex-1">
                                 {simulator}
                             </p>
@@ -265,10 +267,10 @@ export function GetTableSimulators({
                                           const matchesSimulator =
                                               task?.SIMULATOR === simulator;
                                           const month = String(
-                                              date.getMonth() + 1
+                                              date.getMonth() + 1,
                                           ).padStart(2, "0");
                                           const day = String(
-                                              date.getDate()
+                                              date.getDate(),
                                           ).padStart(2, "0");
                                           const formattedDate = `${date.getFullYear()}-${month}-${day}T00:00:00.000Z`;
 
@@ -280,7 +282,7 @@ export function GetTableSimulators({
                                               matchesSimulator &&
                                               matchesDate
                                           );
-                                      }
+                                      },
                                   );
 
                                   return filteredTasks.length > 0 ? (

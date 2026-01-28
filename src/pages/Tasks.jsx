@@ -26,7 +26,7 @@ function Tasks() {
         return saved !== null ? JSON.parse(saved) : true;
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
-    //const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
+    const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
     const [popupType, setPopupType] = useState("success");
     const [popupMessage, setPopupMessage] = useState("");
@@ -83,13 +83,13 @@ function Tasks() {
         }, 2000);
     };
 
-    /*const handleSimulatorClick = () => {
+    const handleSimulatorClick = () => {
         setIsSimulatorModalOpen(true);
-    };*/
+    };
 
-    /*const handleCloseSimulatorModal = () => {
+    const handleCloseSimulatorModal = () => {
         setIsSimulatorModalOpen(false);
-    };*/
+    };
 
     const handleExportPDF = () => {
         try {
@@ -249,20 +249,20 @@ function Tasks() {
                                                 </>
                                             )}
 
-                                            {/* {GetTodayDate(startDate) ===
+                                            {GetTodayDate(startDate) ===
                                                 GetTodayDate(new Date()) && (
                                                 <button
                                                     className="btn secondary flex gap-2 items-center"
                                                     onClick={() =>
                                                         handleSimulatorClick(
-                                                            true
+                                                            true,
                                                         )
                                                     }
                                                 >
                                                     <SimulatorIcon className="w-6" />
                                                     <p>Imposta simulatore</p>
                                                 </button>
-                                            )} */}
+                                            )}
                                         </div>
 
                                         {/* <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
@@ -457,9 +457,9 @@ function Tasks() {
                     onSuccess={handleSuccess}
                 />
             )}
-            {/*isSimulatorModalOpen && (
+            {isSimulatorModalOpen && (
                 <SimulatorModal onClose={handleCloseSimulatorModal} />
-            )*/}
+            )}
             {showPopup && <Popup type={popupType} message={popupMessage} />}
         </section>
     );
