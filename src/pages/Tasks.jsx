@@ -93,7 +93,7 @@ function Tasks() {
 
     const handleExportPDF = () => {
         try {
-            const tasksExported = exportTasksToPDF(tasks, startDate);
+            const tasksExported = exportTasksToPDF(filteredTasks, startDate);
             setPopupType("success");
             setPopupMessage(
                 `PDF esportato con successo! (${tasksExported} task${
