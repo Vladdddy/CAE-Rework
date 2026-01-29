@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react"; // Added useEffect import
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import CalendarIcon from "../assets/icons/calendar.tsx";
@@ -11,6 +11,17 @@ export default function DatePickerComponent({
     isCalendar,
 }) {
     const datePickerRef = useRef(null);
+
+    useEffect(() => {
+        if (startDate) {
+            const year = startDate.getFullYear();
+            const month = String(startDate.getMonth() + 1).padStart(2, "0");
+            const day = String(startDate.getDate()).padStart(2, "0");
+            const dateString = `${year}-${month}-${day}`;
+
+            localStorage.setItem("selectedDate", dateString);
+        }
+    }, [startDate]);
 
     const formatDate = (date, includeDay = false) => {
         const months = [

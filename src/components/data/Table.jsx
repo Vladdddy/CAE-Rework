@@ -2,8 +2,15 @@ import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import { GetTableSimulators } from "../../functions/Simulators.jsx";
 import { GetTaskCountTime } from "../../functions/TaskLength.jsx";
+import { useEffect, useState } from "react";
 
 function Table({ type, loading, taskList, date, onDeleteSuccess }) {
+    const [localDate, setLocalDate] = useState(date);
+
+    useEffect(() => {
+        setLocalDate(date);
+    }, [date]);
+
     return (
         <div className="grid grid-cols-1 gap-16 mt-4">
             <div className="overflow-x-auto">
@@ -16,7 +23,7 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                                 <GetTaskCountTime
                                     filteredTasks={taskList}
                                     time="Diurno"
-                                    date={date}
+                                    date={localDate}
                                 />
                                 {/*<span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
                                     2 logbook

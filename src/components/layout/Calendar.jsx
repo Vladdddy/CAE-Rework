@@ -105,7 +105,7 @@ function Calendar({ startDate, setStartDate, onDayClick }) {
                                         <div className="flex items-center justify-between w-full gap-1">
                                             {tasks.filter((task) => {
                                                 const taskDate = new Date(
-                                                    task.DATE
+                                                    task.DATE,
                                                 );
                                                 return (
                                                     taskDate.getDate() ===
@@ -130,7 +130,7 @@ function Calendar({ startDate, setStartDate, onDayClick }) {
                                                                 (task) => {
                                                                     const taskDate =
                                                                         new Date(
-                                                                            task.DATE
+                                                                            task.DATE,
                                                                         );
                                                                     return (
                                                                         taskDate.getDate() ===
@@ -140,7 +140,7 @@ function Calendar({ startDate, setStartDate, onDayClick }) {
                                                                         taskDate.getFullYear() ===
                                                                             startDate.getFullYear()
                                                                     );
-                                                                }
+                                                                },
                                                             ).length
                                                         )}
                                                     </p>

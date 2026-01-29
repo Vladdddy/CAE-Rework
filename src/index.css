@@ -78,6 +78,14 @@ body {
     }
 }
 
+.cursor-not-allowed {
+    cursor: auto;
+
+    &:hover {
+        background-color: var(--primary);
+    }
+}
+
 .secondary {
     background-color: transparent;
     color: var(--primary);

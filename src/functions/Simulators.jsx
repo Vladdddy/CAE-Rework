@@ -1,7 +1,8 @@
 import ClockIcon from "../assets/icons/shifts.tsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Task from "../components/data/Task.jsx";
+import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators.js";
 
 export function GetSimulators({
     type,
@@ -203,13 +204,21 @@ export function GetTableSimulators({
     onDeleteSuccess,
 }) {
     const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
+    const [selectedSimulator, setSelectedSimulator] = useState(null);
+    const { simulators: dbSimulators, fetchSimulators } = useSimulators();
 
-    /*const handleSimulatorClick = () => {
+    useEffect(() => {
+        fetchSimulators();
+    }, [date]);
+
+    const handleSimulatorClick = (simulatorData) => {
+        setSelectedSimulator(simulatorData);
         setIsSimulatorModalOpen(true);
-    };*/
+    };
 
     const handleCloseSimulatorModal = () => {
         setIsSimulatorModalOpen(false);
+        setSelectedSimulator(null);
     };
 
     const formatDate = (dateString) => {
@@ -232,6 +241,41 @@ export function GetTableSimulators({
         "Others",
     ];
 
+    const findMatchingSimulator = (simulatorName) => {
+        const selectedDate = localStorage.getItem("selectedDate");
+
+        if (!selectedDate) return null;
+
+        const dateObj = new Date(selectedDate + "T00:00:00");
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const day = String(dateObj.getDate()).padStart(2, "0");
+        const formattedSelectedDate = `${year}-${month}-${day}`;
+
+        /*const today = new Date("T00:00:00");
+        const yearToday = today.getFullYear();
+        const monthToday = String(today.getMonth() + 1).padStart(2, "0");
+        const dayToday = String(today.getDate()).padStart(2, "0");
+        const formattedSelectedDateToday = `${yearToday}-${monthToday}-${dayToday}`;*/
+
+        const match = dbSimulators?.find((dbSim) => {
+            if (!dbSim.CREATION_DATE) return false;
+
+            const dbDateObj = new Date(dbSim.CREATION_DATE);
+            const dbYear = dbDateObj.getFullYear();
+            const dbMonth = String(dbDateObj.getMonth() + 1).padStart(2, "0");
+            const dbDay = String(dbDateObj.getDate()).padStart(2, "0");
+            const dbFormattedDate = `${dbYear}-${dbMonth}-${dbDay}`;
+
+            return (
+                dbSim.NAME === simulatorName &&
+                dbFormattedDate === formattedSelectedDate
+            );
+        });
+
+        return match;
+    };
+
     return (
         <>
             <div
@@ -245,14 +289,22 @@ export function GetTableSimulators({
                     <div key={index} className={"flex flex-col gap-2"}>
                         <div className="flex items-center gap-1">
                             {/* Simulatore */}
-                            {/*index === 3 ? (
-                                <div
-                                    onClick={() => handleSimulatorClick(true)}
-                                    className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
-                                >
-                                    <ClockIcon className="w-4 text-[#ffffff]" />
-                                </div>
-                            ) : null*/}
+                            {(() => {
+                                const matchingSimulator =
+                                    findMatchingSimulator(simulator);
+                                return matchingSimulator ? (
+                                    <div
+                                        onClick={() =>
+                                            handleSimulatorClick(
+                                                matchingSimulator,
+                                            )
+                                        }
+                                        className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
+                                    >
+                                        <ClockIcon className="w-4 text-[#ffffff]" />
+                                    </div>
+                                ) : null;
+                            })()}
                             <p className="text-center text-[var(--primary)] bg-[var(--light-primary)] rounded-md px-2 flex-1">
                                 {simulator}
                             </p>
@@ -307,13 +359,13 @@ export function GetTableSimulators({
                     </div>
                 ))}
 
-                {isSimulatorModalOpen && (
+                {isSimulatorModalOpen && selectedSimulator && (
                     <SimulatorModal
                         onClose={handleCloseSimulatorModal}
-                        simulatorInfo={simulators[3]}
-                        startTime={"08:00"}
-                        endTime={"10:00"}
-                        assignee={"Marco"}
+                        simulatorInfo={selectedSimulator.NAME}
+                        startTime={selectedSimulator.START_HOUR}
+                        endTime={selectedSimulator.END_HOUR}
+                        assignee={selectedSimulator.ASSIGNED_TO}
                     />
                 )}
             </div>

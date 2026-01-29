@@ -124,7 +124,6 @@ function Tasks() {
     const filteredTasks = useMemo(() => {
         let result = tasks;
 
-        // Apply filter selections
         if (selectedSimulator) {
             result = result.filter(
                 (task) => task.SIMULATOR === selectedSimulator,
@@ -443,6 +442,7 @@ function Tasks() {
                                         taskList={filteredTasks}
                                         date={startDate}
                                         onDeleteSuccess={handleSuccess}
+                                        key={startDate.toISOString()}
                                     />
                                 </div>
                             </div>
