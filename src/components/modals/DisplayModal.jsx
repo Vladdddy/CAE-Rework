@@ -442,7 +442,17 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Chiudi
                                     </button>
                                     {(currentUserRole === "Admin" ||
-                                        currentUserRole === "Shift Leader") && (
+                                        currentUserRole === "Shift Leader" ||
+                                        (taskInfo.ASSIGNED_TO &&
+                                            users.find(
+                                                (u) => u.ID === currentUserId,
+                                            )?.Username &&
+                                            taskInfo.ASSIGNED_TO.includes(
+                                                users.find(
+                                                    (u) =>
+                                                        u.ID === currentUserId,
+                                                ).Username,
+                                            ))) && (
                                         <button
                                             className="btn flex items-center gap-1"
                                             onClick={handleModify}
