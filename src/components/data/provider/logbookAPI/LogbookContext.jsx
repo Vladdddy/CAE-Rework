@@ -8,14 +8,22 @@ export const LogbookProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Fetch logbooks once on mount
+    // Fetch logbooks on mount and every 1 minute
     useEffect(() => {
         fetchLogbooks();
+
+        const interval = setInterval(() => {
+            fetchLogbooks(true); // Silent refresh
+        }, 60000); // 60000ms = 1 minute
+
+        return () => clearInterval(interval);
     }, []);
 
-    const fetchLogbooks = async () => {
+    const fetchLogbooks = async (silent = false) => {
         try {
-            setLoading(true);
+            if (!silent) {
+                setLoading(true);
+            }
 
             const response = await fetch(`${API_URL}/logbooks`);
             if (!response.ok) throw new Error("Failed to fetch logbooks");
@@ -25,7 +33,9 @@ export const LogbookProvider = ({ children }) => {
         } catch (err) {
             setError(err.message);
         } finally {
-            setLoading(false);
+            if (!silent) {
+                setLoading(false);
+            }
         }
     };
 

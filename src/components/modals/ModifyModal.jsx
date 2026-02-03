@@ -10,6 +10,7 @@ import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useNotes } from "../data/provider/noteAPI/useNotes.js";
+import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks.js";
 
 function ModifyModal({ onClose, onSuccess, task }) {
     const [selectedCategory, setSelectedCategory] = useState(
@@ -41,6 +42,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
     );
     const [titleError, setTitleError] = useState(false);
     const { createNote } = useNotes();
+    const { createNoteLogbook } = useNoteLogbooks();
     // eslint-disable-next-line no-unused-vars
     const [noteDescription, setNoteDescription] = useState("");
     const simulators = GetSimulatorsList();
@@ -91,12 +93,18 @@ function ModifyModal({ onClose, onSuccess, task }) {
             ? await updateLogbook(task.ID, modifiedTask)
             : await updateTask(task.ID, modifiedTask);
 
-        if (result.success && !isLogbook) {
-            const changedTaskNote = await createNote(
-                task.ID,
-                currentUserId,
-                "Ha modificato la task",
-            );
+        if (result.success) {
+            const changedTaskNote = isLogbook
+                ? await createNoteLogbook(
+                      task.ID,
+                      currentUserId,
+                      "Ha modificato la entry",
+                  )
+                : await createNote(
+                      task.ID,
+                      currentUserId,
+                      "Ha modificato la task",
+                  );
 
             if (changedTaskNote.success) {
                 setNoteDescription("");

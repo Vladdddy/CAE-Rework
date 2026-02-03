@@ -8,14 +8,24 @@ export const TaskProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Fetch tasks once on mount
+    // Fetch tasks on mount and every 1 minute
     useEffect(() => {
         fetchTasks();
+
+        const interval = setInterval(() => {
+            fetchTasks(true); // Silent refresh
+
+            console.log("Tasks refreshed");
+        }, 60000); // 60000ms = 1 minute
+
+        return () => clearInterval(interval);
     }, []);
 
-    const fetchTasks = async () => {
+    const fetchTasks = async (silent = false) => {
         try {
-            setLoading(true);
+            if (!silent) {
+                setLoading(true);
+            }
 
             const response = await fetch(`${API_URL}/tasks`);
 
@@ -26,7 +36,9 @@ export const TaskProvider = ({ children }) => {
         } catch (err) {
             setError(err.message);
         } finally {
-            setLoading(false);
+            if (!silent) {
+                setLoading(false);
+            }
         }
     };
 
@@ -69,8 +81,8 @@ export const TaskProvider = ({ children }) => {
             if (!response.ok) throw new Error("Failed to update task");
             setTasks((prev) =>
                 prev.map((task) =>
-                    task.id === id ? { ...updatedTask, id } : task
-                )
+                    task.id === id ? { ...updatedTask, id } : task,
+                ),
             );
             return { success: true };
         } catch (err) {

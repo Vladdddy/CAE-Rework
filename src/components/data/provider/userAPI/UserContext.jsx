@@ -11,9 +11,15 @@ export const UserProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Fetch users once on mount
+    // Fetch users on mount and every 1 minute
     useEffect(() => {
         fetchUsers();
+
+        const interval = setInterval(() => {
+            fetchUsers(true); // Silent refresh
+        }, 60000); // 60000ms = 1 minute
+
+        return () => clearInterval(interval);
     }, []);
 
     // Validate token and load user info on mount
@@ -29,9 +35,11 @@ export const UserProvider = ({ children }) => {
         loadUserFromToken();
     }, []);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (silent = false) => {
         try {
-            setLoading(true);
+            if (!silent) {
+                setLoading(true);
+            }
 
             const response = await fetch(`${API_URL}/users`);
 
@@ -42,7 +50,9 @@ export const UserProvider = ({ children }) => {
         } catch (err) {
             setError(err.message);
         } finally {
-            setLoading(false);
+            if (!silent) {
+                setLoading(false);
+            }
         }
     };
 
@@ -85,8 +95,8 @@ export const UserProvider = ({ children }) => {
             if (!response.ok) throw new Error("Failed to update user");
             setUsers((prev) =>
                 prev.map((user) =>
-                    user.id === id ? { ...updatedUser, id } : user
-                )
+                    user.id === id ? { ...updatedUser, id } : user,
+                ),
             );
             return { success: true };
         } catch (err) {
