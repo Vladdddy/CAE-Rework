@@ -39,8 +39,6 @@ export const exportTasksToPDF = (tasks, date = null) => {
     doc.setFont(undefined, "normal");
     if (date) {
         doc.text(`Data: ${formatDate(date)}`, margin, yPosition);
-    } else {
-        doc.text("Report Filtrato", margin, yPosition);
     }
 
     yPosition += lineHeight;
@@ -71,9 +69,27 @@ export const exportTasksToPDF = (tasks, date = null) => {
             // Check if we need a new page for task header
             checkPageBreak(20);
 
+            // Determine if this is a logbook or task and set color accordingly
+            const isLogbook = task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
+
+            // Set color based on type: orange for logbooks, blue for tasks
+            if (isLogbook) {
+                doc.setTextColor(255, 140, 0); // Orange color for logbooks
+            } else {
+                doc.setTextColor(0, 102, 204); // Blue/primary color for tasks
+            }
+
             doc.setFontSize(12);
             doc.setFont(undefined, "bold");
-            doc.text(`${index + 1}. ${task.TITLE || "N/A"}`, margin, yPosition);
+            const typeLabel = isLogbook ? "[LOGBOOK]" : "[TASK]";
+            doc.text(
+                `${index + 1}. ${typeLabel} ${task.TITLE || "N/A"}`,
+                margin,
+                yPosition,
+            );
+
+            // Reset to black for the rest of the content
+            doc.setTextColor(0, 0, 0);
 
             yPosition += lineHeight - 2;
             doc.setFontSize(10);
