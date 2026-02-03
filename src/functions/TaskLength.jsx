@@ -1,5 +1,12 @@
 export function GetTaskCountTime({ filteredTasks, time, date }) {
     const taskCount = () => {
+        // If no date provided, only filter by time
+        if (!date) {
+            return filteredTasks.filter((task) => {
+                return task.TIME === time;
+            }).length;
+        }
+
         // Format date with zero-padding for single-digit months/days
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const day = String(date.getDate()).padStart(2, "0");
@@ -27,6 +34,13 @@ export function GetTaskCountTime({ filteredTasks, time, date }) {
 
 export function GetLogbookCountTime({ filteredLogbooks, time, date }) {
     const taskCount = () => {
+        // If no date provided, only filter by time
+        if (!date) {
+            return filteredLogbooks.filter((logbook) => {
+                return logbook.TIME === time;
+            }).length;
+        }
+
         // Format date with zero-padding for single-digit months/days
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const day = String(date.getDate()).padStart(2, "0");

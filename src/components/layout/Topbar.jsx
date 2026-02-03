@@ -128,10 +128,16 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                 <CreateModal
                     onClose={handleCloseModal}
                     onSuccess={handleSuccess}
+                    type="task"
                 />
             )}
 
-            {isSearchOpen && <SearchModal onClose={handleCloseSearch} />}
+            {isSearchOpen && (
+                <SearchModal
+                    onClose={handleCloseSearch}
+                    onDeleteSuccess={handleSuccess}
+                />
+            )}
 
             {showPopup && <Popup type={popupType} message={popupMessage} />}
         </div>

@@ -14,8 +14,6 @@ export const TaskProvider = ({ children }) => {
 
         const interval = setInterval(() => {
             fetchTasks(true); // Silent refresh
-
-            console.log("Tasks refreshed");
         }, 60000); // 60000ms = 1 minute
 
         return () => clearInterval(interval);

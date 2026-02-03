@@ -16,6 +16,7 @@ import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks"
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 import ArrowRightIcon from "../assets/icons/arrow-right.tsx";
+import CloseIcon from "../assets/icons/close.tsx";
 import { GetSimulatorsList } from "../functions/Simulators.jsx";
 
 function Logbook() {
@@ -32,6 +33,8 @@ function Logbook() {
     const [startDate, setStartDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(true);
     const [selectedAssignees, setSelectedAssignees] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("");
+    const [selectedSubCategory, setSelectedSubCategory] = useState("");
     // eslint-disable-next-line no-unused-vars
     const [selectedDay, setSelectedDay] = useState(null);
     const [selectedStatus, setSelectedStatus] = useState("");
@@ -39,10 +42,21 @@ function Logbook() {
     const [showFilters, setShowFilters] = useState(false);
     const simulators = GetSimulatorsList();
     const [selectedSimulator, setSelectedSimulator] = useState("");
+    const [selectedFrom, setSelectedFrom] = useState("");
+    const [selectedTo, setSelectedTo] = useState("");
+    const [dateError, setDateError] = useState(false);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
+
+    useEffect(() => {
+        if (selectedFrom && selectedTo) {
+            setDateError(new Date(selectedFrom) > new Date(selectedTo));
+        } else {
+            setDateError(false);
+        }
+    }, [selectedFrom, selectedTo]);
 
     const handleDayClick = (day) => {
         setSelectedDay(day);
@@ -85,11 +99,32 @@ function Logbook() {
 
     const handleExportPDF = () => {
         try {
-            const tasksExported = exportTasksToPDF(filteredLogbooks, startDate);
+            // Pass null as date if filters are active, otherwise pass startDate
+            const hasActiveFilters =
+                selectedFrom ||
+                selectedTo ||
+                selectedCategory ||
+                selectedSubCategory ||
+                selectedStatus ||
+                selectedSimulator ||
+                selectedAssignees ||
+                searchQuery.trim();
+
+            // Combine both tasks and logbooks for export
+            const combinedItems = [...filteredTasks, ...filteredLogbooks];
+
+            console.log("Exporting tasks:", filteredTasks.length);
+            console.log("Exporting logbooks:", filteredLogbooks.length);
+            console.log("Total combined:", combinedItems.length);
+
+            const itemsExported = exportTasksToPDF(
+                combinedItems,
+                hasActiveFilters ? null : startDate,
+            );
             setPopupType("success");
             setPopupMessage(
-                `PDF esportato con successo! (${tasksExported} task${
-                    tasksExported !== 1 ? "s" : ""
+                `PDF esportato con successo! (${itemsExported} item${
+                    itemsExported !== 1 ? "s" : ""
                 })`,
             );
             setShowPopup(true);
@@ -174,6 +209,38 @@ function Logbook() {
             );
         }
 
+        if (selectedCategory) {
+            result = result.filter(
+                (logbook) => logbook.CATEGORY === selectedCategory,
+            );
+        }
+
+        if (selectedSubCategory) {
+            result = result.filter(
+                (logbook) => logbook.SUBCATEGORY === selectedSubCategory,
+            );
+        }
+
+        if (selectedFrom) {
+            result = result.filter((logbook) => {
+                const logbookDate = new Date(logbook.DATE);
+                logbookDate.setHours(0, 0, 0, 0);
+                const fromDate = new Date(selectedFrom);
+                fromDate.setHours(0, 0, 0, 0);
+                return logbookDate >= fromDate;
+            });
+        }
+
+        if (selectedTo) {
+            result = result.filter((logbook) => {
+                const logbookDate = new Date(logbook.DATE);
+                logbookDate.setHours(0, 0, 0, 0);
+                const toDate = new Date(selectedTo);
+                toDate.setHours(23, 59, 59, 999);
+                return logbookDate <= toDate;
+            });
+        }
+
         // Apply search query
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
@@ -193,7 +260,34 @@ function Logbook() {
         selectedSimulator,
         selectedAssignees,
         selectedStatus,
+        selectedCategory,
+        selectedSubCategory,
+        selectedFrom,
+        selectedTo,
     ]);
+
+    const categories = {
+        "Routine Task": [
+            "PM",
+            "MR",
+            "Backup",
+            "QTG",
+            "FMS & Parsing",
+            "First AID check",
+            "Refill DPI",
+            "Toolbox check",
+            "STG",
+        ],
+        Investigation: ["HW", "SW"],
+        "Recurrent Issues": ["HW", "SW"],
+        Troubleshooting: ["HW", "SW"],
+        Others: [
+            "Part test",
+            "Remote connection with support",
+            "Remote connection without support",
+            "On-Site Connection",
+        ],
+    };
 
     return (
         <section className="flex h-screen">
@@ -427,6 +521,157 @@ function Logbook() {
                                                     <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                                                 </div>
                                             </div>
+                                            <div className="flex flex-col gap-1 w-full">
+                                                <h3 className="text-sm text-[var(--gray)]">
+                                                    Categoria
+                                                </h3>
+                                                <div className="relative">
+                                                    <select
+                                                        name=""
+                                                        id=""
+                                                        value={selectedCategory}
+                                                        onChange={(e) =>
+                                                            setSelectedCategory(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="">
+                                                            ...
+                                                        </option>
+                                                        {Object.keys(
+                                                            categories,
+                                                        ).map(
+                                                            (
+                                                                category,
+                                                                index,
+                                                            ) => (
+                                                                <option
+                                                                    key={index}
+                                                                    value={
+                                                                        category
+                                                                    }
+                                                                >
+                                                                    {category}
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </select>
+                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1 w-full">
+                                                <h3 className="text-sm text-[var(--gray)]">
+                                                    Sotto-Categoria
+                                                </h3>
+                                                <div className="relative">
+                                                    <select
+                                                        name=""
+                                                        id=""
+                                                        value={
+                                                            selectedSubCategory
+                                                        }
+                                                        onChange={(e) =>
+                                                            setSelectedSubCategory(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                                    >
+                                                        {categories[
+                                                            selectedCategory
+                                                        ]?.map(
+                                                            (
+                                                                subCategory,
+                                                                index,
+                                                            ) => (
+                                                                <option
+                                                                    key={index}
+                                                                    value={
+                                                                        subCategory
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        subCategory
+                                                                    }
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </select>
+                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {showFilters && (
+                                        <div className="flex flex-row gap-4">
+                                            <div className="flex flex-col gap-1 w-1/2">
+                                                <div className="flex flex-row justify-between gap-4">
+                                                    <div className="flex flex-col gap-1 w-full">
+                                                        <h3 className="text-sm text-[var(--gray)]">
+                                                            Da
+                                                        </h3>
+                                                        <input
+                                                            type="date"
+                                                            value={selectedFrom}
+                                                            onChange={(e) =>
+                                                                setSelectedFrom(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1 w-full">
+                                                        <h3 className="text-sm text-[var(--gray)]">
+                                                            A
+                                                        </h3>
+                                                        <input
+                                                            type="date"
+                                                            value={selectedTo}
+                                                            onChange={(e) =>
+                                                                setSelectedTo(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 ${
+                                                                dateError
+                                                                    ? "border border-[var(--red)] focus:border-[var(--red)]"
+                                                                    : "border border-[var(--light-primary)] focus:border-[var(--separator)]"
+                                                            }`}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {dateError && (
+                                                    <p className="text-[var(--red)] text-sm mt-1">
+                                                        La data di inizio deve
+                                                        essere precedente alla
+                                                        data di fine
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <button
+                                                className="btn delete flex gap-2 items-center h-[40px] mt-6"
+                                                onClick={() => {
+                                                    setSelectedCategory("");
+                                                    setSelectedSubCategory("");
+                                                    setSelectedFrom("");
+                                                    setSelectedTo("");
+                                                    setSelectedStatus("");
+                                                    setSelectedSimulator("");
+                                                    setSelectedAssignees("");
+                                                    setSearchQuery("");
+                                                }}
+                                            >
+                                                <CloseIcon className="w-6" />
+                                                <p>Togli filtri</p>
+                                            </button>
                                         </div>
                                     )}
 
@@ -435,7 +680,11 @@ function Logbook() {
                                         loading={loading}
                                         taskList={filteredTasks}
                                         logbookList={filteredLogbooks}
-                                        date={startDate}
+                                        date={
+                                            selectedFrom || selectedTo
+                                                ? null
+                                                : startDate
+                                        }
                                         onDeleteSuccess={handleSuccess}
                                         key={startDate.toISOString()}
                                     />

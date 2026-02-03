@@ -13,21 +13,13 @@ const formatDate = (date) => {
 };
 
 /**
- * Exports tasks for a specific date to a PDF file
- * @param {Array} tasks - Array of task objects
- * @param {Date} date - The date to filter tasks by
+ * Exports tasks to a PDF file
+ * @param {Array} tasks - Array of task objects (can be pre-filtered)
+ * @param {Date} date - The date for the report title (optional, null if using filters)
  */
-export const exportTasksToPDF = (tasks, date) => {
-    // Filter tasks for the specific date
-    const selectedDate = new Date(date);
-    selectedDate.setHours(0, 0, 0, 0);
-
-    const tasksForDay = tasks.filter((task) => {
-        if (!task.DATE) return false;
-        const taskDate = new Date(task.DATE);
-        taskDate.setHours(0, 0, 0, 0);
-        return taskDate.getTime() === selectedDate.getTime();
-    });
+export const exportTasksToPDF = (tasks, date = null) => {
+    // Use the tasks as-is (already filtered by the calling component)
+    const tasksForExport = tasks;
 
     // Create PDF
     const doc = new jsPDF();
@@ -41,15 +33,19 @@ export const exportTasksToPDF = (tasks, date) => {
     doc.setFont(undefined, "bold");
     doc.text("Task Report", margin, yPosition);
 
-    // Date
+    // Date or Filter info
     yPosition += lineHeight;
     doc.setFontSize(12);
     doc.setFont(undefined, "normal");
-    doc.text(`Data: ${formatDate(selectedDate)}`, margin, yPosition);
+    if (date) {
+        doc.text(`Data: ${formatDate(date)}`, margin, yPosition);
+    } else {
+        doc.text("Report Filtrato", margin, yPosition);
+    }
 
     yPosition += lineHeight;
     doc.setFontSize(10);
-    doc.text(`Totale tasks: ${tasksForDay.length}`, margin, yPosition);
+    doc.text(`Totale tasks: ${tasksForExport.length}`, margin, yPosition);
 
     // Line separator
     yPosition += 5;
@@ -58,17 +54,22 @@ export const exportTasksToPDF = (tasks, date) => {
     yPosition += 10;
 
     // If no tasks
-    if (tasksForDay.length === 0) {
+    if (tasksForExport.length === 0) {
         doc.setFontSize(11);
-        doc.text("Nessuna task trovata per questa data.", margin, yPosition);
+        doc.text("Nessuna task trovata.", margin, yPosition);
     } else {
         // Task list
-        tasksForDay.forEach((task, index) => {
-            // Check if we need a new page
-            if (yPosition > 270) {
-                doc.addPage();
-                yPosition = 20;
-            }
+        tasksForExport.forEach((task, index) => {
+            // Helper function to check and add new page if needed
+            const checkPageBreak = (requiredSpace = 10) => {
+                if (yPosition + requiredSpace > 270) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+            };
+
+            // Check if we need a new page for task header
+            checkPageBreak(20);
 
             doc.setFontSize(12);
             doc.setFont(undefined, "bold");
@@ -82,36 +83,41 @@ export const exportTasksToPDF = (tasks, date) => {
             if (task.DESCRIPTION) {
                 const descLines = doc.splitTextToSize(
                     `Descrizione: ${task.DESCRIPTION}`,
-                    pageWidth - 2 * margin
+                    pageWidth - 2 * margin,
                 );
+                checkPageBreak(descLines.length * 5);
                 doc.text(descLines, margin + 5, yPosition);
                 yPosition += descLines.length * 5;
             }
 
             // Assigned To
             if (task.ASSIGNED_TO) {
+                checkPageBreak(5);
                 doc.text(
                     `Assegnato a: ${task.ASSIGNED_TO}`,
                     margin + 5,
-                    yPosition
+                    yPosition,
                 );
                 yPosition += 5;
             }
 
             // Status
             if (task.STATUS) {
+                checkPageBreak(5);
                 doc.text(`Stato: ${task.STATUS}`, margin + 5, yPosition);
                 yPosition += 5;
             }
 
             // Priority
             if (task.PRIORITY) {
+                checkPageBreak(5);
                 doc.text(`Priorità: ${task.PRIORITY}`, margin + 5, yPosition);
                 yPosition += 5;
             }
 
             // Time
             if (task.START_TIME || task.END_TIME) {
+                checkPageBreak(5);
                 const timeStr = `Orario: ${task.START_TIME || "N/A"} - ${
                     task.END_TIME || "N/A"
                 }`;
@@ -121,15 +127,28 @@ export const exportTasksToPDF = (tasks, date) => {
 
             // Simulator
             if (task.SIMULATOR) {
+                checkPageBreak(5);
                 doc.text(
                     `Simulatore: ${task.SIMULATOR}`,
                     margin + 5,
-                    yPosition
+                    yPosition,
+                );
+                yPosition += 5;
+            }
+
+            // Date
+            if (task.DATE) {
+                checkPageBreak(5);
+                doc.text(
+                    `Data: ${formatDate(task.DATE)}`,
+                    margin + 5,
+                    yPosition,
                 );
                 yPosition += 5;
             }
 
             // Separator between tasks
+            checkPageBreak(10);
             yPosition += 5;
             doc.setLineWidth(0.2);
             doc.setDrawColor(200, 200, 200);
@@ -148,16 +167,15 @@ export const exportTasksToPDF = (tasks, date) => {
             `Pagina ${i} di ${pageCount}`,
             pageWidth / 2,
             doc.internal.pageSize.getHeight() - 10,
-            { align: "center" }
+            { align: "center" },
         );
     }
 
     // Save the PDF
-    const fileName = `Tasks_${formatDate(selectedDate).replace(
-        /\//g,
-        "-"
-    )}.pdf`;
+    const fileName = date
+        ? `Tasks_${formatDate(date).replace(/\//g, "-")}.pdf`
+        : `Tasks_Filtered_${new Date().getTime()}.pdf`;
     doc.save(fileName);
 
-    return tasksForDay.length;
+    return tasksForExport.length;
 };

@@ -4,14 +4,23 @@ import ArrowIcon from "../../assets/icons/arrow-left.tsx";
 import Task from "../data/Task.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
 
-function SearchModal({ onClose }) {
-    const { tasks, loading } = useTasks();
+function SearchModal({ onClose, onDeleteSuccess }) {
+    const { tasks, loading, fetchTasks } = useTasks();
     const [searchQuery, setSearchQuery] = useState("");
     const inputRef = useRef(null);
 
     useEffect(() => {
         inputRef.current?.focus();
     }, []);
+
+    const handleDeleteSuccess = async (isSuccess, message) => {
+        if (isSuccess) {
+            await fetchTasks();
+        }
+        if (onDeleteSuccess) {
+            onDeleteSuccess(isSuccess, message);
+        }
+    };
 
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -33,7 +42,7 @@ function SearchModal({ onClose }) {
                 task.TITLE?.toLowerCase().includes(query) ||
                 task.DESCRIPTION?.toLowerCase().includes(query) ||
                 task.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                task.STATUS?.toLowerCase().includes(query)
+                task.STATUS?.toLowerCase().includes(query),
         );
     }, [tasks, searchQuery]);
 
@@ -92,7 +101,9 @@ function SearchModal({ onClose }) {
                                     date={formatDate(task?.DATE)}
                                     assignedTo={task?.ASSIGNED_TO}
                                     status={task?.STATUS}
+                                    type="dashboard"
                                     wholeTask={task}
+                                    onDeleteSuccess={handleDeleteSuccess}
                                 />
                             ))
                         )}

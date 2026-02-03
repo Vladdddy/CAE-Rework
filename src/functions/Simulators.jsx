@@ -149,10 +149,15 @@ export function GetSimulators({
                                   : (() => {
                                         const filteredTasks = taskList.filter(
                                             (task) => {
+                                                const matchesTime =
+                                                    task?.TIME === time;
                                                 const matchesSimulator =
                                                     task?.SIMULATOR ===
                                                     simulator;
-                                                return matchesSimulator;
+                                                return (
+                                                    matchesTime &&
+                                                    matchesSimulator
+                                                );
                                             },
                                         );
 
@@ -333,6 +338,15 @@ export function GetTableSimulators({
                                               task?.TIME === time;
                                           const matchesSimulator =
                                               task?.SIMULATOR === simulator;
+
+                                          // If no date provided, only filter by time and simulator
+                                          if (!date) {
+                                              return (
+                                                  matchesTime &&
+                                                  matchesSimulator
+                                              );
+                                          }
+
                                           const month = String(
                                               date.getMonth() + 1,
                                           ).padStart(2, "0");
