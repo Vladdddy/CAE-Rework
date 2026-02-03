@@ -14,6 +14,7 @@ import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
+import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 import ArrowRightIcon from "../assets/icons/arrow-right.tsx";
 import CloseIcon from "../assets/icons/close.tsx";
@@ -22,6 +23,7 @@ import { GetSimulatorsList } from "../functions/Simulators.jsx";
 function Logbook() {
     const { tasks, loading, fetchTasks } = useTasks();
     const { logbooks, fetchLogbooks } = useLogbooks();
+    const { simulators: todaySimulators } = useSimulators();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -110,16 +112,61 @@ function Logbook() {
                 selectedAssignees ||
                 searchQuery.trim();
 
-            // Combine both tasks and logbooks for export
-            const combinedItems = [...filteredTasks, ...filteredLogbooks];
+            let itemsToExport;
+            let simulatorsToExport;
 
-            console.log("Exporting tasks:", filteredTasks.length);
-            console.log("Exporting logbooks:", filteredLogbooks.length);
-            console.log("Total combined:", combinedItems.length);
+            if (hasActiveFilters) {
+                // If filters are active, use the filtered results
+                itemsToExport = [...filteredTasks, ...filteredLogbooks];
+                simulatorsToExport = [];
+            } else {
+                // If no filters are active, filter by the selected date only
+                const selectedDate = new Date(startDate);
+                selectedDate.setHours(0, 0, 0, 0);
+
+                // Filter tasks by selected date
+                const tasksForDate = filteredTasks.filter((task) => {
+                    const taskDate = new Date(task.DATE);
+                    taskDate.setHours(0, 0, 0, 0);
+                    return taskDate.getTime() === selectedDate.getTime();
+                });
+
+                // Filter logbooks by selected date
+                const logbooksForDate = filteredLogbooks.filter((logbook) => {
+                    const logbookDate = new Date(logbook.DATE);
+                    logbookDate.setHours(0, 0, 0, 0);
+                    return logbookDate.getTime() === selectedDate.getTime();
+                });
+
+                itemsToExport = [...tasksForDate, ...logbooksForDate];
+
+                // Filter simulators by selected date
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(
+                    2,
+                    "0",
+                );
+                const day = String(selectedDate.getDate()).padStart(2, "0");
+                const formattedDate = `${year}-${month}-${day}`;
+
+                simulatorsToExport = (todaySimulators || []).filter((sim) => {
+                    if (!sim.CREATION_DATE) return false;
+                    const simDate = new Date(sim.CREATION_DATE);
+                    const simYear = simDate.getFullYear();
+                    const simMonth = String(simDate.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                    );
+                    const simDay = String(simDate.getDate()).padStart(2, "0");
+                    const simFormattedDate = `${simYear}-${simMonth}-${simDay}`;
+                    return simFormattedDate === formattedDate;
+                });
+            }
 
             const itemsExported = exportTasksToPDF(
-                combinedItems,
+                itemsToExport,
                 hasActiveFilters ? null : startDate,
+                simulatorsToExport,
             );
             setPopupType("success");
             setPopupMessage(

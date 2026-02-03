@@ -16,8 +16,9 @@ const formatDate = (date) => {
  * Exports tasks to a PDF file
  * @param {Array} tasks - Array of task objects (can be pre-filtered)
  * @param {Date} date - The date for the report title (optional, null if using filters)
+ * @param {Array} simulators - Array of simulator objects for today (optional)
  */
-export const exportTasksToPDF = (tasks, date = null) => {
+export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
     // Use the tasks as-is (already filtered by the calling component)
     const tasksForExport = tasks;
 
@@ -50,6 +51,31 @@ export const exportTasksToPDF = (tasks, date = null) => {
     doc.setLineWidth(0.5);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
     yPosition += 10;
+
+    // Simulator Hours Section (if date is provided and simulators exist)
+    if (date && simulators && simulators.length > 0) {
+        doc.setFontSize(14);
+        doc.setFont(undefined, "bold");
+        doc.setTextColor(0, 102, 204);
+        doc.text("Orari Simulatori", margin, yPosition);
+        doc.setTextColor(0, 0, 0);
+        yPosition += 8;
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+
+        simulators.forEach((sim) => {
+            const simText = `${sim.NAME}: ${sim.START_HOUR || "N/A"} - ${sim.END_HOUR || "N/A"} (${sim.ASSIGNED_TO || "N/A"})`;
+            doc.text(simText, margin + 5, yPosition);
+            yPosition += 6;
+        });
+
+        // Separator after simulator section
+        yPosition += 5;
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 10;
+    }
 
     // If no tasks
     if (tasksForExport.length === 0) {

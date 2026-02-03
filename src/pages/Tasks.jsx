@@ -15,6 +15,7 @@ import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
+import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 import ArrowRightIcon from "../assets/icons/arrow-right.tsx";
 import { GetSimulatorsList } from "../functions/Simulators.jsx";
@@ -22,6 +23,7 @@ import CloseIcon from "../assets/icons/close.tsx";
 
 function Tasks() {
     const { tasks, loading, fetchTasks } = useTasks();
+    const { simulators: todaySimulators } = useSimulators();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -118,9 +120,49 @@ function Tasks() {
                 selectedAssignees ||
                 searchQuery.trim();
 
+            // Filter tasks and simulators by selected date if no filters are active
+            let tasksToExport = filteredTasks;
+            let simulatorsToExport = [];
+
+            if (!hasActiveFilters) {
+                // Filter tasks by the selected date
+                const selectedDate = new Date(startDate);
+                selectedDate.setHours(0, 0, 0, 0);
+
+                tasksToExport = filteredTasks.filter((task) => {
+                    if (!task.DATE) return false;
+                    const taskDate = new Date(task.DATE);
+                    taskDate.setHours(0, 0, 0, 0);
+                    return taskDate.getTime() === selectedDate.getTime();
+                });
+
+                // Filter simulators by the selected date
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(
+                    2,
+                    "0",
+                );
+                const day = String(selectedDate.getDate()).padStart(2, "0");
+                const formattedDate = `${year}-${month}-${day}`;
+
+                simulatorsToExport = (todaySimulators || []).filter((sim) => {
+                    if (!sim.CREATION_DATE) return false;
+                    const simDate = new Date(sim.CREATION_DATE);
+                    const simYear = simDate.getFullYear();
+                    const simMonth = String(simDate.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                    );
+                    const simDay = String(simDate.getDate()).padStart(2, "0");
+                    const simFormattedDate = `${simYear}-${simMonth}-${simDay}`;
+                    return simFormattedDate === formattedDate;
+                });
+            }
+
             const tasksExported = exportTasksToPDF(
-                filteredTasks,
+                tasksToExport,
                 hasActiveFilters ? null : startDate,
+                simulatorsToExport,
             );
             setPopupType("success");
             setPopupMessage(
