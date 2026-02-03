@@ -26,7 +26,7 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                         />
 
                         {type !== "tasks" && (
-                            <span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
+                            <span className="text-xs bg-[var(--orange-light)] text-[var(--orange)] rounded-md px-2 py-1">
                                 2 logbook
                             </span>
                         )}
@@ -39,7 +39,11 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                             </div>
                         ) : (
                             <GetTableSimulators
-                                type="table"
+                                type={
+                                    type === "tasks&logbook"
+                                        ? "table&logbook"
+                                        : "table"
+                                }
                                 time="Diurno"
                                 date={date}
                                 taskList={taskList}
@@ -63,7 +67,7 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                         />
 
                         {type !== "tasks" && (
-                            <span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
+                            <span className="text-xs bg-[var(--orange-light)] text-[var(--orange)] rounded-md px-2 py-1">
                                 2 logbook
                             </span>
                         )}
@@ -76,7 +80,11 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                             </div>
                         ) : (
                             <GetTableSimulators
-                                type="table"
+                                type={
+                                    type === "tasks&logbook"
+                                        ? "table&logbook"
+                                        : "table"
+                                }
                                 time="Notturno"
                                 date={date}
                                 taskList={taskList}

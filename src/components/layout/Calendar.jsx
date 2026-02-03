@@ -58,11 +58,11 @@ function Calendar({ startDate, setStartDate, onDayClick }) {
                 <div className="w-1"></div>
 
                 <div
-                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--gray)] bg-[var(--separator)]`}
+                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]`}
                 >
                     <LogbookIcon className="w-4" />
                 </div>
-                <p className="text-xs text-[var(--gray)]">Logbook</p>
+                <p className="text-xs text-[var(--orange)]">Logbook</p>
             </div>
 
             <div className="w-full">

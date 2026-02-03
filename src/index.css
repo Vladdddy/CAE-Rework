@@ -21,6 +21,7 @@
     --red: #ff4646;
     --green: #32de84;
     --orange: #ff9f43;
+    --orange-light: #ffebcb;
     --placeholder: #aaaaaa;
 }
 
@@ -38,6 +39,7 @@ body.dark-mode {
     --red: hsl(0, 100%, 71%);
     --green: hsl(145, 63%, 49%);
     --orange: hsl(31, 100%, 65%);
+    --orange-light: hsl(31, 30%, 15%);
     --placeholder: hsl(0, 0%, 50%);
 }
 

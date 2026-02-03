@@ -280,7 +280,7 @@ export function GetTableSimulators({
         <>
             <div
                 className={`${
-                    type === "table"
+                    type === "table" || type === "table&logbook"
                         ? "grid grid-cols-7 gap-4 justify-start items-start gap-1"
                         : ""
                 } `}
@@ -290,6 +290,8 @@ export function GetTableSimulators({
                         <div className="flex items-center gap-1">
                             {/* Simulatore */}
                             {(() => {
+                                if (type !== "table") return null;
+
                                 // Only show icon if 'date' is today
                                 const isToday = (() => {
                                     if (!date) return false;
