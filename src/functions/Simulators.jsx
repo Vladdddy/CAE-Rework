@@ -290,6 +290,19 @@ export function GetTableSimulators({
                         <div className="flex items-center gap-1">
                             {/* Simulatore */}
                             {(() => {
+                                // Only show icon if 'date' is today
+                                const isToday = (() => {
+                                    if (!date) return false;
+                                    const today = new Date();
+                                    return (
+                                        date.getFullYear() ===
+                                            today.getFullYear() &&
+                                        date.getMonth() === today.getMonth() &&
+                                        date.getDate() === today.getDate()
+                                    );
+                                })();
+                                if (!isToday) return null;
+
                                 const matchingSimulator =
                                     findMatchingSimulator(simulator);
                                 return matchingSimulator ? (

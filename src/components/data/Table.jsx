@@ -18,18 +18,14 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                     <div className="flex items-center gap-1 text-[var(--gray)] border-b border-[var(--light-primary)] pb-2">
                         <DayIcon className="w-6" />
                         <h1 className="text-md">Giorno</h1>
-                        {type === "tasks" ? (
-                            <>
-                                <GetTaskCountTime
-                                    filteredTasks={taskList}
-                                    time="Diurno"
-                                    date={localDate}
-                                />
-                                {/*<span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
-                                    2 logbook
-                                </span>*/}
-                            </>
-                        ) : (
+
+                        <GetTaskCountTime
+                            filteredTasks={taskList}
+                            time="Diurno"
+                            date={localDate}
+                        />
+
+                        {type !== "tasks" && (
                             <span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
                                 2 logbook
                             </span>
@@ -59,18 +55,14 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                     <div className="flex items-center gap-1 text-[var(--gray)] border-b border-[var(--light-primary)] pb-2">
                         <NightIcon className="w-6" />
                         <h1 className="text-md">Notte</h1>
-                        {type === "tasks" ? (
-                            <>
-                                <GetTaskCountTime
-                                    filteredTasks={taskList}
-                                    time="Notturno"
-                                    date={date}
-                                />
-                                {/*<span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
-                                    2 logbook
-                                </span>*/}
-                            </>
-                        ) : (
+
+                        <GetTaskCountTime
+                            filteredTasks={taskList}
+                            time="Notturno"
+                            date={date}
+                        />
+
+                        {type !== "tasks" && (
                             <span className="text-xs bg-[var(--separator)] text-[var(--gray)] rounded-md px-2 py-1">
                                 2 logbook
                             </span>

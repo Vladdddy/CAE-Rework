@@ -65,6 +65,21 @@ function SimulatorModal({
         onClose();
     };
 
+    function toTimeInputValue(dbTime) {
+        if (!dbTime) return "";
+        let timePart = dbTime;
+
+        // To convert all combinations of date-time strings to HH:MM format
+        if (timePart.includes("T")) timePart = timePart.split("T")[1];
+        if (timePart.includes(" ")) timePart = timePart.split(" ")[1];
+        timePart = timePart.split(".")[0];
+        if (timePart.split(":").length > 2)
+            timePart = timePart.split(":").slice(0, 2).join(":");
+        if (timePart.length > 5) timePart = timePart.slice(0, 5);
+
+        return timePart;
+    }
+
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
@@ -137,7 +152,7 @@ function SimulatorModal({
                             <input
                                 type="time"
                                 className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                value={startHour || startTime}
+                                value={startHour || toTimeInputValue(startTime)}
                                 required
                                 onChange={(e) => {
                                     setStartHour(e.target.value);
@@ -155,13 +170,14 @@ function SimulatorModal({
                                 type="time"
                                 required
                                 className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                value={endHour || endTime}
+                                value={endHour || toTimeInputValue(endTime)}
                                 onChange={(e) => {
                                     setEndHour(e.target.value);
                                     setEditSimulator(true);
                                     setExistingSimulatorError(false);
                                 }}
                             />
+                            {console.log(toTimeInputValue(endTime))}
                         </div>
                     </div>
 
