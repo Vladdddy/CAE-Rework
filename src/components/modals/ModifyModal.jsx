@@ -7,6 +7,7 @@ import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
+import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 
@@ -47,6 +48,7 @@ function ModifyModal({ onClose, onSuccess, task }) {
         task.SIMULATOR || simulators[0],
     );
     const { updateTask } = useTasks();
+    const { updateLogbook } = useLogbooks();
     const { users, currentUserId } = useUsers();
 
     const handleRadioChange = (event) => {
@@ -63,6 +65,8 @@ function ModifyModal({ onClose, onSuccess, task }) {
 
     const handleModify = async () => {
         console.log(`Modifying task with ID: ${task.ID}`);
+
+        const isLogbook = task.ISLOGBOOK;
 
         if (!title.trim()) {
             setTitleError(true);
@@ -83,9 +87,11 @@ function ModifyModal({ onClose, onSuccess, task }) {
             status: selectedStatus,
         };
 
-        const result = await updateTask(task.ID, modifiedTask);
+        const result = isLogbook
+            ? await updateLogbook(task.ID, modifiedTask)
+            : await updateTask(task.ID, modifiedTask);
 
-        if (result.success) {
+        if (result.success && !isLogbook) {
             const changedTaskNote = await createNote(
                 task.ID,
                 currentUserId,

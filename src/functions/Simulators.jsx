@@ -366,6 +366,7 @@ export function GetTableSimulators({
                                                   onDeleteSuccess={
                                                       onDeleteSuccess
                                                   }
+                                                  isLogbook={task.ISLOGBOOK}
                                               />
                                           ))}
                                       </>

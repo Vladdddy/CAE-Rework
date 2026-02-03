@@ -1,15 +1,31 @@
 import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import { GetTableSimulators } from "../../functions/Simulators.jsx";
-import { GetTaskCountTime } from "../../functions/TaskLength.jsx";
+import {
+    GetTaskCountTime,
+    GetLogbookCountTime,
+} from "../../functions/TaskLength.jsx";
 import { useEffect, useState } from "react";
 
-function Table({ type, loading, taskList, date, onDeleteSuccess }) {
+function Table({
+    type,
+    loading,
+    taskList,
+    logbookList,
+    date,
+    onDeleteSuccess,
+}) {
     const [localDate, setLocalDate] = useState(date);
 
     useEffect(() => {
         setLocalDate(date);
     }, [date]);
+
+    // Combine lists for display when type is tasks&logbook
+    const combinedList =
+        type === "tasks&logbook"
+            ? [...(taskList || []), ...(logbookList || [])]
+            : taskList;
 
     return (
         <div className="grid grid-cols-1 gap-16 mt-4">
@@ -19,16 +35,20 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                         <DayIcon className="w-6" />
                         <h1 className="text-md">Giorno</h1>
 
-                        <GetTaskCountTime
-                            filteredTasks={taskList}
-                            time="Diurno"
-                            date={localDate}
-                        />
+                        {(type === "tasks" || type === "tasks&logbook") && (
+                            <GetTaskCountTime
+                                filteredTasks={taskList || []}
+                                time="Diurno"
+                                date={localDate}
+                            />
+                        )}
 
-                        {type !== "tasks" && (
-                            <span className="text-xs bg-[var(--orange-light)] text-[var(--orange)] rounded-md px-2 py-1">
-                                2 logbook
-                            </span>
+                        {type === "tasks&logbook" && (
+                            <GetLogbookCountTime
+                                filteredLogbooks={logbookList || []}
+                                time="Diurno"
+                                date={localDate}
+                            />
                         )}
                     </div>
 
@@ -46,7 +66,7 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                                 }
                                 time="Diurno"
                                 date={date}
-                                taskList={taskList}
+                                taskList={combinedList}
                                 onDeleteSuccess={onDeleteSuccess}
                             />
                         )}
@@ -60,16 +80,20 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                         <NightIcon className="w-6" />
                         <h1 className="text-md">Notte</h1>
 
-                        <GetTaskCountTime
-                            filteredTasks={taskList}
-                            time="Notturno"
-                            date={date}
-                        />
+                        {(type === "tasks" || type === "tasks&logbook") && (
+                            <GetTaskCountTime
+                                filteredTasks={taskList || []}
+                                time="Notturno"
+                                date={date}
+                            />
+                        )}
 
-                        {type !== "tasks" && (
-                            <span className="text-xs bg-[var(--orange-light)] text-[var(--orange)] rounded-md px-2 py-1">
-                                2 logbook
-                            </span>
+                        {type === "tasks&logbook" && (
+                            <GetLogbookCountTime
+                                filteredLogbooks={logbookList || []}
+                                time="Notturno"
+                                date={localDate}
+                            />
                         )}
                     </div>
 
@@ -87,7 +111,7 @@ function Table({ type, loading, taskList, date, onDeleteSuccess }) {
                                 }
                                 time="Notturno"
                                 date={date}
-                                taskList={taskList}
+                                taskList={combinedList}
                                 onDeleteSuccess={onDeleteSuccess}
                             />
                         )}

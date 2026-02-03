@@ -8,10 +8,12 @@ import UserIcon from "../../assets/icons/user.tsx";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
+import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
 import { CheckExistingDays } from "../../functions/CheckExistingDays.jsx";
 
-function CreateModal({ onClose, onSuccess }) {
+function CreateModal({ onClose, onSuccess, type, initialDate }) {
     const { addTask } = useTasks();
+    const { addLogbook, fetchLogbooks } = useLogbooks();
     const { users } = useUsers();
     const [selectedCategory, setSelectedCategory] = useState("Routine Task");
     const [selectedStatus, setSelectedStatus] = useState("Da definire");
@@ -22,7 +24,7 @@ function CreateModal({ onClose, onSuccess }) {
     const [selectedSubCategory, setSelectedSubCategory] = useState("PM");
     const [selectedDetail, setSelectedDetail] = useState("VISUAL");
     const [selectedDate, setSelectedDate] = useState(
-        new Date().toISOString().split("T")[0],
+        initialDate || new Date().toISOString().split("T")[0],
     );
     const [titleError, setTitleError] = useState(false);
     const [dateError, setDateError] = useState(false);
@@ -96,6 +98,42 @@ function CreateModal({ onClose, onSuccess }) {
             return;
         }
         setTitleError(false);
+
+        // Handle logbook entry creation
+        if (type === "logbook") {
+            const newEntry = {
+                title: title,
+                description: description,
+                category: selectedCategory,
+                subcategory: selectedSubCategory,
+                extradetail: selectedDetail,
+                simulator: selectedSimulator,
+                date: selectedDate,
+                time: selectedRadio,
+                assigned_to: selectedAssignees.join(", ") || null,
+                status: selectedStatus || "Da definire",
+                type: "Ordinaria",
+                start_date: null,
+                end_date: null,
+                selected_days: null,
+            };
+
+            console.log("New Entry:", newEntry);
+
+            const result = await addLogbook(newEntry);
+            onClose();
+            if (onSuccess) {
+                await fetchLogbooks();
+
+                onSuccess(
+                    result.success,
+                    result.success
+                        ? "Hai creato l'entry con successo"
+                        : "Errore durante la creazione dell'entry",
+                );
+            }
+            return;
+        }
 
         if (activeTab === "Ordinaria") {
             const newTask = {
@@ -257,7 +295,9 @@ function CreateModal({ onClose, onSuccess }) {
                 <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
                     <div className="flex flex-row items-center gap-2 text-[var(--black)]">
                         <TaskIcon className="w-6" />
-                        <h1 className="text-xl">Crea task</h1>
+                        <h1 className="text-xl">
+                            {type === "task" ? "Crea task" : "Crea entry"}
+                        </h1>
                     </div>
                     <button
                         onClick={onClose}
@@ -268,31 +308,33 @@ function CreateModal({ onClose, onSuccess }) {
                 </div>
 
                 <div className="flex flex-col gap-8">
-                    <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
-                        <div
-                            className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
-                                activeTab === "Ordinaria"
-                                    ? "bg-[var(--light-primary)] text-[var(--primary)]"
-                                    : "text-[var(--black)] hover:bg-[var(--light-primary)]"
-                            }`}
-                            onClick={() => setActiveTab("Ordinaria")}
-                        >
-                            <p className="text-sm">Task Ordinaria</p>
-                        </div>
+                    {type === "task" && (
+                        <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
+                            <div
+                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
+                                    activeTab === "Ordinaria"
+                                        ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                        : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                }`}
+                                onClick={() => setActiveTab("Ordinaria")}
+                            >
+                                <p className="text-sm">Task Ordinaria</p>
+                            </div>
 
-                        <div
-                            className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
-                                activeTab === "Ricorrente"
-                                    ? "bg-[var(--light-primary)] text-[var(--primary)]"
-                                    : "text-[var(--black)] hover:bg-[var(--light-primary)]"
-                            }`}
-                            onClick={() => {
-                                setActiveTab("Ricorrente");
-                            }}
-                        >
-                            <p className="text-sm">Task Ricorrente</p>
+                            <div
+                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
+                                    activeTab === "Ricorrente"
+                                        ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                        : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                }`}
+                                onClick={() => {
+                                    setActiveTab("Ricorrente");
+                                }}
+                            >
+                                <p className="text-sm">Task Ricorrente</p>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="flex flex-col gap-8 max-h-[calc(60vh-1rem)] overflow-y-auto pr-1">
                         <div className="flex flex-col gap-1">

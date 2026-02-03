@@ -25,6 +25,33 @@ export function GetTaskCountTime({ filteredTasks, time, date }) {
     );
 }
 
+export function GetLogbookCountTime({ filteredLogbooks, time, date }) {
+    const taskCount = () => {
+        // Format date with zero-padding for single-digit months/days
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const formattedDate = `${date.getFullYear()}-${month}-${day}T00:00:00.000Z`;
+
+        return filteredLogbooks.filter((logbook) => {
+            return logbook.TIME === time && logbook.DATE === formattedDate;
+        }).length;
+    };
+
+    return (
+        <>
+            {taskCount() > 0 ? (
+                <p className="text-xs bg-[var(--orange-light)] text-[var(--orange)] rounded-md px-2 py-1">
+                    {taskCount()} logbook
+                </p>
+            ) : (
+                <p className="text-xs bg-[var(--light-primary)] text-[var(--gray)] rounded-md px-2 py-1">
+                    Nessuna logbook
+                </p>
+            )}
+        </>
+    );
+}
+
 export function GetTaskCountStatus({ filteredTasks, status }) {
     const taskCount = () => {
         return filteredTasks.filter((task) => {

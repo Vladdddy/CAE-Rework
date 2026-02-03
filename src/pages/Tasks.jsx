@@ -177,6 +177,7 @@ function Tasks() {
                             startDate={startDate}
                             setStartDate={setStartDate}
                             onDayClick={handleDayClick}
+                            type="tasks"
                         />
                     ) : (
                         <>
@@ -455,6 +456,8 @@ function Tasks() {
                 <CreateModal
                     onClose={handleCloseModal}
                     onSuccess={handleSuccess}
+                    type="task"
+                    initialDate={startDate.toISOString().split("T")[0]}
                 />
             )}
             {isSimulatorModalOpen && (

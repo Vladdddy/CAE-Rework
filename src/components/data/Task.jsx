@@ -1,9 +1,18 @@
 import TaskIcon from "../../assets/icons/tasks.tsx";
+import EntryIcon from "../../assets/icons/logbook.tsx";
 import DisplayModal from "../modals/DisplayModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
 import { useState } from "react";
 
-function Task({ title, date, status, type, wholeTask, onDeleteSuccess }) {
+function Task({
+    title,
+    date,
+    status,
+    type,
+    wholeTask,
+    onDeleteSuccess,
+    isLogbook,
+}) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
 
@@ -25,8 +34,14 @@ function Task({ title, date, status, type, wholeTask, onDeleteSuccess }) {
             {type === "table" ? (
                 <>
                     <div className="flex flex-row items-center gap-1 mb-2 w-full">
-                        <TaskIcon className="w-4 flex-shrink-0" />
-                        <h1 className="text-sm font-semibold truncate">
+                        {!isLogbook === true ? (
+                            <TaskIcon className="w-4 flex-shrink-0 text-[var(--primary)]" />
+                        ) : (
+                            <EntryIcon className="w-4 flex-shrink-0 text-[var(--orange)]" />
+                        )}
+                        <h1
+                            className={`text-sm font-semibold truncate ${!isLogbook ? "text-[var(--primary)]" : "text-[var(--orange)]"}`}
+                        >
                             {title || "N/A"}
                         </h1>
                     </div>

@@ -4,6 +4,7 @@ import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
+import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
 import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import ModifyModal from "./ModifyModal.jsx";
@@ -15,6 +16,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [activeTab, setActiveTab] = useState("dettagli");
     const [noteDescription, setNoteDescription] = useState("");
     const { deleteTask, fetchTasks, updateTask } = useTasks();
+    const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
     const { notes, fetchNotes, createNote } = useNotes();
     const { users, currentUserId } = useUsers();
     const { currentUserRole } = useUsers();
@@ -46,17 +48,25 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     };
 
     const handleDelete = async () => {
-        console.log(`Deleting task with ID: ${taskInfo.ID}`);
+        const isLogbook = taskInfo.ISLOGBOOK;
 
-        const result = await deleteTask(taskInfo.ID);
+        const result = isLogbook
+            ? await deleteLogbook(taskInfo.ID)
+            : await deleteTask(taskInfo.ID);
         onClose();
 
         if (onSuccess) {
-            await fetchTasks();
+            if (isLogbook) {
+                await fetchLogbooks();
+            } else {
+                await fetchTasks();
+            }
 
             onSuccess(
                 result.success,
-                `Task "${taskInfo.TITLE}" eliminata con successo`,
+                isLogbook
+                    ? `Entry "${taskInfo.TITLE}" eliminata con successo`
+                    : `Task "${taskInfo.TITLE}" eliminata con successo`,
             );
         }
     };
@@ -81,7 +91,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
     const handleModifyPopup = async () => {
         if (onSuccess) {
+            await fetchLogbooks();
             await fetchTasks();
+
             const result = { success: true };
             onSuccess(
                 result.success,
@@ -91,6 +103,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     };
 
     const handleStatusChange = async (e) => {
+        const isLogbook = taskInfo.ISLOGBOOK;
+
         const newStatus = e.target.value;
 
         const updatedTaskData = {
@@ -106,20 +120,26 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             status: newStatus,
         };
 
-        const result = await updateTask(taskInfo.ID, updatedTaskData);
+        const result = isLogbook
+            ? await updateLogbook(taskInfo.ID, updatedTaskData)
+            : await updateTask(taskInfo.ID, updatedTaskData);
 
         if (result.success) {
-            await fetchTasks();
+            if (isLogbook) {
+                await fetchLogbooks();
+            } else {
+                await fetchTasks();
 
-            const changeStatusNote = await createNote(
-                taskInfo.ID,
-                currentUserId,
-                "Stato modificato da " +
-                    `"${taskInfo.STATUS}" a "${newStatus}"`,
-            );
+                const changeStatusNote = await createNote(
+                    taskInfo.ID,
+                    currentUserId,
+                    "Stato modificato da " +
+                        `"${taskInfo.STATUS}" a "${newStatus}"`,
+                );
 
-            if (changeStatusNote.success) {
-                setNoteDescription("");
+                if (changeStatusNote.success) {
+                    setNoteDescription("");
+                }
             }
 
             if (onSuccess) {
@@ -416,7 +436,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     {activeTab === "note" && (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-8 max-h-[calc(40vh-4rem)] overflow-y-auto pr-1">
-                                {notes && notes.length > 0 ? (
+                                {notes &&
+                                !taskInfo.ISLOGBOOK &&
+                                notes.length > 0 ? (
                                     [...notes].reverse().map((note) => (
                                         <div
                                             key={note.ID}
@@ -445,6 +467,39 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Nessuna nota disponibile per questa task
                                     </p>
                                 )}
+
+                                {/* Displays notes only for logbooks */}
+                                {/*notesLogbook &&
+                                taskInfo.ISLOGBOOK &&
+                                notesLogbook.length > 0 ? (
+                                    [...notesLogbook].reverse().map((note) => (
+                                        <div
+                                            key={note.ID}
+                                            className="flex justify-between gap-4"
+                                        >
+                                            <h3 className="text-sm text-[var(--gray)] truncate w-20">
+                                                {getUsernameById(
+                                                    note.CREATEDBY,
+                                                )}
+                                                :
+                                            </h3>
+                                            <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
+                                                <p className="break-words whitespace-pre-wrap">
+                                                    {note.DESCRIPTION}
+                                                </p>
+                                                <span className="flex justify-end text-xs text-[var(--black)] mt-2">
+                                                    {formatDateTime(
+                                                        note.CREATEDDATE,
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-center text-sm text-[var(--gray)] italic">
+                                        Nessuna nota disponibile per questa entry
+                                    </p>
+                                )*/}
                             </div>
 
                             <div className="flex flex-col gap-2 border-t border-[var(--light-primary)] pt-4">

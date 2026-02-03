@@ -12,6 +12,7 @@ import BackIcon from "../assets/icons/back.tsx";
 import CreateModal from "../components/modals/CreateModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
+import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 import ArrowRightIcon from "../assets/icons/arrow-right.tsx";
@@ -19,6 +20,7 @@ import { GetSimulatorsList } from "../functions/Simulators.jsx";
 
 function Logbook() {
     const { tasks, loading, fetchTasks } = useTasks();
+    const { logbooks, fetchLogbooks } = useLogbooks();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -66,6 +68,7 @@ function Logbook() {
     const handleSuccess = async (isSuccess, message) => {
         if (isSuccess) {
             await fetchTasks();
+            await fetchLogbooks();
         }
         setPopupType(isSuccess ? "success" : "error");
         setPopupMessage(
@@ -82,7 +85,7 @@ function Logbook() {
 
     const handleExportPDF = () => {
         try {
-            const tasksExported = exportTasksToPDF(filteredTasks, startDate);
+            const tasksExported = exportTasksToPDF(filteredLogbooks, startDate);
             setPopupType("success");
             setPopupMessage(
                 `PDF esportato con successo! (${tasksExported} task${
@@ -150,6 +153,48 @@ function Logbook() {
         selectedStatus,
     ]);
 
+    const filteredLogbooks = useMemo(() => {
+        let result = logbooks;
+
+        if (selectedSimulator) {
+            result = result.filter(
+                (logbook) => logbook.SIMULATOR === selectedSimulator,
+            );
+        }
+
+        if (selectedAssignees) {
+            result = result.filter(
+                (logbook) => logbook.ASSIGNED_TO === selectedAssignees,
+            );
+        }
+
+        if (selectedStatus) {
+            result = result.filter(
+                (logbook) => logbook.STATUS === selectedStatus,
+            );
+        }
+
+        // Apply search query
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(
+                (logbook) =>
+                    logbook.TITLE?.toLowerCase().includes(query) ||
+                    logbook.DESCRIPTION?.toLowerCase().includes(query) ||
+                    logbook.ASSIGNED_TO?.toLowerCase().includes(query) ||
+                    logbook.STATUS?.toLowerCase().includes(query),
+            );
+        }
+
+        return result;
+    }, [
+        logbooks,
+        searchQuery,
+        selectedSimulator,
+        selectedAssignees,
+        selectedStatus,
+    ]);
+
     return (
         <section className="flex h-screen">
             <Sidebar active="logbook" isSidebarOpen={isSidebarOpen} />
@@ -166,6 +211,7 @@ function Logbook() {
                             startDate={startDate}
                             setStartDate={setStartDate}
                             onDayClick={handleDayClick}
+                            type="logbooks"
                         />
                     ) : (
                         <>
@@ -388,6 +434,7 @@ function Logbook() {
                                         type="tasks&logbook"
                                         loading={loading}
                                         taskList={filteredTasks}
+                                        logbookList={filteredLogbooks}
                                         date={startDate}
                                         onDeleteSuccess={handleSuccess}
                                         key={startDate.toISOString()}
@@ -403,6 +450,7 @@ function Logbook() {
                 <CreateModal
                     onClose={handleCloseModal}
                     onSuccess={handleSuccess}
+                    type="logbook"
                 />
             )}
 

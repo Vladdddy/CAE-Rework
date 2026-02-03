@@ -2,9 +2,11 @@ import DatePickerComponent from "../../functions/DatePicker.jsx";
 import TasksIcon from "../../assets/icons/tasks.tsx";
 import LogbookIcon from "../../assets/icons/logbook.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
+import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks";
 
-function Calendar({ startDate, setStartDate, onDayClick }) {
+function Calendar({ startDate, setStartDate, onDayClick, type }) {
     const { tasks, loading } = useTasks();
+    const { logbooks } = useLogbooks();
     const today = new Date();
     const isCurrentMonth =
         startDate.getMonth() === today.getMonth() &&
@@ -55,14 +57,18 @@ function Calendar({ startDate, setStartDate, onDayClick }) {
                 </div>
                 <p className="text-xs text-[var(--primary)]">Tasks</p>
 
-                <div className="w-1"></div>
+                {type === "logbooks" && (
+                    <>
+                        <div className="w-1"></div>
 
-                <div
-                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]`}
-                >
-                    <LogbookIcon className="w-4" />
-                </div>
-                <p className="text-xs text-[var(--orange)]">Logbook</p>
+                        <div
+                            className={`flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]`}
+                        >
+                            <LogbookIcon className="w-4" />
+                        </div>
+                        <p className="text-xs text-[var(--orange)]">Logbook</p>
+                    </>
+                )}
             </div>
 
             <div className="w-full">
@@ -147,19 +153,22 @@ function Calendar({ startDate, setStartDate, onDayClick }) {
                                                 </div>
                                             ) : null}
 
-                                            {/*Logbook implementation*/}
-                                            {/*{tasks.filter((task) => {
-                                                const taskDate = new Date(
-                                                    task.DATE
+                                            {type === "logbooks" &&
+                                            logbooks.filter((logbook) => {
+                                                const logbookDate = new Date(
+                                                    logbook.DATE,
                                                 );
                                                 return (
-                                                    taskDate.getDate() === day &&
-                                                    taskDate.getMonth() === startDate.getMonth() &&
-                                                    taskDate.getFullYear() === startDate.getFullYear()
+                                                    logbookDate.getDate() ===
+                                                        day &&
+                                                    logbookDate.getMonth() ===
+                                                        startDate.getMonth() &&
+                                                    logbookDate.getFullYear() ===
+                                                        startDate.getFullYear()
                                                 );
                                             }).length > 0 ? (
                                                 <div
-                                                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--gray)] bg-[var(--separator)]`}
+                                                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]`}
                                                 >
                                                     <LogbookIcon className="w-4" />
                                                     <p className="text-xs">
@@ -168,23 +177,26 @@ function Calendar({ startDate, setStartDate, onDayClick }) {
                                                                 Caricamento...
                                                             </div>
                                                         ) : (
-                                                            tasks.filter(
-                                                                (task) => {
-                                                                    const taskDate =
+                                                            logbooks.filter(
+                                                                (logbook) => {
+                                                                    const logbookDate =
                                                                         new Date(
-                                                                            task.DATE
+                                                                            logbook.DATE,
                                                                         );
                                                                     return (
-                                                                        taskDate.getDate() === day &&
-                                                                        taskDate.getMonth() === startDate.getMonth() &&
-                                                                        taskDate.getFullYear() === startDate.getFullYear()
+                                                                        logbookDate.getDate() ===
+                                                                            day &&
+                                                                        logbookDate.getMonth() ===
+                                                                            startDate.getMonth() &&
+                                                                        logbookDate.getFullYear() ===
+                                                                            startDate.getFullYear()
                                                                     );
-                                                                }
+                                                                },
                                                             ).length
                                                         )}
                                                     </p>
                                                 </div>
-                                            ) : null}*/}
+                                            ) : null}
                                         </div>
                                     </div>
                                 ) : (
