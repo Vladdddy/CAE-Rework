@@ -152,6 +152,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     currentUserId,
                     "Stato modificato da " +
                         `"${taskInfo.STATUS}" a "${newStatus}"`,
+                    "automatico",
                 );
 
                 if (changeStatusNote.success) {
@@ -165,6 +166,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     currentUserId,
                     "Stato modificato da " +
                         `"${taskInfo.STATUS}" a "${newStatus}"`,
+                    "automatico",
                 );
 
                 if (changeStatusNote.success) {
@@ -190,8 +192,14 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                   taskInfo.ID,
                   currentUserId,
                   noteDescription,
+                  "creato",
               )
-            : await createNote(taskInfo.ID, currentUserId, noteDescription);
+            : await createNote(
+                  taskInfo.ID,
+                  currentUserId,
+                  noteDescription,
+                  "creato",
+              );
 
         if (result.success) {
             setNoteDescription("");
@@ -500,7 +508,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     [...notes].reverse().map((note) => (
                                         <div
                                             key={note.ID}
-                                            className="flex justify-between gap-4"
+                                            className={`flex justify-between gap-4`}
                                         >
                                             <h3 className="text-sm text-[var(--gray)] truncate w-20">
                                                 {getUsernameById(
@@ -508,8 +516,16 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 )}
                                                 :
                                             </h3>
-                                            <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
+                                            <div
+                                                className={`flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden}`}
+                                            >
                                                 <p className="break-words whitespace-pre-wrap">
+                                                    {note.TYPE ===
+                                                        "automatico" && (
+                                                        <p className="text-[var(--primary)] italic mb-1">
+                                                            [Sistema]
+                                                        </p>
+                                                    )}
                                                     {note.DESCRIPTION}
                                                 </p>
                                                 <span className="flex justify-end text-xs text-[var(--black)] mt-2">
@@ -536,6 +552,12 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             </h3>
                                             <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
                                                 <p className="break-words whitespace-pre-wrap">
+                                                    {note.TYPE ===
+                                                        "automatico" && (
+                                                        <p className="text-[var(--primary)] italic mb-1">
+                                                            [Sistema]
+                                                        </p>
+                                                    )}
                                                     {note.DESCRIPTION}
                                                 </p>
                                                 <span className="flex justify-end text-xs text-[var(--black)] mt-2">

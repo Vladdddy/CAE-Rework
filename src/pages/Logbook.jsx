@@ -389,10 +389,12 @@ function Logbook() {
 
                                     <div className="flex items-center w-full justify-between gap-4">
                                         <div className="flex items-center gap-4">
-                                            <FilterIcon
-                                                className="w-6 text-[var(--black)] icon cursor-pointer"
+                                            <div
+                                                className="flex items-center bg-[var(--bento-bg)] border border-[var(--light-primary)] rounded-md p-2 cursor-pointer transition-all duration-200"
                                                 onClick={showFiltersFunction}
-                                            />
+                                            >
+                                                <FilterIcon className="w-6 text-[var(--black)] icon cursor-pointer" />
+                                            </div>
                                             <div className="relative w-[20vw]">
                                                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
                                                 <input

@@ -27,7 +27,7 @@ export const NoteProvider = ({ children }) => {
         }
     };
 
-    const createNote = async (taskId, userId, description) => {
+    const createNote = async (taskId, userId, description, type) => {
         console.log("Creating note for task ID:", taskId);
         try {
             const response = await fetch(`${API_URL}/notes/${taskId}`, {
@@ -39,6 +39,7 @@ export const NoteProvider = ({ children }) => {
                     createdBy: userId,
                     description: description,
                     createdTime: new Date().toISOString(),
+                    type: type,
                 }),
             });
 

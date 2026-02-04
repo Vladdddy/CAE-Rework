@@ -27,7 +27,7 @@ export const NoteLogbookProvider = ({ children }) => {
         }
     };
 
-    const createNoteLogbook = async (logbookId, userId, description) => {
+    const createNoteLogbook = async (logbookId, userId, description, type) => {
         console.log("Creating note for logbook ID:", logbookId);
         try {
             const response = await fetch(
@@ -41,6 +41,7 @@ export const NoteLogbookProvider = ({ children }) => {
                         createdBy: userId,
                         description: description,
                         createdTime: new Date().toISOString(),
+                        type: type,
                     }),
                 },
             );

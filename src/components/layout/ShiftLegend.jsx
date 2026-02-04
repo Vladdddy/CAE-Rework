@@ -26,7 +26,9 @@ function ShiftLegend() {
                 className="flex flex-row justify-center items-center text-center gap-1 text-[var(--gray)] cursor-pointer hover:text-[var(--black)] transition-all duration-200"
                 onClick={() => setShowLegend((prev) => !prev)}
             >
-                <p>{showLegend ? "Nascondi" : "Mostra"} Leggenda</p>
+                <p className="text-md">
+                    {showLegend ? "Nascondi" : "Mostra"} Leggenda
+                </p>
                 <ArrowIcon
                     className={`w-6 transition-transform duration-300 ${showLegend ? "rotate-[-90deg]" : "rotate-90"}`}
                 />

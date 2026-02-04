@@ -99,11 +99,13 @@ function ModifyModal({ onClose, onSuccess, task }) {
                       task.ID,
                       currentUserId,
                       "Ha modificato la entry",
+                      "automatico",
                   )
                 : await createNote(
                       task.ID,
                       currentUserId,
                       "Ha modificato la task",
+                      "automatico",
                   );
 
             if (changedTaskNote.success) {
