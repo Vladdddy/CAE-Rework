@@ -65,6 +65,111 @@ function ModifyModal({ onClose, onSuccess, task }) {
         );
     };
 
+    const generateChangeMessage = () => {
+        const changes = [];
+        const taskType = task.ISLOGBOOK ? "entry" : "task";
+
+        // Check assigned users change
+        const originalAssignees = task.ASSIGNED_TO
+            ? typeof task.ASSIGNED_TO === "string"
+                ? task.ASSIGNED_TO.split(", ").filter((name) => name.trim())
+                : task.ASSIGNED_TO
+            : [];
+        const newAssignees = selectedAssignees;
+
+        if (
+            JSON.stringify(originalAssignees.sort()) !==
+            JSON.stringify(newAssignees.sort())
+        ) {
+            const fromUsers =
+                originalAssignees.length > 0
+                    ? `"${originalAssignees.join('", "')}"`
+                    : "nessuno";
+            const toUsers =
+                newAssignees.length > 0
+                    ? `"${newAssignees.join('", "')}"`
+                    : "nessuno";
+            changes.push(
+                `riassegnato la ${taskType} da ${fromUsers} a ${toUsers}`,
+            );
+        }
+
+        // Check date change
+        const originalDate = task.DATE ? task.DATE.split("T")[0] : "";
+        if (originalDate !== selectedDate) {
+            const formatDate = (dateStr) => {
+                const [year, month, day] = dateStr.split("-");
+                return `${year}/${month}/${day}`;
+            };
+            changes.push(
+                `cambiato la data da ${formatDate(originalDate)} a ${formatDate(selectedDate)}`,
+            );
+        }
+
+        // Check time/shift change
+        if (task.TIME !== selectedRadio) {
+            changes.push(
+                `cambiato il turno da "${task.TIME}" a "${selectedRadio}"`,
+            );
+        }
+
+        // Check status change
+        if (task.STATUS !== selectedStatus) {
+            changes.push(
+                `cambiato lo stato da "${task.STATUS}" a "${selectedStatus}"`,
+            );
+        }
+
+        // Check title change
+        if (task.TITLE !== title) {
+            changes.push(`cambiato il titolo da "${task.TITLE}" a "${title}"`);
+        }
+
+        // Check description change
+        if (task.DESCRIPTION !== description) {
+            changes.push(`modificato la descrizione`);
+        }
+
+        // Check category change
+        if (task.CATEGORY !== selectedCategory) {
+            changes.push(
+                `cambiato la categoria da "${task.CATEGORY}" a "${selectedCategory}"`,
+            );
+        }
+
+        // Check subcategory change
+        if (task.SUBCATEGORY !== selectedSubCategory) {
+            changes.push(
+                `cambiato la sotto-categoria da "${task.SUBCATEGORY}" a "${selectedSubCategory}"`,
+            );
+        }
+
+        // Check extradetail change
+        if (task.EXTRADETAIL !== selectedDetail) {
+            changes.push(
+                `cambiato il dettaglio extra da "${task.EXTRADETAIL}" a "${selectedDetail}"`,
+            );
+        }
+
+        // Check simulator change
+        if (task.SIMULATOR !== selectedSimulator) {
+            changes.push(
+                `cambiato il simulatore da "${task.SIMULATOR}" a "${selectedSimulator}"`,
+            );
+        }
+
+        if (changes.length === 0) {
+            return `Ha modificato la ${taskType}`;
+        } else if (changes.length === 1) {
+            return `Ha ${changes[0]}`;
+        } else {
+            // Capitalize first letter
+            const firstChange =
+                changes[0].charAt(0).toUpperCase() + changes[0].slice(1);
+            return `Ha ${firstChange}, ${changes.slice(1).join(", ")}`;
+        }
+    };
+
     const handleModify = async () => {
         console.log(`Modifying task with ID: ${task.ID}`);
 
@@ -94,17 +199,18 @@ function ModifyModal({ onClose, onSuccess, task }) {
             : await updateTask(task.ID, modifiedTask);
 
         if (result.success) {
+            const changeMessage = generateChangeMessage();
             const changedTaskNote = isLogbook
                 ? await createNoteLogbook(
                       task.ID,
                       currentUserId,
-                      "Ha modificato la entry",
+                      changeMessage,
                       "automatico",
                   )
                 : await createNote(
                       task.ID,
                       currentUserId,
-                      "Ha modificato la task",
+                      changeMessage,
                       "automatico",
                   );
 

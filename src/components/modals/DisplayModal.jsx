@@ -519,7 +519,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             <div
                                                 className={`flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden}`}
                                             >
-                                                <p className="break-words whitespace-pre-wrap">
+                                                <div
+                                                    className={`break-words whitespace-pre-wrap ${note.TYPE === "automatico" && "text-[var(--black)]"}`}
+                                                >
                                                     {note.TYPE ===
                                                         "automatico" && (
                                                         <p className="text-[var(--primary)] italic mb-1">
@@ -527,7 +529,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                         </p>
                                                     )}
                                                     {note.DESCRIPTION}
-                                                </p>
+                                                </div>
                                                 <span className="flex justify-end text-xs text-[var(--black)] mt-2">
                                                     {formatDateTime(
                                                         note.CREATEDDATE,
@@ -551,7 +553,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 :
                                             </h3>
                                             <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
-                                                <p className="break-words whitespace-pre-wrap">
+                                                <div
+                                                    className={`break-words whitespace-pre-wrap ${note.TYPE === "automatico" && "text-[var(--black)]"}`}
+                                                >
                                                     {note.TYPE ===
                                                         "automatico" && (
                                                         <p className="text-[var(--primary)] italic mb-1">
@@ -559,7 +563,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                         </p>
                                                     )}
                                                     {note.DESCRIPTION}
-                                                </p>
+                                                </div>
                                                 <span className="flex justify-end text-xs text-[var(--black)] mt-2">
                                                     {formatDateTime(
                                                         note.CREATEDDATE,
