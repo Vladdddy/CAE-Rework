@@ -292,7 +292,7 @@ export function GetTableSimulators({
             >
                 {simulators.map((simulator, index) => (
                     <div key={index} className={"flex flex-col gap-2"}>
-                        <div className="flex items-center gap-1">
+                        <div className="sticky top-0 z-10 flex items-center gap-1 pb-2">
                             {/* Simulatore */}
                             {(() => {
                                 if (type !== "table") return null;
