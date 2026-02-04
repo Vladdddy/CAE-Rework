@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/layout/Sidebar.jsx";
 import Topbar from "../components/layout/Topbar.jsx";
 import DatePickerComponent from "../functions/DatePicker.jsx";
+import ShiftLegend from "../components/layout/ShiftLegend.jsx";
 
 function Shifts() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -15,9 +16,8 @@ function Shifts() {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
 
-    const adminShifts = ["O", "OP", "ON", "F", "M", "R", "C", "CA"];
-    const employeeShifts = ["D", "N", "F", "M", "R", "C", "CA"];
-    const shifts = ["O", "OP", "ON", "D", "N", "F", "M", "R", "C", "CA"];
+    /*const adminShifts = ["O", "OP", "ON", "F", "M", "R", "C", "CA"];
+    const employeeShifts = ["D", "N", "F", "M", "R", "C", "CA"];*/
 
     return (
         <section className="flex">
@@ -31,8 +31,8 @@ function Shifts() {
 
                 <div className="flex-1 overflow-y-auto">
                     <>
-                        <div className="m-8 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
+                        <div className="m-8 flex items-start justify-between">
+                            <div className="flex items-start gap-4">
                                 <DatePickerComponent
                                     startDate={startDate}
                                     setStartDate={setStartDate}
@@ -45,17 +45,8 @@ function Shifts() {
                             </button>
                         </div>
 
-                        <div className="m-8 flex items-center justify-start gap-4">
-                            {shifts.map((shift) => (
-                                <div
-                                    key={shift}
-                                    className="flex flex-row items-center gap-4"
-                                >
-                                    <span className="text-center font-bold px-2 py-2 w-12 h-12 flex justify-center items-center rounded-lg bg-[var(--light-primary)] text-[var(--primary)]">
-                                        {shift}
-                                    </span>
-                                </div>
-                            ))}
+                        <div className="m-8 flex flex-row items-center justify-between">
+                            <ShiftLegend />
                         </div>
                     </>
                 </div>

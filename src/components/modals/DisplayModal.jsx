@@ -84,6 +84,22 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         return `${day}/${month}/${year}`;
     };
 
+    const getDayOfWeek = (dateString) => {
+        if (!dateString) return "N/A";
+
+        const date = new Date(dateString);
+        const days = [
+            "Domenica",
+            "Lunedì",
+            "Martedì",
+            "Mercoledì",
+            "Giovedì",
+            "Venerdì",
+            "Sabato",
+        ];
+        return days[date.getDay()];
+    };
+
     const handleModify = () => {
         setIsModifyOpen(true);
     };
@@ -275,6 +291,16 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
                                             <div className="flex items-center gap-2">
                                                 <div className="flex items-center gap-1">
+                                                    <p className="text-sm text-[var(--black)]">
+                                                        {getDayOfWeek(
+                                                            taskInfo?.DATE,
+                                                        )}
+                                                    </p>
+
+                                                    <p className="text-sm text-[var(--black)]">
+                                                        •
+                                                    </p>
+
                                                     <p className="text-sm text-[var(--black)]">
                                                         {formatDate(
                                                             taskInfo?.DATE,
