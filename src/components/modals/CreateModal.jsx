@@ -29,6 +29,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
     const [titleError, setTitleError] = useState(false);
     const [dateError, setDateError] = useState(false);
     const [dateNotFoundError, setDateNotFoundError] = useState(false);
+    const [taskLimitError, setTaskLimitError] = useState(false);
     const simulators = GetSimulatorsList();
     const [selectedSimulator, setSelectedSimulator] = useState(
         simulators[0] || "",
@@ -192,6 +193,12 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             return;
         }
         setDateNotFoundError(false);
+
+        if (existingDaysList.length > 50) {
+            setTaskLimitError(true);
+            return;
+        }
+        setTaskLimitError(false);
 
         const results = await Promise.all(
             existingDaysList.map(async (date) => {
@@ -642,6 +649,11 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
                                     <p className="text-[var(--red)] text-sm mt-1">
                                         Nessuna data trovata per i giorni
                                         selezionati
+                                    </p>
+                                )}
+                                {taskLimitError && (
+                                    <p className="text-[var(--red)] text-sm mt-1">
+                                        Limite massimo di 50 task superato.
                                     </p>
                                 )}
                             </div>
