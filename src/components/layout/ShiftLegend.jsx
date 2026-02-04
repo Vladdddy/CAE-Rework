@@ -32,7 +32,7 @@ function ShiftLegend() {
                 />
             </div>
             <div
-                className={`max-h-[calc(100vh-20rem)] overflow-y-auto pr-8 overflow-hidden transition-all duration-300 ${showLegend ? "max-h-[calc(100vh-20rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
+                className={` overflow-y-auto pr-8 overflow-hidden transition-all duration-300 ${showLegend ? "max-h-[calc(100vh-20rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
             >
                 <div className="flex flex-col justify-between w-auto items-start text-center gap-4 ">
                     {Object.entries(shiftMeanings).map(([shift, meaning]) => (
