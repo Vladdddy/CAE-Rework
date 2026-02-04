@@ -382,6 +382,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
                                 onChange={(e) => setDescription(e.target.value)}
                                 className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                                 placeholder="Inserisci note aggiuntive qui..."
+                                maxLength={500}
                                 required
                             ></textarea>
                         </div>
