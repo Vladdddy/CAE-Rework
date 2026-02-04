@@ -12,13 +12,15 @@ function SimulatorModal({
     startTime,
     endTime,
     assignee,
+    creationDate,
+    time,
 }) {
-    const [name, setName] = useState("FTD");
+    const [name, setName] = useState(simulatorInfo || "FTD");
     const [startHour, setStartHour] = useState("");
     const [endHour, setEndHour] = useState("");
     const [assignedTo, setAssignedTo] = useState("");
     const simulators = GetSimulatorsList();
-    const { createSimulator } = useSimulators();
+    const { createSimulator, updateSimulator } = useSimulators();
     const { users } = useUsers();
     const [emptyError, setEmptyError] = useState(false);
     const [editSimulator, setEditSimulator] = useState(false);
@@ -60,7 +62,49 @@ function SimulatorModal({
     };
 
     const handleEdit = async () => {
-        console.log("EDIT");
+        const finalName = name || simulatorInfo;
+        const finalStartHour = startHour || toTimeInputValue(startTime);
+        const finalEndHour = endHour || toTimeInputValue(endTime);
+        const finalAssignedTo = assignedTo || assignee;
+
+        console.log("Editing Simulator with data:", {
+            name: finalName,
+            startHour: finalStartHour,
+            endHour: finalEndHour,
+            assignedTo: finalAssignedTo,
+        });
+
+        if (
+            !finalName ||
+            !finalStartHour ||
+            !finalEndHour ||
+            !finalAssignedTo
+        ) {
+            setEmptyError(true);
+            return;
+        }
+        setEmptyError(false);
+
+        const updatedSimulator = {
+            name: finalName,
+            startHour: finalStartHour,
+            endHour: finalEndHour,
+            assignedTo: finalAssignedTo,
+            creationDate: creationDate,
+        };
+
+        console.log("Updated Simulator Data:", updatedSimulator);
+
+        const result = await updateSimulator(updatedSimulator);
+        if (result.success) {
+            console.log("Simulator updated successfully:", result.data);
+        } else {
+            console.error("Error updating simulator:", result.error);
+            if (result.status === 409) {
+                setExistingSimulatorError(true);
+                return;
+            }
+        }
 
         onClose();
     };
@@ -147,7 +191,9 @@ function SimulatorModal({
                     <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1">
                             <h3 className="text-sm text-[var(--gray)]">
-                                Orario inizio
+                                {time === "Diurno"
+                                    ? "Orario inizio"
+                                    : "Orario fine"}
                             </h3>
                             <input
                                 type="time"
@@ -164,7 +210,9 @@ function SimulatorModal({
 
                         <div className="flex flex-col gap-1">
                             <h3 className="text-sm text-[var(--gray)]">
-                                Orario fine
+                                {time === "Diurno"
+                                    ? "Orario fine"
+                                    : "Orario inizio"}
                             </h3>
                             <input
                                 type="time"
@@ -177,7 +225,6 @@ function SimulatorModal({
                                     setExistingSimulatorError(false);
                                 }}
                             />
-                            {console.log(toTimeInputValue(endTime))}
                         </div>
                     </div>
 

@@ -396,6 +396,8 @@ export function GetTableSimulators({
                         startTime={selectedSimulator.START_HOUR}
                         endTime={selectedSimulator.END_HOUR}
                         assignee={selectedSimulator.ASSIGNED_TO}
+                        creationDate={selectedSimulator.CREATION_DATE}
+                        time={time}
                     />
                 )}
             </div>

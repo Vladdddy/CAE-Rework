@@ -59,6 +59,37 @@ export const SimulatorProvider = ({ children }) => {
         }
     };
 
+    const updateSimulator = async (updatedData) => {
+        console.log("Updating simulator with data:", updatedData);
+
+        try {
+            const response = await fetch(`${API_URL}/simulators`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ simulator: updatedData }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return {
+                    success: false,
+                    error: data.error || "Failed to update simulator",
+                    status: response.status,
+                };
+            }
+
+            await fetchSimulators();
+
+            return { success: true, data, status: response.status };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message, status: null };
+        }
+    };
+
     return (
         <SimulatorContext.Provider
             value={{
@@ -67,6 +98,7 @@ export const SimulatorProvider = ({ children }) => {
                 error,
                 fetchSimulators,
                 createSimulator,
+                updateSimulator,
             }}
         >
             {children}
