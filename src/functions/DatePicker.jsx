@@ -75,6 +75,15 @@ export default function DatePickerComponent({
         setStartDate(newDate);
     };
 
+    const getDayOfWeek = (dateString) => {
+        if (!dateString) return "N/A";
+
+        const date = new Date(dateString);
+        const days = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
+        return days[date.getDay()];
+    };
+
     return (
         <div
             className={`flex items-center justify-between ${
@@ -97,6 +106,10 @@ export default function DatePickerComponent({
                 >
                     <CalendarIcon className="w-6 icon" />
                 </div>
+
+                {!isCalendar && (
+                    <p className="text-md">{getDayOfWeek(startDate)},</p>
+                )}
 
                 <h1 className={`${isCalendar ? "text-xl" : "text-md"}`}>
                     {formatDate(startDate, !isCalendar)}
