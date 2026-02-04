@@ -177,7 +177,10 @@ function Register() {
                         </button>
                         <button
                             className="btn gray-btn"
-                            onClick={() => navigate(-1)}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                navigate(-1);
+                            }}
                         >
                             Indietro
                         </button>
