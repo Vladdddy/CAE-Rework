@@ -32,13 +32,13 @@ function ShiftLegend() {
                 />
             </div>
             <div
-                className={`overflow-hidden transition-all duration-300 ${showLegend ? "max-h-96 opacity-100" : "max-h-0 w-0 opacity-0"}`}
+                className={`max-h-[calc(100vh-20rem)] overflow-y-auto pr-8 overflow-hidden transition-all duration-300 ${showLegend ? "max-h-[calc(100vh-20rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
             >
-                <div className="flex flex-row justify-between w-auto items-center text-center gap-4">
+                <div className="flex flex-col justify-between w-auto items-start text-center gap-4 ">
                     {Object.entries(shiftMeanings).map(([shift, meaning]) => (
                         <div
                             key={shift}
-                            className="flex flex-col justify-center items-center text-center gap-1 w-20"
+                            className="flex flex-row justify-start items-center text-center gap-4"
                         >
                             <p
                                 className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg ${GetColorForShift(shift)}`}
