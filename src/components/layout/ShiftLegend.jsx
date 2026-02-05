@@ -16,11 +16,13 @@ function ShiftLegend() {
         R: "Riposo",
         C: "Corso",
         CA: "Chiusura",
+        T: "Trasferta",
+        P: "Paternità",
     };
 
     return (
         <div
-            className={`flex flex-col justify-between items-start text-center bg-[var(--white)] border border-[var(--white)] rounded-lg px-4 py-4 transition-all duration-300 ${showLegend ? "gap-8 w-auto" : "gap-0 w-fit"}`}
+            className={`flex flex-col justify-between items-start text-center bg-[var(--white)] border border-[var(--light-primary)] rounded-xl px-4 py-4 transition-all duration-300 ${showLegend ? "gap-8 w-auto" : "gap-0 w-fit"}`}
         >
             <div
                 className="flex flex-row justify-center items-center text-center gap-1 text-[var(--gray)] cursor-pointer hover:text-[var(--black)] transition-all duration-200"

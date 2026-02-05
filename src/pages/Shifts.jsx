@@ -2,8 +2,9 @@ import React from "react";
 import { useEffect, useState } from "react";
 import Sidebar from "../components/layout/Sidebar.jsx";
 import Topbar from "../components/layout/Topbar.jsx";
-import DatePickerComponent from "../functions/DatePicker.jsx";
+import ShiftMonthPicker from "../functions/ShiftMonthPicker.jsx";
 import ShiftLegend from "../components/layout/ShiftLegend.jsx";
+import ShiftsTable from "../components/data/ShiftsTable.jsx";
 
 function Shifts() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -30,25 +31,27 @@ function Shifts() {
                 />
 
                 <div className="flex-1 overflow-y-auto">
-                    <>
-                        <div className="m-8 flex items-start justify-between">
-                            <div className="flex items-start gap-4">
-                                <DatePickerComponent
-                                    startDate={startDate}
-                                    setStartDate={setStartDate}
-                                    isCalendar={false}
-                                />
-                            </div>
-
-                            <button className="btn secondary">
-                                Export PDF
-                            </button>
+                    <div className="m-8 flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                            <ShiftMonthPicker
+                                startDate={startDate}
+                                setStartDate={setStartDate}
+                                isCalendar={false}
+                            />
                         </div>
 
-                        <div className="m-8 flex flex-row items-center justify-between">
-                            <ShiftLegend />
-                        </div>
-                    </>
+                        <button className="btn secondary">Export PDF</button>
+                    </div>
+
+                    <div className="m-8 flex flex-row items-start justify-between gap-8">
+                        <ShiftsTable
+                            selectedMonth={startDate.toLocaleString("it-IT", {
+                                month: "long",
+                                year: "numeric",
+                            })}
+                        />
+                        <ShiftLegend />
+                    </div>
                 </div>
             </div>
         </section>

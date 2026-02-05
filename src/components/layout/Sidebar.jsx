@@ -142,14 +142,12 @@ function Sidebar(props) {
                             Shifts
                         </p>
                     </Link>
+                    {props.isSidebarOpen ? (
+                        <p className="text-sm text-[var(--gray)] mt-4">Altro</p>
+                    ) : null}
                     {(currentUserRole === "Admin" ||
                         currentUserRole === "Shift Leader") && (
                         <>
-                            {props.isSidebarOpen ? (
-                                <p className="text-sm text-[var(--gray)] mt-4">
-                                    Altro
-                                </p>
-                            ) : null}
                             <Link
                                 to="/register"
                                 className={`flex flex-row items-center gap-2 transition-all duration-300 ${
@@ -177,31 +175,31 @@ function Sidebar(props) {
                                     Aggiungi Utente
                                 </p>
                             </Link>
-                            <Link
-                                to="mailto:bukatorvladyslav@gmail.com?subject=Segnalazione%20bug%20CAE"
-                                className={`flex flex-row items-center gap-2 transition-all duration-300 ${
-                                    props.active === "report"
-                                        ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
-                                              !props.isSidebarOpen
-                                                  ? "px-2"
-                                                  : "pr-8 pl-2 w-48"
-                                          } py-2`
-                                        : "p-2 hover:bg-[var(--light-primary)] rounded-md"
-                                } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
-                            >
-                                <ReportIcon className="w-6" />
-                                <p
-                                    className={`transition-opacity duration-300 ${
-                                        props.isSidebarOpen
-                                            ? "opacity-100"
-                                            : "opacity-0 hidden"
-                                    }`}
-                                >
-                                    Segnala Bug
-                                </p>
-                            </Link>
                         </>
                     )}
+                    <Link
+                        to="mailto:bukatorvladyslav@gmail.com?subject=Segnalazione%20bug%20CAE"
+                        className={`flex flex-row items-center gap-2 transition-all duration-300 ${
+                            props.active === "report"
+                                ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
+                                      !props.isSidebarOpen
+                                          ? "px-2"
+                                          : "pr-8 pl-2 w-48"
+                                  } py-2`
+                                : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                        } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
+                    >
+                        <ReportIcon className="w-6" />
+                        <p
+                            className={`transition-opacity duration-300 ${
+                                props.isSidebarOpen
+                                    ? "opacity-100"
+                                    : "opacity-0 hidden"
+                            }`}
+                        >
+                            Segnala Bug
+                        </p>
+                    </Link>
                 </div>
             </div>
 

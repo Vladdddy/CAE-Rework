@@ -237,7 +237,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     <div className="flex flex-row items-center gap-2 text-[var(--black)]">
                         <TaskIcon className="w-6" />
                         <h1 className="text-xl">
-                            Dettagli Task #{taskInfo.ID}
+                            Dettagli{taskInfo.ISLOGBOOK ? " Entry" : " Task"} #
+                            {taskInfo.ID}
                         </h1>
                     </div>
                     <button
@@ -489,6 +490,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     {(currentUserRole === "Admin" ||
                                         currentUserRole === "Shift Leader" ||
                                         (taskInfo.ASSIGNED_TO &&
+                                            taskInfo.ISLOGBOOK &&
                                             users.find(
                                                 (u) => u.ID === currentUserId,
                                             )?.Username &&

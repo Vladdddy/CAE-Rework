@@ -20,6 +20,10 @@ export function GetColorForShift(shift) {
             return "bg-green-100 text-green-800";
         case "CA":
             return "bg-red-100 text-red-800";
+        case "T":
+            return "bg-fuchsia-100 text-fuchsia-800";
+        case "P":
+            return "bg-violet-100 text-violet-800";
         default:
             return "bg-[var(--light-primary)] text-[var(--primary)]";
     }
