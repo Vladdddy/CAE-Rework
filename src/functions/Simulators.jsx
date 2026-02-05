@@ -214,6 +214,7 @@ export function GetTableSimulators({
 
     useEffect(() => {
         fetchSimulators();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [date]);
 
     const handleSimulatorClick = (simulatorData) => {

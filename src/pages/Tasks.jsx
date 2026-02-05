@@ -48,6 +48,7 @@ function Tasks() {
     const [selectedFrom, setSelectedFrom] = useState("");
     const [selectedTo, setSelectedTo] = useState("");
     const [dateError, setDateError] = useState(false);
+    const [viewDays, setViewDays] = useState(1);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -267,6 +268,14 @@ function Tasks() {
         selectedTo,
     ]);
 
+    const datesList = useMemo(() => {
+        return Array.from({ length: viewDays }).map((_, index) => {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + index);
+            return currentDate;
+        });
+    }, [startDate, viewDays]);
+
     const categories = {
         "Routine Task": [
             "PM",
@@ -288,6 +297,26 @@ function Tasks() {
             "Remote connection without support",
             "On-Site Connection",
         ],
+    };
+
+    const getSelectedDateString = (currentDate) => {
+        return (
+            currentDate
+                .toLocaleDateString("it-IT", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                })
+                .charAt(0)
+                .toUpperCase() +
+            currentDate
+                .toLocaleDateString("it-IT", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                })
+                .slice(1)
+        );
     };
 
     return (
@@ -396,23 +425,32 @@ function Tasks() {
                                             )}
                                         </div>
 
-                                        {/* <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
-                                            <div className="flex items-center gap-2 bg-[var(--light-primary)] text-[var(--primary)] p-2 px-4 rounded-md cursor-pointer">
+                                        <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
+                                            <div
+                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 1 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
+                                                onClick={() => setViewDays(1)}
+                                            >
                                                 <p className="text-sm">Oggi</p>
                                             </div>
 
-                                            <div className="flex items-center gap-2 text-[var(--black)] p-2 px-4 rounded-md cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200">
+                                            <div
+                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 7 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
+                                                onClick={() => setViewDays(7)}
+                                            >
                                                 <p className="text-sm">
                                                     1 settimana
                                                 </p>
                                             </div>
 
-                                            <div className="flex items-center gap-2 text-[var(--black)] p-2 px-4 rounded-md cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200">
+                                            <div
+                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 14 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
+                                                onClick={() => setViewDays(14)}
+                                            >
                                                 <p className="text-sm">
                                                     2 settimane
                                                 </p>
                                             </div>
-                                        </div> */}
+                                        </div>
                                     </div>
 
                                     {showFilters && (
@@ -719,18 +757,43 @@ function Tasks() {
                                         </div>
                                     )}
 
-                                    <Table
-                                        type="tasks"
-                                        loading={loading}
-                                        taskList={filteredTasks}
-                                        date={
-                                            selectedFrom || selectedTo
-                                                ? null
-                                                : startDate
-                                        }
-                                        onDeleteSuccess={handleSuccess}
-                                        key={startDate.toISOString()}
-                                    />
+                                    {datesList.map((currentDate, index) => (
+                                        <div key={currentDate.toISOString()}>
+                                            {viewDays > 1 && (
+                                                <h1 className="text-xl font-semibold text-[var(--black)] mb-1 mt-4">
+                                                    {getSelectedDateString(
+                                                        currentDate,
+                                                    )}
+                                                </h1>
+                                            )}
+                                            <div
+                                                className={
+                                                    viewDays > 1 &&
+                                                    "p-4 bg-[var(--white)] rounded-xl"
+                                                }
+                                            >
+                                                <Table
+                                                    type="tasks"
+                                                    loading={loading}
+                                                    taskList={filteredTasks}
+                                                    date={
+                                                        selectedFrom ||
+                                                        selectedTo
+                                                            ? null
+                                                            : currentDate
+                                                    }
+                                                    onDeleteSuccess={
+                                                        handleSuccess
+                                                    }
+                                                />
+                                            </div>
+
+                                            {viewDays > 1 &&
+                                                index < viewDays - 1 && (
+                                                    <div className="my-4" />
+                                                )}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </>

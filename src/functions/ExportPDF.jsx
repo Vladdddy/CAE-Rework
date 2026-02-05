@@ -18,8 +18,8 @@ const formatDate = (date) => {
 const formatTime = (time) => {
     if (!time) return "N/A";
     const d = new Date(time);
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
+    const hours = String(d.getUTCHours()).padStart(2, "0");
+    const minutes = String(d.getUTCMinutes()).padStart(2, "0");
     return `${hours}:${minutes}`;
 };
 
@@ -120,7 +120,7 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
             if (sim) {
                 checkPageBreak(15);
                 doc.text(
-                    `Orario inizio: ${formatTime(sim.START_HOUR)}`,
+                    `Orario fine: ${formatTime(sim.START_HOUR)}`,
                     margin + 5,
                     yPosition,
                 );
@@ -128,7 +128,7 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
 
                 checkPageBreak(5);
                 doc.text(
-                    `Orario fine: ${formatTime(sim.END_HOUR)}`,
+                    `Orario inizio: ${formatTime(sim.END_HOUR)}`,
                     margin + 5,
                     yPosition,
                 );
