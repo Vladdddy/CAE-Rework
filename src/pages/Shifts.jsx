@@ -5,6 +5,7 @@ import Topbar from "../components/layout/Topbar.jsx";
 import ShiftMonthPicker from "../functions/ShiftMonthPicker.jsx";
 import ShiftLegend from "../components/layout/ShiftLegend.jsx";
 import ShiftsTable from "../components/data/ShiftsTable.jsx";
+import ShiftsTableTest from "../components/data/ShiftsTableTest.jsx";
 
 function Shifts() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -44,7 +45,7 @@ function Shifts() {
                     </div>
 
                     <div className="m-8 flex flex-row items-start justify-between gap-8">
-                        <ShiftsTable
+                        <ShiftsTableTest
                             selectedMonth={startDate.toLocaleString("it-IT", {
                                 month: "long",
                                 year: "numeric",

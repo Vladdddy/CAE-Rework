@@ -55,27 +55,12 @@ function ShiftsTable({ selectedMonth }) {
     };
 
     return (
-        <div className="flex-1 w-[800px] max-h-[calc(100vh-14rem)] flex bg-[var(--bento-bg)] border border-[var(--separator)] rounded-lg overflow-x-auto pb-1">
-            <div className="flex flex-col max-w-[240px] border-r border-[var(--separator)] sticky left-0 z-20">
-                <div className="min-w-max">
-                    <p className="sticky top-0 z-20 text-[var(--gray)] bg-[var(--bento-bg)] text-sm p-4 text-start border-b border-[var(--separator)] truncate max-w-[240px]">
-                        Giorno della settimana
-                    </p>
-                    <p className="sticky top-10 z-20 text-[var(--gray)] bg-[var(--bento-bg)] text-sm p-4 text-start border-b border-[var(--separator)] truncate max-w-[240px]">
-                        Giorno del mese
-                    </p>
-                    <p className="sticky top-20 z-20 text-[var(--gray)] bg-[var(--light-primary)] text-sm p-4 text-start border-b border-[var(--separator)] truncate max-w-[240px]">
-                        Conteggio turni
-                    </p>
-                    {users.map((user) => (
-                        <p className="text-[var(--black)] bg-[var(--bento-bg)] text-sm p-4 text-start border-b border-[var(--separator)] truncate max-w-[240px]">
-                            {formatUsername(user.Username)}
-                        </p>
-                    ))}
-                </div>
-            </div>
-            <div className="flex flex-col min-w-max">
-                <div className="flex flex-row border-b border-[var(--separator)] sticky top-0 z-10">
+        <div className="flex-1 w-[800px] max-h-[calc(100vh-14rem)] flex flex-col bg-[var(--bento-bg)] border border-[var(--separator)] rounded-lg overflow-x-auto pb-1">
+            <div className="sticky top-0 z-30 flex flex-row">
+                <p className="sticky left-0 z-20 text-[var(--gray)] bg-[var(--bento-bg)] text-sm p-4 text-start border-r border-b border-[var(--separator)] min-w-[240px]">
+                    Giorno della settimana
+                </p>
+                <div className="flex flex-row border-b border-[var(--separator)]">
                     {dayOfWeek.map((day, index) => (
                         <p
                             key={`dow-${index}`}
@@ -85,7 +70,12 @@ function ShiftsTable({ selectedMonth }) {
                         </p>
                     ))}
                 </div>
-                <div className="flex flex-row border-b border-[var(--separator)] sticky top-10 z-10">
+            </div>
+            <div className="sticky top-10 z-30 flex flex-row">
+                <p className="sticky left-0 z-20 text-[var(--gray)] bg-[var(--bento-bg)] text-sm p-4 text-start border-r border-b border-[var(--separator)] min-w-[240px]">
+                    Giorno del mese
+                </p>
+                <div className="flex flex-row border-b border-[var(--separator)]">
                     {numericDays.map((day, index) => (
                         <p
                             key={`day-${index}`}
@@ -95,30 +85,44 @@ function ShiftsTable({ selectedMonth }) {
                         </p>
                     ))}
                 </div>
-                <div className="flex flex-row border-b border-[var(--separator)] sticky top-20 z-10">
+            </div>
+            <div className="sticky top-20 z-30 flex flex-row">
+                <p className="sticky left-0 z-20 text-[var(--gray)] bg-[var(--light-primary)] text-sm p-4 text-start border-r border-b border-[var(--separator)] min-w-[240px]">
+                    Conteggio turni
+                </p>
+                <div className="flex flex-row border-b border-[var(--separator)]">
                     {numericDays.map((day, index) => (
-                        <p
+                        <div
                             key={`day-${index}`}
                             className="text-[var(--primary)] bg-[var(--light-primary)] text-sm p-4 min-w-[6rem] text-center border-r border-[var(--separator)]"
                         >
-                            {day} {day}
-                        </p>
+                            <span className="text-[var(--green)] border border-[var(--green)] bg-green-900 p-2 rounded mr-2">
+                                0
+                            </span>
+                            <span className="text-[var(--red)] border border-[var(--red)] bg-red-900 p-2 rounded">
+                                0
+                            </span>
+                        </div>
                     ))}
                 </div>
-
-                {users.map(() => (
+            </div>
+            {users.map((user) => (
+                <div className="flex flex-row">
+                    <p className="sticky left-0 z-20 text-[var(--gray)] bg-[var(--bento-bg)] text-sm p-4 text-start border-r border-b border-[var(--separator)] min-w-[240px]">
+                        {formatUsername(user.Username)}
+                    </p>
                     <div className="flex flex-row border-b border-[var(--separator)]">
                         {numericDays.map((day, index) => (
                             <p
                                 key={`day-${index}`}
                                 className="text-[var(--black)] text-sm p-4 min-w-[6rem] text-center border-r border-[var(--separator)]"
                             >
-                                OP
+                                {day % 3 === 0 ? "D" : "N"}
                             </p>
                         ))}
                     </div>
-                ))}
-            </div>
+                </div>
+            ))}
         </div>
     );
 }
