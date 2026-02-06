@@ -224,11 +224,11 @@ function ShiftsTable({ selectedMonth }) {
                                 className="min-w-[8rem] w-[8rem]"
                             >
                                 <div className="text-[var(--primary)] bg-[var(--light-primary)] text-sm p-4 text-center border-r border-[var(--separator)]">
-                                    <span className="text-[var(--green)] bg-[#32de8410] border border-[#32de8450] p-2 rounded mr-2">
+                                    <span className="text-[var(--green)] bg-[#32de8410] border border-[#32de8420] p-2 rounded mr-2">
                                         D-2
                                     </span>
 
-                                    <span className="text-[var(--red)] bg-[#de323210] border border-[#de323250] p-2 rounded">
+                                    <span className="text-[var(--red)] bg-[#de323210] border border-[#de323220] p-2 rounded">
                                         N-0
                                     </span>
                                 </div>
