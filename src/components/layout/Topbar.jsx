@@ -112,15 +112,21 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                 )}
             </div>
             {isDarkMode ? (
-                <DayIcon
-                    className="w-6 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] ml-auto mr-4"
+                <div
+                    className="flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition  rounded-md p-2 px-4 cursor-pointer ml-auto mr-4"
                     onClick={toggleDarkMode}
-                />
+                >
+                    <DayIcon className="w-6" />
+                    <p className="">Tema chiaro</p>
+                </div>
             ) : (
-                <NightIcon
-                    className="w-6 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] ml-auto mr-4"
+                <div
+                    className="flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition  rounded-md p-2 px-4 cursor-pointer ml-auto mr-4"
                     onClick={toggleDarkMode}
-                />
+                >
+                    <NightIcon className="w-6" />
+                    <p className="">Tema scuro</p>
+                </div>
             )}
             <CurrentTime />
 
