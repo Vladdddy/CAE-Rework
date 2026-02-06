@@ -25,6 +25,6 @@ export function GetColorForShift(shift) {
         case "P":
             return "bg-violet-100 text-violet-800";
         default:
-            return "bg-[var(--light-primary)] text-[var(--primary)]";
+            return "bg-[var(--white)] text-[var(--gray)]";
     }
 }
