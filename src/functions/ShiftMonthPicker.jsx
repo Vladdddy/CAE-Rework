@@ -62,7 +62,7 @@ export default function ShiftMonthPicker({ startDate, setStartDate }) {
     };
 
     return (
-        <div className="flex items-center justify-between w-[320px] z-[49]">
+        <div className="flex items-center justify-between w-[320px] z-[40]">
             <div
                 onClick={goToPreviousMonth}
                 className="cursor-pointer p-2 text-[var(--black)] bg-[var(--bento-bg)] border border-[var(--light-primary)] rounded-md"

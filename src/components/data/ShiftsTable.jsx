@@ -225,11 +225,11 @@ function ShiftsTable({ selectedMonth }) {
                             >
                                 <div className="text-[var(--primary)] bg-[var(--light-primary)] text-sm p-4 text-center border-r border-[var(--separator)]">
                                     <span className="text-[var(--green)] bg-[#32de8410] border border-[#32de8450] p-2 rounded mr-2">
-                                        D 2
+                                        D-2
                                     </span>
 
                                     <span className="text-[var(--red)] bg-[#de323210] border border-[#de323250] p-2 rounded">
-                                        N 0
+                                        N-0
                                     </span>
                                 </div>
                             </div>
@@ -254,7 +254,7 @@ function ShiftsTable({ selectedMonth }) {
                         >
                             <div className="flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)]">
                                 <div className="min-w-[240px] w-[240px]">
-                                    <p className="text-[var(--gray)] text-sm p-4 text-start select-none flex items-center gap-2">
+                                    <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
                                         {isEmployee && (
                                             <DragIcon className="w-6 text-[var(--black)]" />
                                         )}
