@@ -57,13 +57,15 @@ function Shifts() {
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-4">
-                            <button className="btn secondary">
-                                Export PDF
-                            </button>
+                        {impagination === 1 && (
+                            <div className="flex items-start gap-4">
+                                <button className="btn secondary">
+                                    Export PDF
+                                </button>
 
-                            <ShiftLegend />
-                        </div>
+                                <ShiftLegend />
+                            </div>
+                        )}
                     </div>
 
                     <div className="m-8 flex flex-row items-start justify-between gap-8">

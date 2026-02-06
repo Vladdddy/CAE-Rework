@@ -78,6 +78,14 @@ function ShiftsTable({ selectedMonth }) {
         return dayOfWeekLabels[currentDate.getDay()];
     });
 
+    // Check if today is in the current displayed month
+    const today = new Date();
+    const isCurrentMonth =
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
+    const todayDate = today.getDate();
+    const todayIndex = isCurrentMonth ? todayDate - 1 : -1;
+
     const formatUsername = (user) => {
         return (
             user.split(".")[0].charAt(0).toUpperCase() +
@@ -177,7 +185,9 @@ function ShiftsTable({ selectedMonth }) {
                                 key={`dow-${index}`}
                                 className="min-w-[8rem] w-[8rem]"
                             >
-                                <p className="text-[var(--primary)] bg-[var(--bento-bg)] text-sm p-4 text-center border-r border-[var(--separator)]">
+                                <p
+                                    className={`${index === todayIndex ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--primary)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                >
                                     {day}
                                 </p>
                             </div>
@@ -200,7 +210,9 @@ function ShiftsTable({ selectedMonth }) {
                                 key={`day-${index}`}
                                 className="min-w-[8rem] w-[8rem]"
                             >
-                                <p className="text-[var(--primary)] bg-[var(--bento-bg)] text-sm p-4 text-center border-r border-[var(--separator)]">
+                                <p
+                                    className={`${index === todayIndex ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--primary)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                >
                                     {day}
                                 </p>
                             </div>
