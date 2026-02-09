@@ -209,13 +209,6 @@ function ShiftsTable({ selectedMonth }) {
                 shift.SELECTED_DATE.split("T")[0] === formattedDate,
         );
 
-        if (matchingShift) {
-            console.log(
-                `Found shift for user ${user.Username} on ${formattedDate}:`,
-                matchingShift,
-            );
-        }
-
         return matchingShift ? matchingShift.SHIFT_TYPE : "--";
     };
 
@@ -278,7 +271,7 @@ function ShiftsTable({ selectedMonth }) {
                                     className="min-w-[8rem] w-[8rem]"
                                 >
                                     <p
-                                        className={`${index === todayIndex ? "bg-[var(--light-primary)] text-[var(--black)]" : isWeekend ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : "bg-[var(--bento-bg)] text-[var(--primary)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                        className={`${index === todayIndex ? "bg-[var(--light-primary)] text-[var(--black)]" : isWeekend ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
                                         {day}
                                     </p>
@@ -313,7 +306,7 @@ function ShiftsTable({ selectedMonth }) {
                                     className="min-w-[8rem] w-[8rem]"
                                 >
                                     <p
-                                        className={`${index === todayIndex ? "bg-[var(--light-primary)] text-[var(--black)]" : isWeekend ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : "bg-[var(--bento-bg)] text-[var(--primary)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                        className={`${index === todayIndex ? "bg-[var(--light-primary)] text-[var(--black)]" : isWeekend ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
                                         {day}
                                     </p>
@@ -364,83 +357,6 @@ function ShiftsTable({ selectedMonth }) {
                 </div>
 
                 {/* Users Rows */}
-                {orderedUsers.map((user, userIndex) => {
-                    const isEmployee = user.Role === "Employee";
-                    return (
-                        <div
-                            key={`user-${userIndex}`}
-                            className={`flex ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""}`}
-                            draggable={isEmployee}
-                            onDragStart={(e) => handleDragStart(e, userIndex)}
-                            onDragOver={(e) => handleDragOver(e, userIndex)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, userIndex)}
-                            onDragEnd={handleDragEnd}
-                            style={{ cursor: isEmployee ? "grab" : "default" }}
-                        >
-                            <div className="flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)]">
-                                <div className="min-w-[240px] w-[240px]">
-                                    <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
-                                        {isEmployee && (
-                                            <DragIcon className="w-6 text-[var(--black)]" />
-                                        )}
-                                        {formatUsername(user.Username)}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex border-b border-[var(--separator)]">
-                                {numericDays.map((day, index) => {
-                                    const isWeekend =
-                                        dayOfWeek[index] === "Sabato" ||
-                                        dayOfWeek[index] === "Domenica";
-                                    return (
-                                        <div
-                                            key={`user-${userIndex}-day-${index}`}
-                                            className="min-w-[8rem] w-[8rem]"
-                                        >
-                                            <div
-                                                className={`py-2 border-r border-[var(--separator)] flex items-center justify-center ${index === todayIndex ? "bg-[var(--light-primary)]" : isWeekend ? "bg-[var(--weekend-cells)]" : ""}`}
-                                            >
-                                                <div className="relative ">
-                                                    <select
-                                                        value={getShiftValue(
-                                                            userIndex,
-                                                            index,
-                                                        )}
-                                                        onChange={(e) =>
-                                                            handleShiftChange(
-                                                                userIndex,
-                                                                index,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(userIndex, index))}`}
-                                                    >
-                                                        <option value="--">
-                                                            --
-                                                        </option>
-                                                        {shiftMeanings.map(
-                                                            (value) => (
-                                                                <option
-                                                                    key={value}
-                                                                    value={
-                                                                        value
-                                                                    }
-                                                                >
-                                                                    {value}
-                                                                </option>
-                                                            ),
-                                                        )}
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    );
-                })}
                 {orderedUsers.map((user, userIndex) => {
                     const isEmployee = user.Role === "Employee";
                     return (
