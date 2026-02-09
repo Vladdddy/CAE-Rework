@@ -5,6 +5,7 @@ import Topbar from "../components/layout/Topbar.jsx";
 import ShiftMonthPicker from "../functions/ShiftMonthPicker.jsx";
 import ShiftLegend from "../components/layout/ShiftLegend.jsx";
 import ShiftsTable from "../components/data/ShiftsTable.jsx";
+import SaveChangesModal from "../components/modals/SaveChanges.jsx";
 
 function Shifts() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -13,6 +14,7 @@ function Shifts() {
     });
     const [startDate, setStartDate] = useState(new Date());
     const [impagination, setImpagination] = useState(1);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -92,6 +94,10 @@ function Shifts() {
                     </div>
                 </div>
             </div>
+
+            {isModalOpen && (
+                <SaveChangesModal onClose={() => setIsModalOpen(false)} />
+            )}
         </section>
     );
 }
