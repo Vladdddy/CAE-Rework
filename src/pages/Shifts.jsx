@@ -15,10 +15,22 @@ function Shifts() {
     const [startDate, setStartDate] = useState(new Date());
     const [impagination, setImpagination] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [postChanges, setPostChanges] = useState({});
+    const [putChanges, setPutChanges] = useState({});
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
+
+    const handleChangesDetected = (hasChanges, postData, putData) => {
+        setPostChanges(postData);
+        setPutChanges(putData);
+        setIsModalOpen(hasChanges);
+    };
+
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+    };
 
     /*const adminShifts = ["O", "OP", "ON", "F", "M", "R", "C", "CA"];
     const employeeShifts = ["D", "N", "F", "M", "R", "C", "CA"];*/
@@ -61,9 +73,9 @@ function Shifts() {
 
                         {impagination === 1 && (
                             <div className="flex items-start gap-4">
-                                <button className="btn secondary">
+                                {/*<button className="btn secondary">
                                     Export PDF
-                                </button>
+                                </button>*/}
 
                                 <ShiftLegend />
                             </div>
@@ -81,6 +93,7 @@ function Shifts() {
                                             year: "numeric",
                                         },
                                     )}
+                                    onChangesDetected={handleChangesDetected}
                                 />
                             </>
                         )}
@@ -96,7 +109,11 @@ function Shifts() {
             </div>
 
             {isModalOpen && (
-                <SaveChangesModal onClose={() => setIsModalOpen(false)} />
+                <SaveChangesModal
+                    onClose={handleModalClose}
+                    postChanges={postChanges}
+                    putChanges={putChanges}
+                />
             )}
         </section>
     );

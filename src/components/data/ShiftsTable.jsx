@@ -4,15 +4,28 @@ import DragIcon from "../../assets/icons/drag.tsx";
 import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 import { useEmployeeShifts } from "./provider/employeeShiftsAPI/useEmployeeShifts.js";
 
-function ShiftsTable({ selectedMonth }) {
+function ShiftsTable({ selectedMonth, onChangesDetected }) {
     const { users } = useUsers();
     const [orderedUsers, setOrderedUsers] = useState([]);
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
-    const [shiftValues, setShiftValues] = useState({});
+    const [shiftValues, setShiftValues] = useState(() => {
+        const saved = localStorage.getItem("shiftValues");
+        return saved ? JSON.parse(saved) : {};
+    });
     const { employeeShifts } = useEmployeeShifts();
     const scrollContainerRef = useRef(null);
     const todayColumnRef = useRef(null);
+
+    // Track POST and PUT changes
+    const [postChanges, setPostChanges] = useState(() => {
+        const saved = localStorage.getItem("shiftPostChanges");
+        return saved ? JSON.parse(saved) : {};
+    });
+    const [putChanges, setPutChanges] = useState(() => {
+        const saved = localStorage.getItem("shiftPutChanges");
+        return saved ? JSON.parse(saved) : {};
+    });
 
     const shiftMeanings = [
         "O",
@@ -32,6 +45,36 @@ function ShiftsTable({ selectedMonth }) {
     useEffect(() => {
         setOrderedUsers(users);
     }, [users]);
+
+    // Save changes to localStorage and notify parent
+    useEffect(() => {
+        localStorage.setItem("shiftPostChanges", JSON.stringify(postChanges));
+        localStorage.setItem("shiftPutChanges", JSON.stringify(putChanges));
+        localStorage.setItem("shiftValues", JSON.stringify(shiftValues));
+
+        const hasChanges =
+            Object.keys(postChanges).length > 0 ||
+            Object.keys(putChanges).length > 0;
+        if (onChangesDetected) {
+            onChangesDetected(hasChanges, postChanges, putChanges);
+        }
+    }, [postChanges, putChanges, shiftValues, onChangesDetected]);
+
+    // Expose clear function via ref or prop callback
+    useEffect(() => {
+        window.clearShiftChanges = () => {
+            setPostChanges({});
+            setPutChanges({});
+            setShiftValues({});
+            localStorage.removeItem("shiftPostChanges");
+            localStorage.removeItem("shiftPutChanges");
+            localStorage.removeItem("shiftValues");
+        };
+
+        return () => {
+            delete window.clearShiftChanges;
+        };
+    }, []);
 
     const parseSelectedMonth = () => {
         const months = {
@@ -179,18 +222,133 @@ function ShiftsTable({ selectedMonth }) {
     };
 
     const handleShiftChange = (userIndex, dayIndex, value) => {
-        setShiftValues((prev) => ({
-            ...prev,
-            [`${userIndex}-${dayIndex}`]: value,
-        }));
+        const user = orderedUsers[userIndex];
+
+        // Construct date string
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(dayIndex + 1).padStart(2, "0");
+        const formattedDate = `${year}-${month}-${day}`;
+
+        // Use employee ID and date as key to ensure uniqueness across months
+        const key = `${user.ID}-${formattedDate}`;
+
+        // Get current shift value from database
+        const matchingShift = employeeShifts.find(
+            (shift) =>
+                shift.EMPLOYEE_ID === user.ID &&
+                shift.SELECTED_DATE &&
+                shift.SELECTED_DATE.split("T")[0] === formattedDate,
+        );
+
+        const currentDbValue = matchingShift ? matchingShift.SHIFT_TYPE : "--";
+        const shiftId = matchingShift ? matchingShift.id : null;
+
+        // If value matches database value, remove from shiftValues and tracking
+        if (value === currentDbValue) {
+            setShiftValues((prev) => {
+                const newValues = { ...prev };
+                delete newValues[key];
+                return newValues;
+            });
+            setPostChanges((prev) => {
+                const newChanges = { ...prev };
+                delete newChanges[key];
+                return newChanges;
+            });
+            setPutChanges((prev) => {
+                const newChanges = { ...prev };
+                delete newChanges[key];
+                return newChanges;
+            });
+            return;
+        }
+
+        // Determine if this is POST, PUT, or DELETE
+        if (value === "--" && currentDbValue !== "--") {
+            // DELETE: User is removing an existing shift (set to null/delete)
+            // Store null in shiftValues to indicate deletion
+            setShiftValues((prev) => ({
+                ...prev,
+                [key]: null,
+            }));
+            setPutChanges((prev) => ({
+                ...prev,
+                [key]: {
+                    id: shiftId,
+                    EMPLOYEE_ID: user.ID,
+                    SELECTED_DATE: formattedDate,
+                    SHIFT_TYPE: null,
+                },
+            }));
+            // Remove from POST if it was there
+            setPostChanges((prev) => {
+                const newChanges = { ...prev };
+                delete newChanges[key];
+                return newChanges;
+            });
+        } else if (value === "--") {
+            // User reset to "--" and DB also has "--", remove from shiftValues and tracking
+            setShiftValues((prev) => {
+                const newValues = { ...prev };
+                delete newValues[key];
+                return newValues;
+            });
+            setPostChanges((prev) => {
+                const newChanges = { ...prev };
+                delete newChanges[key];
+                return newChanges;
+            });
+            setPutChanges((prev) => {
+                const newChanges = { ...prev };
+                delete newChanges[key];
+                return newChanges;
+            });
+        } else if (currentDbValue === "--") {
+            // POST: Adding new shift (database had no value)
+            setShiftValues((prev) => ({
+                ...prev,
+                [key]: value,
+            }));
+            setPostChanges((prev) => ({
+                ...prev,
+                [key]: {
+                    EMPLOYEE_ID: user.ID,
+                    SELECTED_DATE: formattedDate,
+                    SHIFT_TYPE: value,
+                },
+            }));
+            // Remove from PUT if it was there
+            setPutChanges((prev) => {
+                const newChanges = { ...prev };
+                delete newChanges[key];
+                return newChanges;
+            });
+        } else {
+            // PUT: Updating existing shift (database had a value)
+            setShiftValues((prev) => ({
+                ...prev,
+                [key]: value,
+            }));
+            setPutChanges((prev) => ({
+                ...prev,
+                [key]: {
+                    id: shiftId,
+                    EMPLOYEE_ID: user.ID,
+                    SELECTED_DATE: formattedDate,
+                    SHIFT_TYPE: value,
+                },
+            }));
+            // Remove from POST if it was there
+            setPostChanges((prev) => {
+                const newChanges = { ...prev };
+                delete newChanges[key];
+                return newChanges;
+            });
+        }
     };
 
     const getShiftValue = (userIndex, dayIndex) => {
-        // Check if there's a manual change first
-        if (shiftValues[`${userIndex}-${dayIndex}`]) {
-            return shiftValues[`${userIndex}-${dayIndex}`];
-        }
-
         // Get the user and construct the date for this day
         const user = orderedUsers[userIndex];
         if (!user) return "--";
@@ -200,6 +358,15 @@ function ShiftsTable({ selectedMonth }) {
         const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-indexed
         const day = String(dayIndex + 1).padStart(2, "0");
         const formattedDate = `${year}-${month}-${day}`;
+
+        // Use employee ID and date as key
+        const key = `${user.ID}-${formattedDate}`;
+
+        // Check if there's a manual change first
+        if (key in shiftValues) {
+            // If value is null (DELETE operation), show as "--"
+            return shiftValues[key] === null ? "--" : shiftValues[key];
+        }
 
         // Find a matching shift in employeeShifts
         const matchingShift = employeeShifts.find(
@@ -222,13 +389,42 @@ function ShiftsTable({ selectedMonth }) {
         // Define which shift types to count based on time
         const shiftTypes = time === "Diurno" ? ["O", "OP", "D"] : ["ON", "N"];
 
-        // Count shifts for this day matching the shift types
-        const count = employeeShifts.filter((shift) => {
-            if (!shift.SELECTED_DATE) return false;
+        // Create a map to track shift values for each employee on this day
+        const shiftsMap = {};
+
+        // First, add shifts from database
+        employeeShifts.forEach((shift) => {
+            if (!shift.SELECTED_DATE) return;
             const shiftDate = shift.SELECTED_DATE.split("T")[0];
+            if (shiftDate === formattedDate) {
+                shiftsMap[shift.EMPLOYEE_ID] = shift.SHIFT_TYPE;
+            }
+        });
+
+        // Then, override with pending changes (POST and PUT)
+        Object.values(postChanges).forEach((change) => {
+            if (change.SELECTED_DATE === formattedDate) {
+                shiftsMap[change.EMPLOYEE_ID] = change.SHIFT_TYPE;
+            }
+        });
+
+        Object.values(putChanges).forEach((change) => {
+            if (change.SELECTED_DATE === formattedDate) {
+                // If SHIFT_TYPE is null (DELETE), remove from map
+                if (change.SHIFT_TYPE === null) {
+                    delete shiftsMap[change.EMPLOYEE_ID];
+                } else {
+                    shiftsMap[change.EMPLOYEE_ID] = change.SHIFT_TYPE;
+                }
+            }
+        });
+
+        // Count only shifts that match the shift types, excluding "--" and null
+        const count = Object.values(shiftsMap).filter((shiftType) => {
             return (
-                shiftDate === formattedDate &&
-                shiftTypes.includes(shift.SHIFT_TYPE)
+                shiftType !== "--" &&
+                shiftType !== null &&
+                shiftTypes.includes(shiftType)
             );
         }).length;
 
@@ -244,6 +440,23 @@ function ShiftsTable({ selectedMonth }) {
 
         // Return 'green' if count >= 2, otherwise 'red'
         return count >= 2;
+    };
+
+    const isCellModified = (userIndex, dayIndex) => {
+        const user = orderedUsers[userIndex];
+        if (!user) return false;
+
+        // Construct date string
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(dayIndex + 1).padStart(2, "0");
+        const formattedDate = `${year}-${month}-${day}`;
+
+        // Use employee ID and date as key
+        const key = `${user.ID}-${formattedDate}`;
+        return (
+            Object.hasOwn(postChanges, key) || Object.hasOwn(putChanges, key)
+        );
     };
 
     return (
@@ -392,7 +605,7 @@ function ShiftsTable({ selectedMonth }) {
                                             className="min-w-[8rem] w-[8rem]"
                                         >
                                             <div
-                                                className={`py-2 border-r border-[var(--separator)] flex items-center justify-center ${index === todayIndex ? "bg-[var(--light-primary)]" : isWeekend ? "bg-[var(--weekend-cells)]" : ""}`}
+                                                className={`py-2 border-r border-[var(--separator)] flex items-center justify-center ${index === todayIndex ? "bg-[var(--light-primary)]" : isWeekend ? "bg-[var(--weekend-cells)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
                                             >
                                                 <div className="relative ">
                                                     <select
