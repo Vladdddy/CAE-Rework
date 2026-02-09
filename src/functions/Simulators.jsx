@@ -313,18 +313,20 @@ export function GetTableSimulators({
 
                                 const matchingSimulator =
                                     findMatchingSimulator(simulator);
-                                return matchingSimulator ? (
-                                    <div
-                                        onClick={() =>
-                                            handleSimulatorClick(
-                                                matchingSimulator,
-                                            )
-                                        }
-                                        className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
-                                    >
-                                        <ClockIcon className="w-4 text-[#ffffff]" />
-                                    </div>
-                                ) : null;
+                                return matchingSimulator
+                                    ? time === "Notturno" && (
+                                          <div
+                                              onClick={() =>
+                                                  handleSimulatorClick(
+                                                      matchingSimulator,
+                                                  )
+                                              }
+                                              className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
+                                          >
+                                              <ClockIcon className="w-4 text-[#ffffff]" />
+                                          </div>
+                                      )
+                                    : null;
                             })()}
                             <p className="text-center text-[var(--primary)] bg-[var(--light-primary)] rounded-md px-2 flex-1">
                                 {simulator}
