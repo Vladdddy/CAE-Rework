@@ -23,8 +23,8 @@
     --orange: #ff9f43;
     --orange-light: #ffebcb;
     --placeholder: #aaaaaa;
-    --weekend-cells: #f7e9e9;
-    --weekend-text: #da4d4d;
+    --weekend-cells: #f6f1ff;
+    --weekend-text: #5d00ff;
 }
 
 body.dark-mode {
@@ -43,8 +43,8 @@ body.dark-mode {
     --orange: hsl(31, 100%, 65%);
     --orange-light: hsl(31, 30%, 15%);
     --placeholder: hsl(0, 0%, 50%);
-    --weekend-cells: #372020;
-    --weekend-text: #da4d4d;
+    --weekend-cells: #25202c;
+    --weekend-text: #a775ff;
 }
 
 ::-webkit-scrollbar-button {

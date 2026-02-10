@@ -80,6 +80,8 @@ function Shifts() {
                                 <ShiftLegend />
                             </div>
                         )}
+
+                        <p className="text-cancel">N</p>
                     </div>
 
                     <div className="m-8 flex flex-row items-start justify-between gap-8">
