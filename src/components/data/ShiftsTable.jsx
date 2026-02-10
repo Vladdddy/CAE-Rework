@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useUsers } from "./provider/userAPI/useUsers.js";
 import DragIcon from "../../assets/icons/drag.tsx";
+import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 import { useEmployeeShifts } from "./provider/employeeShiftsAPI/useEmployeeShifts.js";
 
 function ShiftsTable({ selectedMonth, onChangesDetected }) {
-    const { users } = useUsers();
+    const { users, loading } = useUsers();
     const [orderedUsers, setOrderedUsers] = useState([]);
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
+    const [showNotes, setShowNotes] = useState({});
     const [shiftValues, setShiftValues] = useState(() => {
         const saved = localStorage.getItem("shiftValues");
         return saved ? JSON.parse(saved) : {};
@@ -570,83 +572,115 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                 </div>
 
                 {/* Users Rows */}
-                {orderedUsers.map((user, userIndex) => {
-                    const isEmployee = user.Role === "Employee";
-                    return (
-                        <div
-                            key={`user-${userIndex}`}
-                            className={`flex ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""}`}
-                            draggable={isEmployee}
-                            onDragStart={(e) => handleDragStart(e, userIndex)}
-                            onDragOver={(e) => handleDragOver(e, userIndex)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, userIndex)}
-                            onDragEnd={handleDragEnd}
-                            style={{ cursor: isEmployee ? "grab" : "default" }}
-                        >
-                            <div className="flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)]">
-                                <div className="min-w-[240px] w-[240px]">
-                                    <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
-                                        {isEmployee && (
-                                            <DragIcon className="w-6 text-[var(--black)]" />
-                                        )}
-                                        {formatUsername(user.Username)}
-                                    </p>
+                {!loading ? (
+                    orderedUsers.map((user, userIndex) => {
+                        const isEmployee = user.Role === "Employee";
+                        return (
+                            <div
+                                key={`user-${userIndex}`}
+                                className={`flex ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""}`}
+                                draggable={isEmployee}
+                                onDragStart={(e) =>
+                                    handleDragStart(e, userIndex)
+                                }
+                                onDragOver={(e) => handleDragOver(e, userIndex)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={(e) => handleDrop(e, userIndex)}
+                                onDragEnd={handleDragEnd}
+                                style={{
+                                    cursor: isEmployee ? "grab" : "default",
+                                }}
+                            >
+                                <div className="flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)]">
+                                    <div className="flex justify-between min-w-[240px] w-[240px]">
+                                        <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
+                                            {isEmployee && (
+                                                <DragIcon className="w-6 text-[var(--black)]" />
+                                            )}
+                                            {formatUsername(user.Username)}
+                                        </p>
+                                        <ArrowRightIcon
+                                            className={`w-6 text-[var(--black)] mr-4 cursor-pointer hover:text-[var(--gray)] transition-all duration-300 ${showNotes[user.ID] ? "rotate-[-90deg]" : "rotate-90"}`}
+                                            onClick={() =>
+                                                setShowNotes((prev) => ({
+                                                    ...prev,
+                                                    [user.ID]: !prev[user.ID],
+                                                }))
+                                            }
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex border-b border-[var(--separator)]">
-                                {numericDays.map((day, index) => {
-                                    const isWeekend =
-                                        dayOfWeek[index] === "Sabato" ||
-                                        dayOfWeek[index] === "Domenica";
-                                    return (
-                                        <div
-                                            key={`user-${userIndex}-day-${index}`}
-                                            className="min-w-[8rem] w-[8rem]"
-                                        >
+                                <div className="flex border-b border-[var(--separator)]">
+                                    {numericDays.map((day, index) => {
+                                        const isWeekend =
+                                            dayOfWeek[index] === "Sabato" ||
+                                            dayOfWeek[index] === "Domenica";
+                                        return (
                                             <div
-                                                className={`py-2 border-r border-[var(--separator)] flex items-center justify-center ${index === todayIndex ? "bg-[var(--light-primary)]" : isWeekend ? "bg-[var(--weekend-cells)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
+                                                key={`user-${userIndex}-day-${index}`}
+                                                className="min-w-[8rem] w-[8rem]"
                                             >
-                                                <div className="relative ">
-                                                    <select
-                                                        value={getShiftValue(
-                                                            userIndex,
-                                                            index,
-                                                        )}
-                                                        onChange={(e) =>
-                                                            handleShiftChange(
+                                                <div
+                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--light-primary)]" : isWeekend ? "bg-[var(--weekend-cells)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
+                                                >
+                                                    <div className="relative ">
+                                                        <select
+                                                            value={getShiftValue(
                                                                 userIndex,
                                                                 index,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(userIndex, index))}`}
+                                                            )}
+                                                            onChange={(e) =>
+                                                                handleShiftChange(
+                                                                    userIndex,
+                                                                    index,
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(userIndex, index))}`}
+                                                        >
+                                                            <option value="--">
+                                                                --
+                                                            </option>
+                                                            {shiftMeanings.map(
+                                                                (value) => (
+                                                                    <option
+                                                                        key={
+                                                                            value
+                                                                        }
+                                                                        value={
+                                                                            value
+                                                                        }
+                                                                    >
+                                                                        {value}
+                                                                    </option>
+                                                                ),
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                    <div
+                                                        className={`flex flex-col w-full mt-2 gap-2 px-2 ${showNotes[user.ID] ? "block" : "hidden"}`}
                                                     >
-                                                        <option value="--">
-                                                            --
-                                                        </option>
-                                                        {shiftMeanings.map(
-                                                            (value) => (
-                                                                <option
-                                                                    key={value}
-                                                                    value={
-                                                                        value
-                                                                    }
-                                                                >
-                                                                    {value}
-                                                                </option>
-                                                            ),
-                                                        )}
-                                                    </select>
+                                                        <button className="w-full flex-1 text-xs text-white p-2 px-2 rounded-md border border-[var(--primary)] bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition duration-300">
+                                                            Aggiungi nota
+                                                        </button>
+                                                        {/*<button className="w-full flex-1 text-xs text-[var(--primary)] p-2 px-2 rounded-md border border-[var(--primary)] hover:bg-[var(--light-primary)] transition duration-300">
+                                                            Leggi nota
+                                                        </button>*/}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })
+                ) : (
+                    <h1 className="p-8 pb-64 text-[var(--black)] text-md">
+                        Caricamento...
+                    </h1>
+                )}
             </div>
         </div>
     );
