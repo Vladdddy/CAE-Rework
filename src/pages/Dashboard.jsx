@@ -7,6 +7,7 @@ import NightIcon from "../assets/icons/night.tsx";
 import SearchIcon from "../assets/icons/search.tsx";
 import { GetSimulators } from "../functions/Simulators.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
+import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import {
     GetTaskCountTime,
@@ -16,6 +17,7 @@ import Employee from "../components/data/Employee.jsx";
 
 function Dashboard() {
     const { tasks, loading, fetchTasks } = useTasks();
+    const { logbooks, loading: logbooksLoading, fetchLogbooks } = useLogbooks();
     const { users, loading: usersLoading } = useUsers();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
@@ -24,6 +26,7 @@ function Dashboard() {
 
     const [searchQuery, setSearchQuery] = useState("");
     const [searchQueryOverview, setSearchQueryOverview] = useState("");
+    const [searchQueryEntries, setSearchQueryEntries] = useState("");
     const [showPopup, setShowPopup] = useState(false);
     const [popupType, setPopupType] = useState("success");
     const [popupMessage, setPopupMessage] = useState("");
@@ -38,7 +41,7 @@ function Dashboard() {
                 task.TITLE?.toLowerCase().includes(query) ||
                 task.DESCRIPTION?.toLowerCase().includes(query) ||
                 task.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                task.STATUS?.toLowerCase().includes(query)
+                task.STATUS?.toLowerCase().includes(query),
         );
     }, [tasks, searchQuery]);
 
@@ -52,9 +55,23 @@ function Dashboard() {
                 task.TITLE?.toLowerCase().includes(query) ||
                 task.DESCRIPTION?.toLowerCase().includes(query) ||
                 task.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                task.STATUS?.toLowerCase().includes(query)
+                task.STATUS?.toLowerCase().includes(query),
         );
     }, [tasks, searchQueryOverview]);
+
+    const filteredEntries = useMemo(() => {
+        if (!searchQueryEntries.trim()) return logbooks;
+
+        const query = searchQueryEntries.toLowerCase();
+
+        return logbooks.filter(
+            (entry) =>
+                entry.TITLE?.toLowerCase().includes(query) ||
+                entry.DESCRIPTION?.toLowerCase().includes(query) ||
+                entry.ASSIGNED_TO?.toLowerCase().includes(query) ||
+                entry.STATUS?.toLowerCase().includes(query),
+        );
+    }, [logbooks, searchQueryEntries]);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -63,13 +80,14 @@ function Dashboard() {
     const handleDeleteSuccess = async (isSuccess, message) => {
         if (isSuccess) {
             await fetchTasks();
+            await fetchLogbooks();
         }
         setPopupType(isSuccess ? "success" : "error");
         setPopupMessage(
             message ||
                 (isSuccess
                     ? "Operazione completata con successo"
-                    : "Errore durante l'operazione")
+                    : "Errore durante l'operazione"),
         );
         setShowPopup(true);
         setTimeout(() => {
@@ -87,210 +105,13 @@ function Dashboard() {
                     setSidebarStatus={setSidebarStatus}
                 />
 
-                <div className="m-8 gap-8 grid grid-cols-3">
-                    <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
-                        <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
-                            Task di oggi
-                        </p>
-                        <div className="relative">
-                            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
-                            <input
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                type="search"
-                                placeholder="Cerca task"
-                                className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
-                            />
-                        </div>
-                        <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
-                            <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
-                                <div className="flex flex-row items-center gap-2">
-                                    <DayIcon className="w-6 text-[var(--black)]" />
-                                    <p className="text-l text-[var(--black)]">
-                                        Giorno
-                                    </p>
-                                    <GetTaskCountTime
-                                        filteredTasks={filteredTasks}
-                                        time="Diurno"
-                                        date={new Date()}
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                    {loading ? (
-                                        <div className="text-center text-sm text-[var(--gray)] py-4">
-                                            Caricamento...
-                                        </div>
-                                    ) : (
-                                        <GetSimulators
-                                            type="dashboard"
-                                            time="Diurno"
-                                            date={new Date()}
-                                            taskList={filteredTasks}
-                                            onDeleteSuccess={
-                                                handleDeleteSuccess
-                                            }
-                                        />
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <div className="flex flex-row items-center gap-2">
-                                    <NightIcon className="w-6 text-[var(--black)]" />
-                                    <p className="text-l text-[var(--black)]">
-                                        Notte
-                                    </p>
-                                    <GetTaskCountTime
-                                        filteredTasks={filteredTasks}
-                                        time="Notturno"
-                                        date={new Date()}
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    {loading ? (
-                                        <div className="text-center text-sm text-[var(--gray)] py-4">
-                                            Caricamento...
-                                        </div>
-                                    ) : (
-                                        <GetSimulators
-                                            type="dashboard"
-                                            time="Notturno"
-                                            date={new Date()}
-                                            taskList={filteredTasks}
-                                            onDeleteSuccess={
-                                                handleDeleteSuccess
-                                            }
-                                        />
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
-                        <div className="flex items-center flex-wrap gap-2 justify-between text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
-                            <p>Panoramica task</p>
-                        </div>
-
-                        <div className="relative">
-                            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
-                            <input
-                                value={searchQueryOverview}
-                                onChange={(e) =>
-                                    setSearchQueryOverview(e.target.value)
-                                }
-                                type="search"
-                                placeholder="Cerca task"
-                                className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
-                            />
-                        </div>
-                        <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
-                            <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
-                                <div className="flex flex-row items-center gap-2">
-                                    <p className="text-l text-[var(--black)]">
-                                        Da definire
-                                    </p>
-                                    <GetTaskCountStatus
-                                        filteredTasks={filteredTasksOverview}
-                                        status="Da definire"
-                                    />
-                                </div>
-
-                                {loading ? (
-                                    <div className="text-center text-sm text-[var(--gray)] py-4">
-                                        Caricamento...
-                                    </div>
-                                ) : (
-                                    <GetSimulators
-                                        type="dashboard"
-                                        status="Da definire"
-                                        taskList={filteredTasksOverview}
-                                        onDeleteSuccess={handleDeleteSuccess}
-                                    />
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
-                                <div className="flex flex-row items-center gap-2">
-                                    <p className="text-l text-[var(--black)]">
-                                        Non completato
-                                    </p>
-                                    <GetTaskCountStatus
-                                        filteredTasks={filteredTasksOverview}
-                                        status="Non completato"
-                                    />
-                                </div>
-
-                                {loading ? (
-                                    <div className="text-center text-sm text-[var(--gray)] py-4">
-                                        Caricamento...
-                                    </div>
-                                ) : (
-                                    <GetSimulators
-                                        type="dashboard"
-                                        status="Non completato"
-                                        taskList={filteredTasksOverview}
-                                        onDeleteSuccess={handleDeleteSuccess}
-                                    />
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
-                                <div className="flex flex-row items-center gap-2">
-                                    <p className="text-l text-[var(--black)]">
-                                        Non iniziato
-                                    </p>
-
-                                    <GetTaskCountStatus
-                                        filteredTasks={filteredTasksOverview}
-                                        status="Non iniziato"
-                                    />
-                                </div>
-
-                                {loading ? (
-                                    <div className="text-center text-sm text-[var(--gray)] py-4">
-                                        Caricamento...
-                                    </div>
-                                ) : (
-                                    <GetSimulators
-                                        type="dashboard"
-                                        status="Non iniziato"
-                                        taskList={filteredTasksOverview}
-                                        onDeleteSuccess={handleDeleteSuccess}
-                                    />
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-2 ">
-                                <div className="flex flex-row items-center gap-2">
-                                    <p className="text-l text-[var(--black)]">
-                                        In corso
-                                    </p>
-                                    <GetTaskCountStatus
-                                        filteredTasks={filteredTasksOverview}
-                                        status="In corso"
-                                    />
-                                </div>
-
-                                {loading ? (
-                                    <div className="text-center text-sm text-[var(--gray)] py-4">
-                                        Caricamento...
-                                    </div>
-                                ) : (
-                                    <GetSimulators
-                                        type="dashboard"
-                                        status="In corso"
-                                        taskList={filteredTasksOverview}
-                                        onDeleteSuccess={handleDeleteSuccess}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                <div className="overflow-y-auto h-screen pb-16">
+                    <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)] m-8">
                         <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
                             Turni di oggi
                         </p>
-                        <div className="flex flex-col gap-8 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
-                            <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                        <div className="flex flex justify-between max-h-[calc(50vh-14rem)] overflow-y-auto pr-1 gap-4">
+                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-[var(--light-primary)]">
                                 <div className="flex flex-row items-center gap-2">
                                     <p className="text-l text-[var(--black)]">
                                         Shift Leader presenti
@@ -305,7 +126,8 @@ function Dashboard() {
                                         users
                                             .filter(
                                                 (user) =>
-                                                    user.Role === "Shift Leader"
+                                                    user.Role ===
+                                                    "Shift Leader",
                                             )
                                             .map((user) => (
                                                 <Employee
@@ -314,7 +136,7 @@ function Dashboard() {
                                                     name={user.Username}
                                                     shortName={user.Username?.substring(
                                                         0,
-                                                        2
+                                                        2,
                                                     ).toUpperCase()}
                                                 />
                                             ))
@@ -322,14 +144,14 @@ function Dashboard() {
                                 </div>
                                 {!usersLoading &&
                                     users.filter(
-                                        (user) => user.Role === "Shift Leader"
+                                        (user) => user.Role === "Shift Leader",
                                     ).length === 0 && (
                                         <p className="text-sm text-[var(--gray)] text-center mt-4">
                                             Nessun tecnico presente
                                         </p>
                                     )}
                             </div>
-                            <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-[var(--light-primary)]">
                                 <div className="flex flex-row items-center gap-2">
                                     <DayIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
@@ -345,7 +167,7 @@ function Dashboard() {
                                         users
                                             .filter(
                                                 (user) =>
-                                                    user.Role === "Employee"
+                                                    user.Role === "Employee",
                                             )
                                             .map((user) => (
                                                 <Employee
@@ -354,7 +176,7 @@ function Dashboard() {
                                                     name={user.Username}
                                                     shortName={user.Username?.substring(
                                                         0,
-                                                        2
+                                                        2,
                                                     ).toUpperCase()}
                                                 />
                                             ))
@@ -362,14 +184,14 @@ function Dashboard() {
                                 </div>
                                 {!usersLoading &&
                                     users.filter(
-                                        (user) => user.Role === "Employee"
+                                        (user) => user.Role === "Employee",
                                     ).length === 0 && (
                                         <p className="text-sm text-[var(--gray)] text-center mt-4">
                                             Nessun tecnico presente
                                         </p>
                                     )}
                             </div>
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-[var(--light-primary)]">
                                 <div className="flex flex-row items-center gap-2">
                                     <NightIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
@@ -385,7 +207,7 @@ function Dashboard() {
                                         users
                                             .filter(
                                                 (user) =>
-                                                    user.Role === "Employee"
+                                                    user.Role === "Employee",
                                             )
                                             .map((user) => (
                                                 <Employee
@@ -394,7 +216,7 @@ function Dashboard() {
                                                     name={user.Username}
                                                     shortName={user.Username?.substring(
                                                         0,
-                                                        2
+                                                        2,
                                                     ).toUpperCase()}
                                                 />
                                             ))
@@ -402,12 +224,355 @@ function Dashboard() {
                                 </div>
                                 {!usersLoading &&
                                     users.filter(
-                                        (user) => user.Role === "Employee"
+                                        (user) => user.Role === "Employee",
                                     ).length === 0 && (
                                         <p className="text-sm text-[var(--gray)] text-center mt-4">
                                             Nessun tecnico presente
                                         </p>
                                     )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="m-8 gap-8 grid grid-cols-3">
+                        <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                            <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
+                                Task di oggi
+                            </p>
+                            <div className="relative">
+                                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
+                                <input
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    type="search"
+                                    placeholder="Cerca task"
+                                    className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                                <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <DayIcon className="w-6 text-[var(--black)]" />
+                                        <p className="text-l text-[var(--black)]">
+                                            Giorno
+                                        </p>
+                                        <GetTaskCountTime
+                                            filteredTasks={filteredTasks}
+                                            time="Diurno"
+                                            date={new Date()}
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-col gap-1">
+                                        {loading ? (
+                                            <div className="text-center text-sm text-[var(--gray)] py-4">
+                                                Caricamento...
+                                            </div>
+                                        ) : (
+                                            <GetSimulators
+                                                type="dashboard"
+                                                time="Diurno"
+                                                date={new Date()}
+                                                taskList={filteredTasks}
+                                                onDeleteSuccess={
+                                                    handleDeleteSuccess
+                                                }
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <NightIcon className="w-6 text-[var(--black)]" />
+                                        <p className="text-l text-[var(--black)]">
+                                            Notte
+                                        </p>
+                                        <GetTaskCountTime
+                                            filteredTasks={filteredTasks}
+                                            time="Notturno"
+                                            date={new Date()}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        {loading ? (
+                                            <div className="text-center text-sm text-[var(--gray)] py-4">
+                                                Caricamento...
+                                            </div>
+                                        ) : (
+                                            <GetSimulators
+                                                type="dashboard"
+                                                time="Notturno"
+                                                date={new Date()}
+                                                taskList={filteredTasks}
+                                                onDeleteSuccess={
+                                                    handleDeleteSuccess
+                                                }
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                            <div className="flex items-center flex-wrap gap-2 justify-between text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
+                                <p>Panoramica task</p>
+                            </div>
+
+                            <div className="relative">
+                                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
+                                <input
+                                    value={searchQueryOverview}
+                                    onChange={(e) =>
+                                        setSearchQueryOverview(e.target.value)
+                                    }
+                                    type="search"
+                                    placeholder="Cerca task"
+                                    className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                                <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <p className="text-l text-[var(--black)]">
+                                            Da definire
+                                        </p>
+                                        <GetTaskCountStatus
+                                            filteredTasks={
+                                                filteredTasksOverview
+                                            }
+                                            status="Da definire"
+                                        />
+                                    </div>
+
+                                    {loading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard"
+                                            status="Da definire"
+                                            taskList={filteredTasksOverview}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <p className="text-l text-[var(--black)]">
+                                            Non completato
+                                        </p>
+                                        <GetTaskCountStatus
+                                            filteredTasks={
+                                                filteredTasksOverview
+                                            }
+                                            status="Non completato"
+                                        />
+                                    </div>
+
+                                    {loading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard"
+                                            status="Non completato"
+                                            taskList={filteredTasksOverview}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <p className="text-l text-[var(--black)]">
+                                            Non iniziato
+                                        </p>
+
+                                        <GetTaskCountStatus
+                                            filteredTasks={
+                                                filteredTasksOverview
+                                            }
+                                            status="Non iniziato"
+                                        />
+                                    </div>
+
+                                    {loading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard"
+                                            status="Non iniziato"
+                                            taskList={filteredTasksOverview}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-2 ">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <p className="text-l text-[var(--black)]">
+                                            In corso
+                                        </p>
+                                        <GetTaskCountStatus
+                                            filteredTasks={
+                                                filteredTasksOverview
+                                            }
+                                            status="In corso"
+                                        />
+                                    </div>
+
+                                    {loading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard"
+                                            status="In corso"
+                                            taskList={filteredTasksOverview}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                            <div className="flex items-center flex-wrap gap-2 justify-between text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
+                                <p>Panoramica entry</p>
+                            </div>
+
+                            <div className="relative">
+                                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
+                                <input
+                                    value={searchQueryEntries}
+                                    onChange={(e) =>
+                                        setSearchQueryEntries(e.target.value)
+                                    }
+                                    type="search"
+                                    placeholder="Cerca entry"
+                                    className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                                <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <p className="text-l text-[var(--black)]">
+                                            Da definire
+                                        </p>
+                                        <GetTaskCountStatus
+                                            filteredTasks={filteredEntries}
+                                            status="Da definire"
+                                        />
+                                    </div>
+
+                                    {logbooksLoading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard&logbook"
+                                            status="Da definire"
+                                            taskList={filteredEntries}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <p className="text-l text-[var(--black)]">
+                                            Non completato
+                                        </p>
+                                        <GetTaskCountStatus
+                                            filteredTasks={filteredEntries}
+                                            status="Non completato"
+                                        />
+                                    </div>
+
+                                    {logbooksLoading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard&logbook"
+                                            status="Non completato"
+                                            taskList={filteredEntries}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <p className="text-l text-[var(--black)]">
+                                            Non iniziato
+                                        </p>
+
+                                        <GetTaskCountStatus
+                                            filteredTasks={filteredEntries}
+                                            status="Non iniziato"
+                                        />
+                                    </div>
+
+                                    {logbooksLoading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard&logbook"
+                                            status="Non iniziato"
+                                            taskList={filteredEntries}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-2 ">
+                                    <div className="flex flex-row items-center gap-2">
+                                        <p className="text-l text-[var(--black)]">
+                                            In corso
+                                        </p>
+                                        <GetTaskCountStatus
+                                            filteredTasks={filteredEntries}
+                                            status="In corso"
+                                        />
+                                    </div>
+
+                                    {logbooksLoading ? (
+                                        <div className="text-center text-sm text-[var(--gray)] py-4">
+                                            Caricamento...
+                                        </div>
+                                    ) : (
+                                        <GetSimulators
+                                            type="dashboard&logbook"
+                                            status="In corso"
+                                            taskList={filteredEntries}
+                                            onDeleteSuccess={
+                                                handleDeleteSuccess
+                                            }
+                                        />
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

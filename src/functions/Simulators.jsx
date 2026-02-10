@@ -76,8 +76,12 @@ export function GetSimulators({
 
                                       return filteredTasks.length > 0 ? (
                                           <>
-                                              {type === "dashboard" && (
+                                              {type === "dashboard" ? (
                                                   <p className="mt-4 text-sm text-[var(--primary)]">
+                                                      {simulator}
+                                                  </p>
+                                              ) : (
+                                                  <p className="mt-4 text-sm text-[var(--orange)]">
                                                       {simulator}
                                                   </p>
                                               )}
@@ -92,7 +96,11 @@ export function GetSimulators({
                                                           task?.ASSIGNED_TO
                                                       }
                                                       status={task?.STATUS}
-                                                      type="dashboard"
+                                                      type={
+                                                          type === "dashboard"
+                                                              ? "dashboard"
+                                                              : "dashboard&logbook"
+                                                      }
                                                       wholeTask={task}
                                                       onDeleteSuccess={
                                                           onDeleteSuccess
@@ -120,8 +128,16 @@ export function GetSimulators({
 
                                         return filteredTasks.length > 0 ? (
                                             <>
-                                                {type === "dashboard" && (
-                                                    <p className="mt-4 text-sm text-[var(--primary)]">
+                                                {type === "dashboard" ? (
+                                                    <p
+                                                        className={`mt-4 text-sm text-[var(--primary)] ${filteredTasks[0]?.ISLOGBOOK ? "text-[var(--orange)]" : ""}`}
+                                                    >
+                                                        {simulator}
+                                                    </p>
+                                                ) : (
+                                                    <p
+                                                        className={`mt-4 text-sm text-[var(--orange)] ${filteredTasks[0]?.ISLOGBOOK ? "text-[var(--orange)]" : ""}`}
+                                                    >
                                                         {simulator}
                                                     </p>
                                                 )}
@@ -136,7 +152,11 @@ export function GetSimulators({
                                                             task?.ASSIGNED_TO
                                                         }
                                                         status={task?.STATUS}
-                                                        type="dashboard"
+                                                        type={
+                                                            type === "dashboard"
+                                                                ? "dashboard"
+                                                                : "dashboard&logbook"
+                                                        }
                                                         wholeTask={task}
                                                         onDeleteSuccess={
                                                             onDeleteSuccess
@@ -163,8 +183,16 @@ export function GetSimulators({
 
                                         return filteredTasks.length > 0 ? (
                                             <>
-                                                {type === "dashboard" && (
-                                                    <p className="mt-4 text-sm text-[var(--primary)]">
+                                                {type === "dashboard" ? (
+                                                    <p
+                                                        className={`mt-4 text-sm text-[var(--primary)] ${filteredTasks[0]?.ISLOGBOOK ? "text-[var(--orange)]" : ""}`}
+                                                    >
+                                                        {simulator}
+                                                    </p>
+                                                ) : (
+                                                    <p
+                                                        className={`mt-4 text-sm text-[var(--orange)] ${filteredTasks[0]?.ISLOGBOOK ? "text-[var(--orange)]" : ""}`}
+                                                    >
                                                         {simulator}
                                                     </p>
                                                 )}
@@ -179,7 +207,11 @@ export function GetSimulators({
                                                             task?.ASSIGNED_TO
                                                         }
                                                         status={task?.STATUS}
-                                                        type="dashboard"
+                                                        type={
+                                                            type === "dashboard"
+                                                                ? "dashboard"
+                                                                : "dashboard&logbook"
+                                                        }
                                                         wholeTask={task}
                                                         onDeleteSuccess={
                                                             onDeleteSuccess

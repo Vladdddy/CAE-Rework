@@ -73,15 +73,22 @@ export function GetTaskCountStatus({ filteredTasks, status }) {
         }).length;
     };
 
+    const isLogbook =
+        filteredTasks.length > 0 && filteredTasks[0]?.ISLOGBOOK === true;
+
     return (
         <>
             {taskCount() > 0 ? (
-                <p className="text-xs bg-[var(--light-primary)] text-[var(--primary)] rounded-md px-2 py-1">
-                    {taskCount()} task
+                <p
+                    className={`text-xs rounded-md px-2 py-1 ${isLogbook ? "bg-[var(--orange-light)] text-[var(--orange)]" : "bg-[var(--light-primary)] text-[var(--primary)]"}`}
+                >
+                    {taskCount()} {isLogbook ? "entry" : "task"}
                 </p>
             ) : (
-                <p className="text-xs bg-[var(--light-primary)] text-[var(--gray)] rounded-md px-2 py-1">
-                    Nessuna task
+                <p
+                    className={`text-xs rounded-md px-2 py-1 ${isLogbook ? "bg-[var(--orange-light)]" : "bg-[var(--light-primary)]"} text-[var(--gray)]`}
+                >
+                    {isLogbook ? "Nessuna entry" : "Nessuna task"}
                 </p>
             )}
         </>

@@ -29,7 +29,7 @@ function Task({
     return (
         <div
             onClick={() => handleTaskClick(wholeTask)}
-            className="flex flex-col items-start justify-between p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:bg-[var(--light-primary)] hover:border-[var(--light-primary)] hover:text-[var(--primary)] transition-all duration-200 cursor-pointer ease-in-out text-[var(--black)]"
+            className={`${type === "dashboard&logbook" ? "hover:text-[var(--orange)]" : "hover:text-[var(--primary)]"} hover:bg-[var(--light-primary)] hover:border-[var(--light-primary)] flex flex-col items-start justify-between p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] transition-all duration-200 cursor-pointer ease-in-out text-[var(--black)]`}
         >
             {type === "table" ? (
                 <>
@@ -68,7 +68,12 @@ function Task({
             ) : (
                 <>
                     <div className="flex flex-row items-center gap-1 mb-2 w-full">
-                        <TaskIcon className="w-4 flex-shrink-0" />
+                        {type !== "dashboard&logbook" ? (
+                            <TaskIcon className="w-4 flex-shrink-0" />
+                        ) : (
+                            <EntryIcon className="w-4 flex-shrink-0" />
+                        )}
+
                         <h1 className="text-l font-semibold truncate">
                             {title || "N/A"}
                         </h1>
