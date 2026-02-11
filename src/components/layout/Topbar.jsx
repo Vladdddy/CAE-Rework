@@ -3,11 +3,13 @@ import SidebarIcon from "../../assets/icons/sidebar.tsx";
 import SearchIcon from "../../assets/icons/search.tsx";
 import CurrentTime from "../../functions/CurrentTime.jsx";
 import AddIcon from "../../assets/icons/add.tsx";
+import BellIcon from "../../assets/icons/bell.tsx";
 import CreateModal from "../modals/CreateModal.jsx";
 import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";
 import SearchModal from "../modals/SearchModal.jsx";
 import Popup from "../modals/Popup.jsx";
+import Notifications from "../modals/Notifications.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 
@@ -17,6 +19,7 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
     const [popupType, setPopupType] = useState("success");
+    const [notificationsModal, setNotificationsModal] = useState(false);
     const [popupMessage, setPopupMessage] = useState("");
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedMode = localStorage.getItem("darkMode");
@@ -110,6 +113,13 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                         </button>
                     </>
                 )}
+                <div
+                    className="relative"
+                    onClick={() => setNotificationsModal(true)}
+                >
+                    <BellIcon className="w-6 cursor-pointer icon" />
+                    <span className="red-circle w-2 h-2 rounded-full bg-red-500 absolute top-0 right-0 hidden"></span>
+                </div>
             </div>
             {isDarkMode ? (
                 <div
@@ -146,6 +156,10 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
             )}
 
             {showPopup && <Popup type={popupType} message={popupMessage} />}
+
+            {notificationsModal && (
+                <Notifications onClose={() => setNotificationsModal(false)} />
+            )}
         </div>
     );
 }
