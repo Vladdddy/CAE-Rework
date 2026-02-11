@@ -9,6 +9,7 @@ import { GetSimulators } from "../functions/Simulators.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
+import { useEmployeeShifts } from "../components/data/provider/employeeShiftsAPI/useEmployeeShifts";
 import {
     GetTaskCountTime,
     GetTaskCountStatus,
@@ -19,6 +20,7 @@ function Dashboard() {
     const { tasks, loading, fetchTasks } = useTasks();
     const { logbooks, loading: logbooksLoading, fetchLogbooks } = useLogbooks();
     const { users, loading: usersLoading } = useUsers();
+    const { employeeShifts, loading: shiftsLoading } = useEmployeeShifts();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -30,6 +32,47 @@ function Dashboard() {
     const [showPopup, setShowPopup] = useState(false);
     const [popupType, setPopupType] = useState("success");
     const [popupMessage, setPopupMessage] = useState("");
+
+    // Get today's date in YYYY-MM-DD format
+    const getTodayDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
+    // Filter today's shifts by shift type
+    const todayShifts = useMemo(() => {
+        const todayDate = getTodayDate();
+        return employeeShifts.filter((shift) => {
+            if (!shift.SELECTED_DATE) return false;
+            const shiftDate = shift.SELECTED_DATE.split("T")[0];
+            return shiftDate === todayDate;
+        });
+    }, [employeeShifts]);
+
+    // Get users with their shifts for today
+    const getUsersWithShifts = (role, shiftTypes) => {
+        return users
+            .filter((user) => user.Role === role)
+            .filter((user) => {
+                const userShift = todayShifts.find(
+                    (shift) => shift.EMPLOYEE_ID === user.ID,
+                );
+                return userShift && shiftTypes.includes(userShift.SHIFT_TYPE);
+            });
+    };
+
+    const dayShiftTypes = ["O", "D", "OP"];
+    const nightShiftTypes = ["ON", "N"];
+
+    const shiftLeadersToday = getUsersWithShifts("Shift Leader", [
+        ...dayShiftTypes,
+        ...nightShiftTypes,
+    ]);
+    const dayShiftEmployees = getUsersWithShifts("Employee", dayShiftTypes);
+    const nightShiftEmployees = getUsersWithShifts("Employee", nightShiftTypes);
 
     const filteredTasks = useMemo(() => {
         if (!searchQuery.trim()) return tasks;
@@ -46,29 +89,37 @@ function Dashboard() {
     }, [tasks, searchQuery]);
 
     const filteredTasksOverview = useMemo(() => {
-        if (!searchQueryOverview.trim()) return tasks;
+        // Filter out tasks with assignees
+        const tasksWithoutAssignees = tasks.filter(
+            (task) => !task.ASSIGNED_TO || task.ASSIGNED_TO.trim() === "",
+        );
+
+        if (!searchQueryOverview.trim()) return tasksWithoutAssignees;
 
         const query = searchQueryOverview.toLowerCase();
 
-        return tasks.filter(
+        return tasksWithoutAssignees.filter(
             (task) =>
                 task.TITLE?.toLowerCase().includes(query) ||
                 task.DESCRIPTION?.toLowerCase().includes(query) ||
-                task.ASSIGNED_TO?.toLowerCase().includes(query) ||
                 task.STATUS?.toLowerCase().includes(query),
         );
     }, [tasks, searchQueryOverview]);
 
     const filteredEntries = useMemo(() => {
-        if (!searchQueryEntries.trim()) return logbooks;
+        // Filter out entries with assignees
+        const entriesWithoutAssignees = logbooks.filter(
+            (entry) => !entry.ASSIGNED_TO || entry.ASSIGNED_TO.trim() === "",
+        );
+
+        if (!searchQueryEntries.trim()) return entriesWithoutAssignees;
 
         const query = searchQueryEntries.toLowerCase();
 
-        return logbooks.filter(
+        return entriesWithoutAssignees.filter(
             (entry) =>
                 entry.TITLE?.toLowerCase().includes(query) ||
                 entry.DESCRIPTION?.toLowerCase().includes(query) ||
-                entry.ASSIGNED_TO?.toLowerCase().includes(query) ||
                 entry.STATUS?.toLowerCase().includes(query),
         );
     }, [logbooks, searchQueryEntries]);
@@ -118,34 +169,27 @@ function Dashboard() {
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {usersLoading ? (
+                                    {usersLoading || shiftsLoading ? (
                                         <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
                                             Caricamento...
                                         </div>
                                     ) : (
-                                        users
-                                            .filter(
-                                                (user) =>
-                                                    user.Role ===
-                                                    "Shift Leader",
-                                            )
-                                            .map((user) => (
-                                                <Employee
-                                                    key={user.ID}
-                                                    role={user.Role}
-                                                    name={user.Username}
-                                                    shortName={user.Username?.substring(
-                                                        0,
-                                                        2,
-                                                    ).toUpperCase()}
-                                                />
-                                            ))
+                                        shiftLeadersToday.map((user) => (
+                                            <Employee
+                                                key={user.ID}
+                                                role={user.Role}
+                                                name={user.Username}
+                                                shortName={user.Username?.substring(
+                                                    0,
+                                                    2,
+                                                ).toUpperCase()}
+                                            />
+                                        ))
                                     )}
                                 </div>
                                 {!usersLoading &&
-                                    users.filter(
-                                        (user) => user.Role === "Shift Leader",
-                                    ).length === 0 && (
+                                    !shiftsLoading &&
+                                    shiftLeadersToday.length === 0 && (
                                         <p className="text-sm text-[var(--gray)] text-center mt-4">
                                             Nessun tecnico presente
                                         </p>
@@ -159,33 +203,27 @@ function Dashboard() {
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {usersLoading ? (
+                                    {usersLoading || shiftsLoading ? (
                                         <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
                                             Caricamento...
                                         </div>
                                     ) : (
-                                        users
-                                            .filter(
-                                                (user) =>
-                                                    user.Role === "Employee",
-                                            )
-                                            .map((user) => (
-                                                <Employee
-                                                    key={user.ID}
-                                                    role={user.Role}
-                                                    name={user.Username}
-                                                    shortName={user.Username?.substring(
-                                                        0,
-                                                        2,
-                                                    ).toUpperCase()}
-                                                />
-                                            ))
+                                        dayShiftEmployees.map((user) => (
+                                            <Employee
+                                                key={user.ID}
+                                                role={user.Role}
+                                                name={user.Username}
+                                                shortName={user.Username?.substring(
+                                                    0,
+                                                    2,
+                                                ).toUpperCase()}
+                                            />
+                                        ))
                                     )}
                                 </div>
                                 {!usersLoading &&
-                                    users.filter(
-                                        (user) => user.Role === "Employee",
-                                    ).length === 0 && (
+                                    !shiftsLoading &&
+                                    dayShiftEmployees.length === 0 && (
                                         <p className="text-sm text-[var(--gray)] text-center mt-4">
                                             Nessun tecnico presente
                                         </p>
@@ -199,33 +237,27 @@ function Dashboard() {
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {usersLoading ? (
+                                    {usersLoading || shiftsLoading ? (
                                         <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
                                             Caricamento...
                                         </div>
                                     ) : (
-                                        users
-                                            .filter(
-                                                (user) =>
-                                                    user.Role === "Employee",
-                                            )
-                                            .map((user) => (
-                                                <Employee
-                                                    key={user.ID}
-                                                    role={user.Role}
-                                                    name={user.Username}
-                                                    shortName={user.Username?.substring(
-                                                        0,
-                                                        2,
-                                                    ).toUpperCase()}
-                                                />
-                                            ))
+                                        nightShiftEmployees.map((user) => (
+                                            <Employee
+                                                key={user.ID}
+                                                role={user.Role}
+                                                name={user.Username}
+                                                shortName={user.Username?.substring(
+                                                    0,
+                                                    2,
+                                                ).toUpperCase()}
+                                            />
+                                        ))
                                     )}
                                 </div>
                                 {!usersLoading &&
-                                    users.filter(
-                                        (user) => user.Role === "Employee",
-                                    ).length === 0 && (
+                                    !shiftsLoading &&
+                                    nightShiftEmployees.length === 0 && (
                                         <p className="text-sm text-[var(--gray)] text-center mt-4">
                                             Nessun tecnico presente
                                         </p>
@@ -234,7 +266,7 @@ function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="m-8 gap-8 grid grid-cols-3">
+                    <div className="m-8 gap-4 grid grid-cols-3">
                         <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
                             <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
                                 Task di oggi

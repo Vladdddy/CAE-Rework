@@ -12,7 +12,7 @@ import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks.js";
 
-function ModifyModal({ onClose, onSuccess, task }) {
+function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
     const [selectedCategory, setSelectedCategory] = useState(
         task.CATEGORY || "Routine Task",
     );
@@ -49,8 +49,8 @@ function ModifyModal({ onClose, onSuccess, task }) {
     const [selectedSimulator, setSelectedSimulator] = useState(
         task.SIMULATOR || simulators[0],
     );
-    const { updateTask } = useTasks();
-    const { updateLogbook } = useLogbooks();
+    const { updateTask, addTask } = useTasks();
+    const { updateLogbook, deleteLogbook } = useLogbooks();
     const { users, currentUserId } = useUsers();
 
     const handleRadioChange = (event) => {
@@ -194,6 +194,36 @@ function ModifyModal({ onClose, onSuccess, task }) {
             status: selectedStatus,
         };
 
+        // Handle conversion from logbook to task
+        if (isConverting && isLogbook) {
+            // Create a new task with the logbook data
+            const createResult = await addTask(modifiedTask);
+
+            if (createResult.success) {
+                // Delete the original logbook
+                const deleteResult = await deleteLogbook(task.ID);
+
+                onClose();
+
+                if (onSuccess) {
+                    onSuccess(
+                        deleteResult.success,
+                        deleteResult.success
+                            ? `Entry "${title}" convertita in Task con successo`
+                            : "Errore durante la conversione in Task",
+                    );
+                }
+                return;
+            } else {
+                onClose();
+                if (onSuccess) {
+                    onSuccess(false, "Errore durante la creazione della Task");
+                }
+                return;
+            }
+        }
+
+        // Normal modification flow
         const result = isLogbook
             ? await updateLogbook(task.ID, modifiedTask)
             : await updateTask(task.ID, modifiedTask);

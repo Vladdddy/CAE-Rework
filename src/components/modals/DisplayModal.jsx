@@ -10,10 +10,12 @@ import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import ModifyModal from "./ModifyModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
+import ConvertIcon from "../../assets/icons/convert.tsx";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isModifyOpen, setIsModifyOpen] = useState(false);
+    const [isConverting, setIsConverting] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
     const [noteDescription, setNoteDescription] = useState("");
     const { deleteTask, fetchTasks, updateTask } = useTasks();
@@ -115,8 +117,14 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         setIsModifyOpen(true);
     };
 
+    const handleConvertToTask = () => {
+        setIsConverting(true);
+        setIsModifyOpen(true);
+    };
+
     const handleCloseModify = () => {
         setIsModifyOpen(false);
+        setIsConverting(false);
     };
 
     const handleModifyPopup = async () => {
@@ -250,35 +258,50 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                 </div>
 
                 <div className="flex flex-col gap-8">
-                    <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
-                        <div
-                            className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
-                                activeTab === "dettagli"
-                                    ? "bg-[var(--light-primary)] text-[var(--primary)]"
-                                    : "text-[var(--black)] hover:bg-[var(--light-primary)]"
-                            }`}
-                            onClick={() => setActiveTab("dettagli")}
-                        >
-                            <p className="text-sm">Dettagli Task</p>
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
+                            <div
+                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
+                                    activeTab === "dettagli"
+                                        ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                        : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                }`}
+                                onClick={() => setActiveTab("dettagli")}
+                            >
+                                <p className="text-sm">Dettagli Task</p>
+                            </div>
+
+                            <div
+                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
+                                    activeTab === "note"
+                                        ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                        : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                }`}
+                                onClick={() => {
+                                    setActiveTab("note");
+                                    if (taskInfo.ISLOGBOOK) {
+                                        fetchNoteLogbooks(taskInfo.ID);
+                                    } else {
+                                        fetchNotes(taskInfo.ID);
+                                    }
+                                }}
+                            >
+                                <p className="text-sm">Note aggiunte</p>
+                            </div>
                         </div>
 
-                        <div
-                            className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
-                                activeTab === "note"
-                                    ? "bg-[var(--light-primary)] text-[var(--primary)]"
-                                    : "text-[var(--black)] hover:bg-[var(--light-primary)]"
-                            }`}
-                            onClick={() => {
-                                setActiveTab("note");
-                                if (taskInfo.ISLOGBOOK) {
-                                    fetchNoteLogbooks(taskInfo.ID);
-                                } else {
-                                    fetchNotes(taskInfo.ID);
-                                }
-                            }}
-                        >
-                            <p className="text-sm">Note aggiunte</p>
-                        </div>
+                        {taskInfo.ISLOGBOOK && (
+                            <div 
+                                className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
+                                onClick={handleConvertToTask}
+                            >
+                                <ConvertIcon className="w-4" />
+
+                                <p className="text-sm transition-all duration-200">
+                                    Converti in Task
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {activeTab === "dettagli" && (
@@ -632,6 +655,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     onClose={handleCloseModify}
                     onSuccess={handleModifyPopup}
                     task={taskInfo}
+                    isConverting={isConverting}
                 />
             )}
         </div>

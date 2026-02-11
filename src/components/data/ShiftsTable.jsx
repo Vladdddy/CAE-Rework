@@ -440,8 +440,18 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
         const result = countShiftsForDay(time, day);
         const count = parseInt(result.split("-")[1]);
 
-        // Return 'green' if count >= 2, otherwise 'red'
-        return count >= 2;
+        // Return classes based on count:
+        // 0-1: red, 2: orange, 3: green, 4+: darker green
+        if (count <= 1) {
+            return "text-white bg-[var(--red)]";
+        } else if (count === 2) {
+            return "text-white bg-[var(--orange)]";
+        } else if (count === 3) {
+            return "text-white bg-[var(--green)]";
+        } else {
+            // 4 or above: darker green
+            return "text-white bg-[var(--dark-green)]";
+        }
     };
 
     const isCellModified = (userIndex, dayIndex) => {
@@ -554,13 +564,13 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                         className={`text-[var(--primary)] ${isWeekend ? "bg-[var(--weekend-cells)]" : "bg-[var(--light-primary)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
                                         <span
-                                            className={`${getShiftCountColor("Diurno", day) ? "text-[var(--green)] bg-[#32de8410] border-[#32de8420]" : "text-[var(--red)] bg-[#de323210] border-[#de323220]"} border p-2 rounded mr-2`}
+                                            className={`${getShiftCountColor("Diurno", day)} p-2 rounded mr-2 font-bold`}
                                         >
                                             {countShiftsForDay("Diurno", day)}
                                         </span>
 
                                         <span
-                                            className={`${getShiftCountColor("Notturno", day) ? "text-[var(--green)] bg-[#32de8410] border-[#32de8420]" : "text-[var(--red)] bg-[#de323210] border-[#de323220]"} border p-2 rounded`}
+                                            className={`${getShiftCountColor("Notturno", day)} p-2 rounded font-bold`}
                                         >
                                             {countShiftsForDay("Notturno", day)}
                                         </span>
@@ -599,7 +609,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                             )}
                                             {formatUsername(user.Username)}
                                         </p>
-                                        <ArrowRightIcon
+                                        {/*<ArrowRightIcon
                                             className={`w-6 text-[var(--black)] mr-4 cursor-pointer hover:text-[var(--gray)] transition-all duration-300 ${showNotes[user.ID] ? "rotate-[-90deg]" : "rotate-90"}`}
                                             onClick={() =>
                                                 setShowNotes((prev) => ({
@@ -607,7 +617,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                                     [user.ID]: !prev[user.ID],
                                                 }))
                                             }
-                                        />
+                                        />*/}
                                     </div>
                                 </div>
                                 <div className="flex border-b border-[var(--separator)]">
