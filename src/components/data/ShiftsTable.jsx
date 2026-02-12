@@ -519,7 +519,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                     className="min-w-[8rem] w-[8rem]"
                                 >
                                     <p
-                                        className={`${index === todayIndex ? "bg-[var(--light-primary)] text-[var(--black)]" : isWeekend ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                        className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
                                         {day}
                                     </p>
@@ -554,7 +554,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                     className="min-w-[8rem] w-[8rem]"
                                 >
                                     <p
-                                        className={`${index === todayIndex ? "bg-[var(--light-primary)] text-[var(--black)]" : isWeekend ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                        className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
                                         {day}
                                     </p>
@@ -584,7 +584,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                     className="min-w-[8rem] w-[8rem]"
                                 >
                                     <div
-                                        className={`text-[var(--primary)] ${isWeekend ? "bg-[var(--weekend-cells)]" : "bg-[var(--light-primary)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                        className={`text-[var(--primary)] ${isWeekend ? "bg-[var(--light-primary)] " : "bg-[var(--light-primary)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
                                         <span
                                             className={`${getShiftCountColor("Diurno", day)} p-2 rounded mr-2 font-bold`}
@@ -656,7 +656,8 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                                 className="min-w-[8rem] w-[8rem]"
                                             >
                                                 <div
-                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--light-primary)]" : isWeekend ? "bg-[var(--weekend-cells)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
+                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isWeekend ? "bg-[var(--light-primary)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
+                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
                                                 >
                                                     <div className="relative ">
                                                         <select

@@ -216,7 +216,7 @@ function ShiftsPattern({ onClose }) {
                 </div>
 
                 <div className="flex flex-col gap-8">
-                    <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
+                    {/* <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
                         <div
                             className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
                                 activeTab === "Seleziona"
@@ -240,7 +240,7 @@ function ShiftsPattern({ onClose }) {
                         >
                             <p className="text-sm">Aggiungi pattern</p>
                         </div>
-                    </div>
+                    </div> */}
 
                     <div className="flex flex-col gap-8 max-h-[calc(60vh-1rem)] overflow-y-auto pr-1">
                         <div className="flex flex-col gap-1">
