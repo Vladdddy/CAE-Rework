@@ -1,5 +1,6 @@
 import React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { UserContext } from "../components/data/provider/userAPI/userContext";
 import Sidebar from "../components/layout/Sidebar.jsx";
 import Topbar from "../components/layout/Topbar.jsx";
 import ShiftMonthPicker from "../functions/ShiftMonthPicker.jsx";
@@ -10,6 +11,7 @@ import PatternIcon from "../assets/icons/pattern.tsx";
 import ShiftsPattern from "../components/modals/ShiftsPattern.jsx";
 
 function Shifts() {
+    const { currentUserRole } = useContext(UserContext);
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -73,16 +75,18 @@ function Shifts() {
                                 </div>
                             </div>
 
-                            <div
-                                className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
-                                onClick={() => setPatternsModalOpen(true)}
-                            >
-                                <PatternIcon className="w-6" />
+                            {currentUserRole !== "Employee" && (
+                                <div
+                                    className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
+                                    onClick={() => setPatternsModalOpen(true)}
+                                >
+                                    <PatternIcon className="w-6" />
 
-                                <p className="text-md transition-all duration-200">
-                                    Pattern shift
-                                </p>
-                            </div>
+                                    <p className="text-md transition-all duration-200">
+                                        Pattern shift
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {impagination === 1 && (

@@ -471,6 +471,29 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
         );
     };
 
+    const isUserRowModified = (userIndex) => {
+        const user = orderedUsers[userIndex];
+        if (!user) return false;
+
+        // Check if any day in the month has been modified for this user
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+
+        for (let dayIndex = 0; dayIndex < daysInMonth; dayIndex++) {
+            const day = String(dayIndex + 1).padStart(2, "0");
+            const formattedDate = `${year}-${month}-${day}`;
+            const key = `${user.ID}-${formattedDate}`;
+
+            if (
+                Object.hasOwn(postChanges, key) ||
+                Object.hasOwn(putChanges, key)
+            ) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     return (
         <div
             ref={scrollContainerRef}
@@ -601,7 +624,9 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                     cursor: isEmployee ? "grab" : "default",
                                 }}
                             >
-                                <div className="flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)]">
+                                <div
+                                    className={`flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)] ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""}`}
+                                >
                                     <div className="flex justify-between min-w-[240px] w-[240px]">
                                         <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
                                             {isEmployee && (
@@ -647,7 +672,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                                                         .value,
                                                                 )
                                                             }
-                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(userIndex, index))}`}
+                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""}`}
                                                         >
                                                             <option value="--">
                                                                 --

@@ -89,10 +89,24 @@ function Dashboard() {
     }, [tasks, searchQuery]);
 
     const filteredTasksOverview = useMemo(() => {
-        // Filter out tasks with assignees
-        const tasksWithoutAssignees = tasks.filter(
-            (task) => !task.ASSIGNED_TO || task.ASSIGNED_TO.trim() === "",
-        );
+        const todayDate = getTodayDate();
+
+        // Filter out tasks with assignees and future tasks
+        const tasksWithoutAssignees = tasks.filter((task) => {
+            if (task.ASSIGNED_TO && task.ASSIGNED_TO.trim() !== "") {
+                return false;
+            }
+
+            // Filter out future tasks
+            if (task.DATE) {
+                const taskDate = task.DATE.split("T")[0];
+                if (taskDate > todayDate) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
 
         if (!searchQueryOverview.trim()) return tasksWithoutAssignees;
 
@@ -107,10 +121,24 @@ function Dashboard() {
     }, [tasks, searchQueryOverview]);
 
     const filteredEntries = useMemo(() => {
-        // Filter out entries with assignees
-        const entriesWithoutAssignees = logbooks.filter(
-            (entry) => !entry.ASSIGNED_TO || entry.ASSIGNED_TO.trim() === "",
-        );
+        const todayDate = getTodayDate();
+
+        // Filter out entries with assignees and future entries
+        const entriesWithoutAssignees = logbooks.filter((entry) => {
+            if (entry.ASSIGNED_TO && entry.ASSIGNED_TO.trim() !== "") {
+                return false;
+            }
+
+            // Filter out future entries
+            if (entry.DATE) {
+                const entryDate = entry.DATE.split("T")[0];
+                if (entryDate > todayDate) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
 
         if (!searchQueryEntries.trim()) return entriesWithoutAssignees;
 
