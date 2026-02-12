@@ -42,6 +42,8 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
         "CA",
         "T",
         "P",
+        "CG",
+        "ND",
     ];
 
     useEffect(() => {
@@ -656,7 +658,6 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                                 className="min-w-[8rem] w-[8rem]"
                                             >
                                                 <div
-                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isWeekend ? "bg-[var(--light-primary)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
                                                     className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
                                                 >
                                                     <div className="relative ">
@@ -673,7 +674,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                                                         .value,
                                                                 )
                                                             }
-                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""}`}
+                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "ND" ? "focus:text-black" : ""}`}
                                                         >
                                                             <option value="--">
                                                                 --
@@ -688,7 +689,10 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                                                             value
                                                                         }
                                                                     >
-                                                                        {value}
+                                                                        {value ===
+                                                                        "CG"
+                                                                            ? "C"
+                                                                            : value}
                                                                     </option>
                                                                 ),
                                                             )}

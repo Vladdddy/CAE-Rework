@@ -24,6 +24,8 @@ function ShiftLegend() {
         CA: "Chiusura",
         T: "Trasferta",
         P: "Paternità",
+        CG: "Corso Giorno",
+        ND: "Non Disponibile",
     };
 
     const handleMouseDown = (e) => {
@@ -134,7 +136,7 @@ function ShiftLegend() {
                             <p
                                 className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg ${GetColorForShift(shift)}`}
                             >
-                                {shift}
+                                {shift === "CG" ? "C" : shift}
                             </p>
                             <p className="text-[var(--black)] text-sm">
                                 {meaning}

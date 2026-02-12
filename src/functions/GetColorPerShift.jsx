@@ -24,6 +24,10 @@ export function GetColorForShift(shift) {
             return "bg-fuchsia-100 text-fuchsia-800";
         case "P":
             return "bg-yellow-400 text-black";
+        case "CG":
+            return "bg-gradient-to-r from-orange-500 to-green-800 text-black";
+        case "ND":
+            return "bg-yellow-100 text-yellow-100";
         default:
             return "bg-[var(--white)] text-[var(--gray)]";
     }
