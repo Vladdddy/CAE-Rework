@@ -28,8 +28,14 @@ const formatTime = (time) => {
  * @param {Array} tasks - Array of task objects (can be pre-filtered)
  * @param {Date} date - The date for the report title (optional, null if using filters)
  * @param {Array} simulators - Array of simulator objects for today (optional)
+ * @param {String} title - Custom title for the PDF (optional, defaults to "Report Giornaliero")
  */
-export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
+export const exportTasksToPDF = (
+    tasks,
+    date = null,
+    simulators = [],
+    title = "Report Giornaliero",
+) => {
     // Use the tasks as-is (already filtered by the calling component)
     const tasksForExport = tasks;
 
@@ -51,7 +57,7 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
     // Title
     doc.setFontSize(18);
     doc.setFont(undefined, "bold");
-    doc.text("Report Giornaliero", margin, yPosition);
+    doc.text(title, margin, yPosition);
 
     // Date
     yPosition += lineHeight;
@@ -62,10 +68,10 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
     }
 
     // Line separator
-    yPosition += 8;
+    yPosition += 10;
     doc.setLineWidth(0.5);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += 10;
+    yPosition += 15;
 
     // Group tasks by simulator
     const tasksBySimulator = {};
@@ -102,48 +108,31 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
                 return;
             }
 
-            checkPageBreak(30);
+            checkPageBreak(40);
 
             // Simulator header
             doc.setFontSize(14);
             doc.setFont(undefined, "bold");
             doc.setTextColor(0, 102, 204);
             doc.text(simName, margin, yPosition);
-            doc.setTextColor(0, 0, 0);
-            yPosition += 7;
 
-            // Simulator details (if available)
-            doc.setFontSize(12);
-            doc.setFont(undefined, "normal");
-
+            // Simulator details inline (if available)
             const sim = simulatorMap[simName];
             if (sim) {
-                checkPageBreak(15);
+                doc.setFontSize(11);
+                doc.setFont(undefined, "normal");
+                doc.setTextColor(0, 102, 204);
+                const simDetails = `  -  Orario inizio: ${formatTime(sim.END_HOUR)}   Orario fine: ${formatTime(sim.START_HOUR)}   Assegnato a: ${sim.ASSIGNED_TO || "N/A"}`;
                 doc.text(
-                    `Orario fine: ${formatTime(sim.START_HOUR)}`,
-                    margin + 5,
+                    simDetails,
+                    margin + doc.getTextWidth(simName) + 5,
                     yPosition,
                 );
-                yPosition += 5;
-
-                checkPageBreak(5);
-                doc.text(
-                    `Orario inizio: ${formatTime(sim.END_HOUR)}`,
-                    margin + 5,
-                    yPosition,
-                );
-                yPosition += 5;
-
-                checkPageBreak(5);
-                doc.text(
-                    `Assegnato a: ${sim.ASSIGNED_TO || "N/A"}`,
-                    margin + 5,
-                    yPosition,
-                );
-                yPosition += 5;
+            } else {
+                doc.setTextColor(0, 0, 0);
             }
 
-            yPosition += 3;
+            yPosition += 10;
 
             // Tasks for this simulator
             simTasks.forEach((task, index) => {
@@ -154,7 +143,7 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
                     task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
                 const typeLabel = isLogbook ? "Logbook" : "Task";
 
-                // Type and Name
+                // Type and Name with Assigned To inline
                 doc.setFontSize(12);
                 doc.setFont(undefined, "bold");
                 if (isLogbook) {
@@ -162,16 +151,25 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
                 } else {
                     doc.setTextColor(0, 102, 204); // Blue for tasks
                 }
+                const taskTitle = `${typeLabel}: ${task.TITLE || "N/A"}`;
+                doc.text(taskTitle, margin + 10, yPosition);
+
+                // Assigned To inline
+                doc.setFontSize(11);
+                doc.setFont(undefined, "normal");
+                doc.setTextColor(0, 0, 0);
+                const assignedText = `   (Assegnato a: ${task.ASSIGNED_TO || "N/A"})`;
                 doc.text(
-                    `${typeLabel}: ${task.TITLE || "N/A"}`,
-                    margin + 10,
+                    assignedText,
+                    margin + 10 + doc.getTextWidth(taskTitle) + 5,
                     yPosition,
                 );
-                doc.setTextColor(0, 0, 0);
-                yPosition += 6;
+
+                yPosition += 8;
 
                 doc.setFontSize(12);
                 doc.setFont(undefined, "normal");
+                doc.setTextColor(0, 0, 0);
 
                 // Description
                 if (task.DESCRIPTION) {
@@ -179,42 +177,15 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
                         `Descrizione: ${task.DESCRIPTION}`,
                         pageWidth - 2 * margin - 10,
                     );
-                    checkPageBreak(descLines.length * 4);
+                    checkPageBreak(descLines.length * 5);
                     doc.text(descLines, margin + 15, yPosition);
-                    yPosition += descLines.length * 4;
+                    yPosition += descLines.length * 5;
                 }
-
-                // Assigned To
-                checkPageBreak(4);
-                doc.text(
-                    `Assegnato a: ${task.ASSIGNED_TO || "N/A"}`,
-                    margin + 15,
-                    yPosition,
-                );
-                yPosition += 4;
-
-                // Status
-                checkPageBreak(4);
-                doc.text(
-                    `Stato: ${task.STATUS || "N/A"}`,
-                    margin + 15,
-                    yPosition,
-                );
-                yPosition += 4;
-
-                // Date
-                checkPageBreak(4);
-                doc.text(
-                    `Data: ${formatDate(task.DATE)}`,
-                    margin + 15,
-                    yPosition,
-                );
-                yPosition += 4;
 
                 // Light separator between tasks
                 if (index < simTasks.length - 1) {
-                    checkPageBreak(6);
-                    yPosition += 2;
+                    checkPageBreak(8);
+                    yPosition += 4;
                     doc.setLineWidth(0.1);
                     doc.setDrawColor(220, 220, 220);
                     doc.line(
@@ -223,18 +194,18 @@ export const exportTasksToPDF = (tasks, date = null, simulators = []) => {
                         pageWidth - margin,
                         yPosition,
                     );
-                    yPosition += 4;
+                    yPosition += 6;
                 }
             });
 
             // Bold separator between simulators
             if (simIndex < simulatorNames.length - 1) {
-                checkPageBreak(10);
-                yPosition += 5;
+                checkPageBreak(12);
+                yPosition += 8;
                 doc.setLineWidth(0.5);
                 doc.setDrawColor(150, 150, 150);
                 doc.line(margin, yPosition, pageWidth - margin, yPosition);
-                yPosition += 10;
+                yPosition += 12;
             }
         });
     }

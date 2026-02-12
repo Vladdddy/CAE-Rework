@@ -164,6 +164,7 @@ function Tasks() {
                 tasksToExport,
                 hasActiveFilters ? null : startDate,
                 simulatorsToExport,
+                "Night Activities",
             );
             setPopupType("success");
             setPopupMessage(
