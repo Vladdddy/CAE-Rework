@@ -11,6 +11,7 @@ import Logbook from "./pages/Logbook";
 import Signin from "./pages/Signin";
 import Shifts from "./pages/Shifts";
 import Register from "./pages/Register";
+import ChangePassword from "./pages/ChangePassword";
 import { TaskProvider } from "./components/data/provider/taskAPI/TaskContext.jsx";
 import { LogbookProvider } from "./components/data/provider/logbookAPI/LogbookContext.jsx";
 import { UserProvider } from "./components/data/provider/userAPI/UserContext.jsx";
@@ -54,6 +55,14 @@ function App() {
                                                             to="/dashboard"
                                                             replace
                                                         />
+                                                    }
+                                                />
+                                                <Route
+                                                    path="/change-password"
+                                                    element={
+                                                        <ProtectedRoute>
+                                                            <ChangePassword />
+                                                        </ProtectedRoute>
                                                     }
                                                 />
                                                 <Route

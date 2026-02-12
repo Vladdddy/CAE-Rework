@@ -7,6 +7,7 @@ export const UserProvider = ({ children }) => {
     const [users, setUsers] = useState([]);
     const [currentUsername, setCurrentUsername] = useState("Guest");
     const [currentUserRole, setCurrentUserRole] = useState("Employee");
+    const [userFirstAccess, setUserFirstAccess] = useState("");
     const [currentUserId, setCurrentUserId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -30,6 +31,7 @@ export const UserProvider = ({ children }) => {
                 setCurrentUsername(result.user.username);
                 setCurrentUserRole(result.user.role);
                 setCurrentUserId(result.user.id);
+                setUserFirstAccess(result.user.FIRST_ACCESS);
             }
         };
         loadUserFromToken();
@@ -74,6 +76,27 @@ export const UserProvider = ({ children }) => {
             const savedUser = await response.json();
             newUser.id = savedUser.id;
             setUsers((prev) => [...prev, newUser]);
+            return { success: true };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
+    const changePassword = async (id, newPassword) => {
+        try {
+            const response = await fetch(
+                `${API_URL}/users/${id}/change-password`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ password: newPassword }),
+                },
+            );
+
+            if (!response.ok) throw new Error("Failed to change password");
             return { success: true };
         } catch (err) {
             setError(err.message);
@@ -145,6 +168,7 @@ export const UserProvider = ({ children }) => {
                 setCurrentUsername(data.user?.username);
                 setCurrentUserRole(data.user?.role);
                 setCurrentUserId(data.user?.id);
+                setUserFirstAccess(data.user?.FIRST_ACCESS);
             }
 
             return { success: true, data };
@@ -221,6 +245,7 @@ export const UserProvider = ({ children }) => {
                 currentUsername,
                 currentUserRole,
                 currentUserId,
+                userFirstAccess,
                 loading,
                 error,
                 fetchUsers,
@@ -231,6 +256,7 @@ export const UserProvider = ({ children }) => {
                 register,
                 logout,
                 validateToken,
+                changePassword,
             }}
         >
             {children}

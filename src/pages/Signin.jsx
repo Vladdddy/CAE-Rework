@@ -38,7 +38,9 @@ function Signin() {
         const result = await login(username, password);
 
         if (result.success) {
-            navigate("/dashboard");
+            result.data.user.firstAccess
+                ? navigate("/change-password")
+                : navigate("/dashboard");
         } else {
             setInvalidCredentials(true);
         }
