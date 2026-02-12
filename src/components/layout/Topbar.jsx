@@ -113,13 +113,13 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                         </button>
                     </>
                 )}
-                <div
+                {/*<div
                     className="relative"
                     onClick={() => setNotificationsModal(true)}
                 >
                     <BellIcon className="w-6 cursor-pointer icon" />
                     <span className="red-circle w-2 h-2 rounded-full bg-red-500 absolute top-0 right-0 hidden"></span>
-                </div>
+                </div>*/}
             </div>
             {isDarkMode ? (
                 <div

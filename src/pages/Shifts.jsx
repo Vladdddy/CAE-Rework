@@ -6,6 +6,8 @@ import ShiftMonthPicker from "../functions/ShiftMonthPicker.jsx";
 import ShiftLegend from "../components/layout/ShiftLegend.jsx";
 import ShiftsTable from "../components/data/ShiftsTable.jsx";
 import SaveChangesModal from "../components/modals/SaveChanges.jsx";
+import PatternIcon from "../assets/icons/pattern.tsx";
+import ShiftsPattern from "../components/modals/ShiftsPattern.jsx";
 
 function Shifts() {
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -17,6 +19,7 @@ function Shifts() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [postChanges, setPostChanges] = useState({});
     const [putChanges, setPutChanges] = useState({});
+    const [patternsModalOpen, setPatternsModalOpen] = useState(false);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -47,7 +50,7 @@ function Shifts() {
 
                 <div className="flex-1 overflow-y-auto">
                     <div className="m-8 flex items-start justify-between">
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-center gap-4">
                             <ShiftMonthPicker
                                 startDate={startDate}
                                 setStartDate={setStartDate}
@@ -68,6 +71,17 @@ function Shifts() {
                                 >
                                     <p className="text-sm">Conteggio ore</p>
                                 </div>
+                            </div>
+
+                            <div
+                                className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
+                                onClick={() => setPatternsModalOpen(true)}
+                            >
+                                <PatternIcon className="w-6" />
+
+                                <p className="text-md transition-all duration-200">
+                                    Pattern shift
+                                </p>
                             </div>
                         </div>
 
@@ -114,6 +128,10 @@ function Shifts() {
                     postChanges={postChanges}
                     putChanges={putChanges}
                 />
+            )}
+
+            {patternsModalOpen && (
+                <ShiftsPattern onClose={() => setPatternsModalOpen(false)} />
             )}
         </section>
     );
