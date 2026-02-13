@@ -11,7 +11,7 @@ function Employee(props) {
                 border-[var(--light-primary)] bg-[var(--white)] text-[var(--black)]`}
         >
             <div className="flex flex-row items-center justify-start gap-2 w-full">
-                <UserIcon className="w-6" />
+                <UserIcon className="w-6 shrink-0" />
                 <h1 className="text-l truncate ">
                     {name.split(".")[0].charAt(0).toUpperCase() +
                         name.split(".")[0].slice(1)}

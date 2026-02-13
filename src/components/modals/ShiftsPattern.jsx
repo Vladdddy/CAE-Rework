@@ -438,7 +438,7 @@ function ShiftsPattern({ onClose }) {
                                             }
                                             className="hidden"
                                         />
-                                        <UserIcon className="w-6" />
+                                        <UserIcon className="w-6 shrink-0" />
                                         <label
                                             className="cursor-pointer truncate"
                                             htmlFor={user.Username}
