@@ -165,12 +165,14 @@ export const exportTasksToPDF = (
                     doc.setFontSize(9);
                     doc.setFont(undefined, "normal");
                     doc.setTextColor(0, 0, 0);
-                    const assignedText = `   (Assegnato a: ${task.ASSIGNED_TO || "N/A"})`;
-                    doc.text(
-                        assignedText,
-                        margin + 10 + doc.getTextWidth(taskTitle) + 5,
-                        yPosition,
-                    );
+                    const assignedText = ` (Assegnato a: ${task.ASSIGNED_TO || "N/A"})`;
+                    // Calculate width with the bold font size
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, "bold");
+                    const titleWidth = doc.getTextWidth(taskTitle);
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, "normal");
+                    doc.text(assignedText, margin + 10 + titleWidth, yPosition);
 
                     yPosition += 8;
 
@@ -181,7 +183,7 @@ export const exportTasksToPDF = (
                     // Description
                     if (task.DESCRIPTION) {
                         const descLines = doc.splitTextToSize(
-                            `Descrizione: ${task.DESCRIPTION}`,
+                            `${task.DESCRIPTION}`,
                             pageWidth - 2 * margin - 10,
                         );
                         checkPageBreak(descLines.length * 5);

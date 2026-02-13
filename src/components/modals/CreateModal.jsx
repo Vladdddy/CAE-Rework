@@ -28,12 +28,25 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
         return now.toISOString().split("T")[0];
     };
 
+    // Function to determine the default shift based on current time
+    const getDefaultShift = () => {
+        const now = new Date();
+        const hours = now.getHours();
+
+        // If time is 8 PM (20:00) or later, set to "Notturno"
+        if (hours >= 20) {
+            return "Notturno";
+        }
+
+        return "Diurno";
+    };
+
     const { addTask } = useTasks();
     const { addLogbook, fetchLogbooks } = useLogbooks();
     const { users } = useUsers();
     const [selectedCategory, setSelectedCategory] = useState("Routine Task");
     const [selectedStatus, setSelectedStatus] = useState("Da definire");
-    const [selectedRadio, setSelectedRadio] = useState("Diurno");
+    const [selectedRadio, setSelectedRadio] = useState(getDefaultShift());
     const [selectedAssignees, setSelectedAssignees] = useState([]);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
