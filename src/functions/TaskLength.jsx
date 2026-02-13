@@ -1,4 +1,4 @@
-export function GetTaskCountTime({ filteredTasks, time, date }) {
+export function GetTaskCountTime({ filteredTasks, time, date, variant }) {
     const taskCount = () => {
         // If no date provided, only filter by time
         if (!date) {
@@ -17,14 +17,20 @@ export function GetTaskCountTime({ filteredTasks, time, date }) {
         }).length;
     };
 
+    const isToday = variant === "today";
+
     return (
         <>
             {taskCount() > 0 ? (
-                <p className="text-xs bg-[var(--light-primary)] text-[var(--primary)] rounded-md px-2 py-1">
+                <p
+                    className={`text-xs rounded-md px-2 py-1 ${isToday ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : "bg-[var(--light-primary)] text-[var(--primary)]"}`}
+                >
                     {taskCount()} task
                 </p>
             ) : (
-                <p className="text-xs bg-[var(--light-primary)] text-[var(--gray)] rounded-md px-2 py-1">
+                <p
+                    className={`text-xs rounded-md px-2 py-1 ${isToday ? "bg-[var(--weekend-cells)]" : "bg-[var(--light-primary)]"} text-[var(--gray)]`}
+                >
                     Nessuna task
                 </p>
             )}

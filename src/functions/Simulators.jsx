@@ -80,6 +80,10 @@ export function GetSimulators({
                                                   <p className="mt-4 text-sm text-[var(--primary)]">
                                                       {simulator}
                                                   </p>
+                                              ) : type === "dashboard&today" ? (
+                                                  <p className="mt-4 text-sm text-[var(--weekend-text)]">
+                                                      {simulator}
+                                                  </p>
                                               ) : (
                                                   <p className="mt-4 text-sm text-[var(--orange)]">
                                                       {simulator}
@@ -99,7 +103,10 @@ export function GetSimulators({
                                                       type={
                                                           type === "dashboard"
                                                               ? "dashboard"
-                                                              : "dashboard&logbook"
+                                                              : type ===
+                                                                  "dashboard&today"
+                                                                ? "dashboard&today"
+                                                                : "dashboard&logbook"
                                                       }
                                                       wholeTask={task}
                                                       onDeleteSuccess={
@@ -155,7 +162,10 @@ export function GetSimulators({
                                                         type={
                                                             type === "dashboard"
                                                                 ? "dashboard"
-                                                                : "dashboard&logbook"
+                                                                : type ===
+                                                                    "dashboard&today"
+                                                                  ? "dashboard&today"
+                                                                  : "dashboard&logbook"
                                                         }
                                                         wholeTask={task}
                                                         onDeleteSuccess={
@@ -210,7 +220,10 @@ export function GetSimulators({
                                                         type={
                                                             type === "dashboard"
                                                                 ? "dashboard"
-                                                                : "dashboard&logbook"
+                                                                : type ===
+                                                                    "dashboard&today"
+                                                                  ? "dashboard&today"
+                                                                  : "dashboard&logbook"
                                                         }
                                                         wholeTask={task}
                                                         onDeleteSuccess={
@@ -401,7 +414,16 @@ export function GetTableSimulators({
                                       },
                                   );
 
-                                  return filteredTasks.length > 0 ? (
+                                  // Check if simulator has hours set for this date
+                                  const matchingSimulator =
+                                      findMatchingSimulator(simulator);
+                                  const hasSimulatorHours =
+                                      matchingSimulator !== null &&
+                                      matchingSimulator !== undefined;
+
+                                  // Show if there are tasks OR if simulator has hours set
+                                  return filteredTasks.length > 0 ||
+                                      hasSimulatorHours ? (
                                       <>
                                           {filteredTasks.map((task) => (
                                               <Task

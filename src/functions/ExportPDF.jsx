@@ -55,13 +55,13 @@ export const exportTasksToPDF = (
     };
 
     // Title
-    doc.setFontSize(18);
+    doc.setFontSize(14);
     doc.setFont(undefined, "bold");
     doc.text(title, margin, yPosition);
 
     // Date
     yPosition += lineHeight;
-    doc.setFontSize(12);
+    doc.setFontSize(10);
     doc.setFont(undefined, "normal");
     if (date) {
         doc.text(`Data: ${formatDate(date)}`, margin, yPosition);
@@ -88,30 +88,29 @@ export const exportTasksToPDF = (
     if (simulators && simulators.length > 0) {
         simulators.forEach((sim) => {
             simulatorMap[sim.NAME] = sim;
+            // Add simulator to tasksBySimulator even if it has no tasks
+            if (!tasksBySimulator[sim.NAME]) {
+                tasksBySimulator[sim.NAME] = [];
+            }
         });
     }
 
     // Sort simulator names
     const simulatorNames = Object.keys(tasksBySimulator).sort();
 
-    // If no tasks
+    // If no tasks and no simulators
     if (simulatorNames.length === 0) {
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.text("Nessuna task trovata.", margin, yPosition);
     } else {
         // Loop through each simulator
         simulatorNames.forEach((simName, simIndex) => {
             const simTasks = tasksBySimulator[simName];
 
-            // Skip if no tasks for this simulator
-            if (simTasks.length === 0) {
-                return;
-            }
-
             checkPageBreak(40);
 
             // Simulator header
-            doc.setFontSize(14);
+            doc.setFontSize(12);
             doc.setFont(undefined, "bold");
             doc.setTextColor(0, 102, 204);
             doc.text(simName, margin, yPosition);
@@ -119,7 +118,7 @@ export const exportTasksToPDF = (
             // Simulator details inline (if available)
             const sim = simulatorMap[simName];
             if (sim) {
-                doc.setFontSize(11);
+                doc.setFontSize(9);
                 doc.setFont(undefined, "normal");
                 doc.setTextColor(0, 102, 204);
                 const simDetails = `  -  Orario inizio: ${formatTime(sim.END_HOUR)}   Orario fine: ${formatTime(sim.START_HOUR)}   Assegnato a: ${sim.ASSIGNED_TO || "N/A"}`;
@@ -135,68 +134,77 @@ export const exportTasksToPDF = (
             yPosition += 10;
 
             // Tasks for this simulator
-            simTasks.forEach((task, index) => {
-                checkPageBreak(30);
+            if (simTasks.length === 0) {
+                // No tasks for this simulator
+                doc.setFontSize(9);
+                doc.setFont(undefined, "italic");
+                doc.setTextColor(128, 128, 128);
+                doc.text("Nessuna task assegnata", margin + 10, yPosition);
+                yPosition += 10;
+            } else {
+                simTasks.forEach((task, index) => {
+                    checkPageBreak(30);
 
-                // Determine if this is a logbook or task
-                const isLogbook =
-                    task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
-                const typeLabel = isLogbook ? "Logbook" : "Task";
+                    // Determine if this is a logbook or task
+                    const isLogbook =
+                        task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
+                    const typeLabel = isLogbook ? "Logbook" : "Task";
 
-                // Type and Name with Assigned To inline
-                doc.setFontSize(12);
-                doc.setFont(undefined, "bold");
-                if (isLogbook) {
-                    doc.setTextColor(255, 140, 0); // Orange for logbooks
-                } else {
-                    doc.setTextColor(0, 102, 204); // Blue for tasks
-                }
-                const taskTitle = `${typeLabel}: ${task.TITLE || "N/A"}`;
-                doc.text(taskTitle, margin + 10, yPosition);
+                    // Type and Name with Assigned To inline
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, "bold");
+                    if (isLogbook) {
+                        doc.setTextColor(255, 140, 0); // Orange for logbooks
+                    } else {
+                        doc.setTextColor(0, 102, 204); // Blue for tasks
+                    }
+                    const taskTitle = `${typeLabel}: ${task.TITLE || "N/A"}`;
+                    doc.text(taskTitle, margin + 10, yPosition);
 
-                // Assigned To inline
-                doc.setFontSize(11);
-                doc.setFont(undefined, "normal");
-                doc.setTextColor(0, 0, 0);
-                const assignedText = `   (Assegnato a: ${task.ASSIGNED_TO || "N/A"})`;
-                doc.text(
-                    assignedText,
-                    margin + 10 + doc.getTextWidth(taskTitle) + 5,
-                    yPosition,
-                );
-
-                yPosition += 8;
-
-                doc.setFontSize(12);
-                doc.setFont(undefined, "normal");
-                doc.setTextColor(0, 0, 0);
-
-                // Description
-                if (task.DESCRIPTION) {
-                    const descLines = doc.splitTextToSize(
-                        `Descrizione: ${task.DESCRIPTION}`,
-                        pageWidth - 2 * margin - 10,
-                    );
-                    checkPageBreak(descLines.length * 5);
-                    doc.text(descLines, margin + 15, yPosition);
-                    yPosition += descLines.length * 5;
-                }
-
-                // Light separator between tasks
-                if (index < simTasks.length - 1) {
-                    checkPageBreak(8);
-                    yPosition += 4;
-                    doc.setLineWidth(0.1);
-                    doc.setDrawColor(220, 220, 220);
-                    doc.line(
-                        margin + 10,
-                        yPosition,
-                        pageWidth - margin,
+                    // Assigned To inline
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, "normal");
+                    doc.setTextColor(0, 0, 0);
+                    const assignedText = `   (Assegnato a: ${task.ASSIGNED_TO || "N/A"})`;
+                    doc.text(
+                        assignedText,
+                        margin + 10 + doc.getTextWidth(taskTitle) + 5,
                         yPosition,
                     );
-                    yPosition += 6;
-                }
-            });
+
+                    yPosition += 8;
+
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, "normal");
+                    doc.setTextColor(0, 0, 0);
+
+                    // Description
+                    if (task.DESCRIPTION) {
+                        const descLines = doc.splitTextToSize(
+                            `Descrizione: ${task.DESCRIPTION}`,
+                            pageWidth - 2 * margin - 10,
+                        );
+                        checkPageBreak(descLines.length * 5);
+                        doc.text(descLines, margin + 15, yPosition);
+                        yPosition += descLines.length * 5;
+                    }
+
+                    // Light separator between tasks
+                    if (index < simTasks.length - 1) {
+                        checkPageBreak(8);
+                        yPosition += 4;
+                        doc.setLineWidth(0.1);
+                        doc.setDrawColor(220, 220, 220);
+                        doc.line(
+                            margin + 10,
+                            yPosition,
+                            pageWidth - margin,
+                            yPosition,
+                        );
+                        yPosition += 6;
+                    }
+                });
+            }
 
             // Bold separator between simulators
             if (simIndex < simulatorNames.length - 1) {
@@ -214,7 +222,7 @@ export const exportTasksToPDF = (
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
-        doc.setFontSize(12);
+        doc.setFontSize(10);
         doc.setFont(undefined, "normal");
         doc.setTextColor(0, 0, 0);
         doc.text(

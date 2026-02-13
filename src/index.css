@@ -26,6 +26,9 @@
     --placeholder: #aaaaaa;
     --weekend-cells: #f6f1ff;
     --weekend-text: #5d00ff;
+    --primary-panoramica: #4690ff;
+    --orange-panoramica: #ff9f43;
+    --purple-panoramica: #5d00ff;
 }
 
 body.dark-mode {
@@ -47,6 +50,9 @@ body.dark-mode {
     --placeholder: hsl(0, 0%, 50%);
     --weekend-cells: #25202c;
     --weekend-text: #a775ff;
+    --primary-panoramica: hsl(217, 100%, 68%);
+    --orange-panoramica: hsl(31, 100%, 65%);
+    --purple-panoramica: #a775ff;
 }
 
 ::-webkit-scrollbar-button {
@@ -78,7 +84,7 @@ body {
     border-radius: 8px;
     cursor: pointer;
     font-weight: normal;
-    font-size: 16px;
+    font-size: 14px;
     transition: all 0.3s ease;
 
     &:hover {
@@ -148,7 +154,7 @@ input[type="checkbox"] {
 }
 
 input[type="search"] {
-    font-size: 16px;
+    font-size: 14px;
     color: var(--black);
 }
 

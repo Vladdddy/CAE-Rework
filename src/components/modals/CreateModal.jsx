@@ -12,6 +12,22 @@ import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
 import { CheckExistingDays } from "../../functions/CheckExistingDays.jsx";
 
 function CreateModal({ onClose, onSuccess, type, initialDate }) {
+    // Function to get the adjusted date based on current time
+    const getAdjustedDate = () => {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+
+        // If time is before 7:30 AM, use previous day
+        if (hours < 7 || (hours === 7 && minutes < 30)) {
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            return yesterday.toISOString().split("T")[0];
+        }
+
+        return now.toISOString().split("T")[0];
+    };
+
     const { addTask } = useTasks();
     const { addLogbook, fetchLogbooks } = useLogbooks();
     const { users } = useUsers();
@@ -24,9 +40,10 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
     const [selectedSubCategory, setSelectedSubCategory] = useState("PM");
     const [selectedDetail, setSelectedDetail] = useState("VISUAL");
     const [selectedDate, setSelectedDate] = useState(
-        initialDate || new Date().toISOString().split("T")[0],
+        initialDate || getAdjustedDate(),
     );
     const [titleError, setTitleError] = useState(false);
+    const [assigneeError, setAssigneeError] = useState(false);
     const [dateError, setDateError] = useState(false);
     const [dateNotFoundError, setDateNotFoundError] = useState(false);
     const [taskLimitError, setTaskLimitError] = useState(false);
@@ -99,6 +116,12 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             return;
         }
         setTitleError(false);
+
+        if (selectedAssignees.length === 0) {
+            setAssigneeError(true);
+            return;
+        }
+        setAssigneeError(false);
 
         // Handle logbook entry creation
         if (type === "logbook") {
@@ -720,15 +743,24 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
 
                         <div className="flex flex-col gap-1">
                             <h3 className="text-sm text-[var(--gray)]">
-                                Assegnatario/i
+                                Assegnatario/i*
                             </h3>
-                            <div className="grid grid-cols-3 gap-2 border border-[var(--light-primary)] rounded-md p-2">
+                            <div
+                                className={`error-display grid grid-cols-3 gap-2 rounded-md p-2 ${
+                                    assigneeError
+                                        ? "border border-[var(--red)]"
+                                        : "border border-[var(--light-primary)]"
+                                }`}
+                            >
                                 {users.map((user) => (
                                     <div
                                         key={user.Username}
-                                        onClick={() =>
-                                            handleCheckboxChange(user.Username)
-                                        }
+                                        onClick={() => {
+                                            handleCheckboxChange(user.Username);
+                                            if (assigneeError) {
+                                                setAssigneeError(false);
+                                            }
+                                        }}
                                         className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
                                             selectedAssignees.includes(
                                                 user.Username,
@@ -777,6 +809,11 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
                                     </div>
                                 ))}
                             </div>
+                            {assigneeError && (
+                                <p className="text-[var(--red)] text-sm mt-1">
+                                    Seleziona almeno un assegnatario
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

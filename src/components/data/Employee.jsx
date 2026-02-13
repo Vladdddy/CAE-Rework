@@ -7,8 +7,8 @@ function Employee(props) {
 
     return (
         <div
-            className={`flex flex-row items-center justify-between gap-2 p-2 border rounded-md 
-                border-[var(--light-primary)] bg-[var(--white)] text-[var(--black)]`}
+            className={` ${props.time === "Diurno" ? "text-green-400" : props.time === "Notturno" ? "text-blue-400" : "text-[var(--black)]"} flex flex-row items-center justify-between gap-2 p-2 border rounded-md 
+                border-[var(--light-primary)] bg-[var(--pure-white)] text-[var(--black)]`}
         >
             <div className="flex flex-row items-center justify-start gap-2 w-full">
                 <UserIcon className="w-6 shrink-0" />
