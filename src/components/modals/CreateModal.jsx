@@ -92,7 +92,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
 
         // Define which shift types correspond to each turno
         const dayShifts = ["O", "OP", "D"]; // Mattino, Pomeriggio, Giorno
-        const nightShifts = ["ON", "N"]; // Notturno, Notte
+        const nightShifts = ["ON", "N", "OP"]; // Notturno, Notte, OP can work both shifts
 
         // For ordinary tasks, check the specific selected date
         return users.filter((user) => {
@@ -182,7 +182,8 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
         }
         setTitleError(false);
 
-        if (selectedAssignees.length === 0) {
+        // Only require assignees for logbook entries, not tasks
+        if (type === "logbook" && selectedAssignees.length === 0) {
             setAssigneeError(true);
             return;
         }
@@ -809,7 +810,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
 
                         <div className="flex flex-col gap-1">
                             <h3 className="text-sm text-[var(--gray)]">
-                                Assegnatario/i*
+                                Assegnatario/i{type === "logbook" ? "*" : ""}
                             </h3>
                             <div
                                 className={`error-display grid grid-cols-3 gap-2 rounded-md p-2 ${

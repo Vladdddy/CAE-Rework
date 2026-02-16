@@ -50,9 +50,9 @@ body.dark-mode {
     --placeholder: hsl(0, 0%, 50%);
     --weekend-cells: #25202c;
     --weekend-text: #a775ff;
-    --primary-panoramica: hsl(217, 100%, 68%);
-    --orange-panoramica: hsl(31, 100%, 65%);
-    --purple-panoramica: #a775ff;
+    --primary-panoramica: hsla(217, 100%, 68%, 0.5);
+    --orange-panoramica: hsl(31, 100%, 65%, 0.5);
+    --purple-panoramica: #a775ff50;
 }
 
 ::-webkit-scrollbar-button {

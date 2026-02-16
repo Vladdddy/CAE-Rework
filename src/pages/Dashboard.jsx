@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import DayIcon from "../assets/icons/day.tsx";
 import NightIcon from "../assets/icons/night.tsx";
 import SearchIcon from "../assets/icons/search.tsx";
+import UserIcon from "../assets/icons/user.tsx";
 import { GetSimulators } from "../functions/Simulators.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
@@ -185,13 +186,14 @@ function Dashboard() {
                 />
 
                 <div className="overflow-y-auto h-screen pb-16">
-                    <div className="flex flex-col gap-8 border border-[var(--gray)] rounded-lg p-4 bg-[var(--bento-bg)] m-8">
+                    <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)] m-8">
                         <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
                             Turni di oggi
                         </p>
                         <div className="flex flex justify-between max-h-[calc(50vh-14rem)] overflow-y-auto pr-1 gap-4">
-                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border-2 border-[var(--gray)]">
+                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-gray-500">
                                 <div className="flex flex-row items-center gap-2">
+                                    <UserIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
                                         Shift Leader presenti
                                     </p>
@@ -223,10 +225,10 @@ function Dashboard() {
                                         </p>
                                     )}
                             </div>
-                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border-2 border-green-400">
+                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-green-900">
                                 <div className="flex flex-row items-center gap-2">
-                                    <DayIcon className="w-6 text-green-400" />
-                                    <p className="text-l text-green-400">
+                                    <DayIcon className="w-6 text-[var(--black)]" />
+                                    <p className="text-l text-[var(--black)]">
                                         Giorno
                                     </p>
                                 </div>
@@ -258,10 +260,10 @@ function Dashboard() {
                                         </p>
                                     )}
                             </div>
-                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border-2 border-blue-400">
+                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-blue-900">
                                 <div className="flex flex-row items-center gap-2">
-                                    <NightIcon className="w-6 text-blue-400" />
-                                    <p className="text-l text-blue-400">
+                                    <NightIcon className="w-6 text-[var(--black)]" />
+                                    <p className="text-l text-[var(--black)]">
                                         Notte
                                     </p>
                                 </div>
@@ -297,7 +299,7 @@ function Dashboard() {
                     </div>
 
                     <div className="m-8 gap-4 grid grid-cols-3">
-                        <div className="flex flex-col gap-8 border-2 border-[var(--purple-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                        <div className="flex flex-col gap-8 border border-[var(--purple-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
                             <p className="text-l text-[var(--weekend-text)] border-b border-[var(--light-primary)] pb-4">
                                 Task di oggi
                             </p>
@@ -380,7 +382,7 @@ function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-8 border-2 border-[var(--primary-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                        <div className="flex flex-col gap-8 border border-[var(--primary-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
                             <div className="flex items-center flex-wrap gap-2 justify-between text-l text-[var(--primary)] border-b border-[var(--light-primary)] pb-4">
                                 <p>Panoramica task</p>
                             </div>
@@ -514,7 +516,7 @@ function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-8 border-2 border-[var(--orange-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                        <div className="flex flex-col gap-8 border border-[var(--orange-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
                             <div className="flex items-center flex-wrap gap-2 justify-between text-l text-[var(--orange)] border-b border-[var(--light-primary)] pb-4">
                                 <p>Panoramica entry</p>
                             </div>
