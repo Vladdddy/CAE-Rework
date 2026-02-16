@@ -12,9 +12,11 @@ import Popup from "../modals/Popup.jsx";
 import Notifications from "../modals/Notifications.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
+import { useEmployeeMessages } from "../data/provider/employeeMessageAPI/useEmployeeMessages";
 
 function Topbar({ isSidebarOpen, setSidebarStatus }) {
     const { fetchTasks } = useTasks();
+    const { fetchUnreadCount, unreadCount } = useEmployeeMessages();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
@@ -25,7 +27,7 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
         const savedMode = localStorage.getItem("darkMode");
         return savedMode === "true";
     });
-    const { currentUsername, currentUserRole } = useUsers();
+    const { currentUsername, currentUserRole, currentUserId } = useUsers();
 
     useEffect(() => {
         if (isDarkMode) {
@@ -33,7 +35,20 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
         } else {
             document.body.classList.remove("dark-mode");
         }
-    }, []);
+    }, [isDarkMode]);
+
+    // Fetch unread count on mount and periodically
+    useEffect(() => {
+        if (currentUserId) {
+            fetchUnreadCount(currentUserId);
+
+            const interval = setInterval(() => {
+                fetchUnreadCount(currentUserId);
+            }, 30000); // Check every 30 seconds
+
+            return () => clearInterval(interval);
+        }
+    }, [currentUserId, fetchUnreadCount]);
 
     const handleTaskClick = () => {
         setIsModalOpen(true);
@@ -113,13 +128,15 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                         </button>
                     </>
                 )}
-                {/*<div
+                <div
                     className="relative"
                     onClick={() => setNotificationsModal(true)}
                 >
                     <BellIcon className="w-6 cursor-pointer icon" />
-                    <span className="red-circle w-2 h-2 rounded-full bg-red-500 absolute top-0 right-0 hidden"></span>
-                </div>*/}
+                    {unreadCount > 0 && (
+                        <span className="red-circle w-2 h-2 rounded-full bg-red-500 absolute top-0 right-0"></span>
+                    )}
+                </div>
             </div>
             {isDarkMode ? (
                 <div

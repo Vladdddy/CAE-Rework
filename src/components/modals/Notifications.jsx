@@ -1,17 +1,350 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import BellIcon from "../../assets/icons/bell.tsx";
 import CloseIcon from "../../assets/icons/close.tsx";
 import LongArrowIcon from "../../assets/icons/long-arrow.tsx";
 import SendIcon from "../../assets/icons/send.tsx";
 import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 import { useUsers } from "../data/provider/userAPI/useUsers";
+import { useEmployeeMessages } from "../data/provider/employeeMessageAPI/useEmployeeMessages";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import ArrowLeftIcon from "../../assets/icons/arrow-left.tsx";
 
 function Notifications({ onClose }) {
     const [emptyText, setEmptyText] = useState("");
-    const [selectedAssignees, setSelectedAssignees] = useState("");
-    const { currentUserRole, users } = useUsers();
+    const [selectedReceiver, setSelectedReceiver] = useState("");
+    const [selectedSender, setSelectedSender] = useState("");
+    const [chatMessages, setChatMessages] = useState([]);
+    const [usersWithUnreadMessages, setUsersWithUnreadMessages] = useState([]);
+    const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+    const messagesEndRef = useRef(null);
+    const previousSelectionRef = useRef({ receiver: "", sender: "" });
+    const { currentUserRole, users, currentUserId, currentUsername } =
+        useUsers();
+    const { fetchUserMessages, sendMessage, markAsRead, fetchUnreadCount } =
+        useEmployeeMessages();
+
+    const isAdmin = currentUserRole === "Admin";
+    const isEmployee =
+        currentUserRole === "Employee" || currentUserRole === "Shift Leader";
+
+    // Scroll to bottom when shouldScrollToBottom flag is set
+    useEffect(() => {
+        if (shouldScrollToBottom && messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+                inline: "nearest",
+            });
+            // Reset the flag after a small delay to avoid cascading renders
+            setTimeout(() => setShouldScrollToBottom(false), 100);
+        }
+    }, [shouldScrollToBottom]);
+
+    // Fetch unread messages to highlight users in dropdowns
+    useEffect(() => {
+        const fetchUnreadSenders = async () => {
+            if (isEmployee && currentUserId) {
+                // For Employee/Shift Leader: get users who sent unread messages to current user
+                const result = await fetchUserMessages(currentUserId);
+                if (result.success) {
+                    const unreadSenderIds = result.data
+                        .filter(
+                            (msg) =>
+                                msg.RECEIVER_ID === currentUserId &&
+                                !msg.IS_READ,
+                        )
+                        .map((msg) => msg.SENDER_ID);
+                    const uniqueSenderIds = [...new Set(unreadSenderIds)];
+                    const unreadUsernames = users
+                        .filter((u) => uniqueSenderIds.includes(u.ID))
+                        .map((u) => u.Username);
+                    setUsersWithUnreadMessages(unreadUsernames);
+                }
+            } else if (isAdmin && selectedReceiver) {
+                // For Admin: get users who sent unread messages to selected receiver
+                const receiverUser = users.find(
+                    (u) => u.Username === selectedReceiver,
+                );
+                if (!receiverUser) return;
+
+                const result = await fetchUserMessages(receiverUser.ID);
+                if (result.success) {
+                    const unreadSenderIds = result.data
+                        .filter(
+                            (msg) =>
+                                msg.RECEIVER_ID === receiverUser.ID &&
+                                !msg.IS_READ,
+                        )
+                        .map((msg) => msg.SENDER_ID);
+                    const uniqueSenderIds = [...new Set(unreadSenderIds)];
+                    const unreadUsernames = users
+                        .filter((u) => uniqueSenderIds.includes(u.ID))
+                        .map((u) => u.Username);
+                    setUsersWithUnreadMessages(unreadUsernames);
+                }
+            }
+        };
+
+        fetchUnreadSenders();
+    }, [
+        currentUserId,
+        isEmployee,
+        isAdmin,
+        selectedReceiver,
+        users,
+        fetchUserMessages,
+    ]);
+
+    // Fetch messages when users are selected
+    useEffect(() => {
+        const loadMessages = async () => {
+            // Check if selection has changed
+            const selectionChanged =
+                previousSelectionRef.current.receiver !== selectedReceiver ||
+                previousSelectionRef.current.sender !== selectedSender;
+
+            if (isEmployee && selectedReceiver) {
+                // For Employee/Shift Leader: fetch chat between current user and selected user
+                const receiverUser = users.find(
+                    (u) => u.Username === selectedReceiver,
+                );
+                if (!receiverUser || !currentUserId) return;
+
+                const result = await fetchUserMessages(currentUserId);
+                if (result.success) {
+                    // Filter messages to only show between current user and selected user
+                    const filtered = result.data
+                        .filter(
+                            (msg) =>
+                                (msg.SENDER_ID === currentUserId &&
+                                    msg.RECEIVER_ID === receiverUser.ID) ||
+                                (msg.RECEIVER_ID === currentUserId &&
+                                    msg.SENDER_ID === receiverUser.ID),
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
+                        );
+                    setChatMessages(filtered);
+
+                    // Only scroll to bottom if this is a new chat selection
+                    if (selectionChanged) {
+                        setShouldScrollToBottom(true);
+                        previousSelectionRef.current = {
+                            receiver: selectedReceiver,
+                            sender: "",
+                        };
+                    }
+
+                    // Mark unread messages as read (where current user is receiver)
+                    const unreadMessages = filtered.filter(
+                        (msg) =>
+                            msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
+                    );
+                    for (const msg of unreadMessages) {
+                        await markAsRead(msg.ID);
+                    }
+
+                    // Refresh unread count and update dropdown indicators
+                    if (unreadMessages.length > 0) {
+                        await fetchUnreadCount(currentUserId);
+
+                        // Refresh unread senders list
+                        const result = await fetchUserMessages(currentUserId);
+                        if (result.success) {
+                            const unreadSenderIds = result.data
+                                .filter(
+                                    (msg) =>
+                                        msg.RECEIVER_ID === currentUserId &&
+                                        !msg.IS_READ,
+                                )
+                                .map((msg) => msg.SENDER_ID);
+                            const uniqueSenderIds = [
+                                ...new Set(unreadSenderIds),
+                            ];
+                            const unreadUsernames = users
+                                .filter((u) => uniqueSenderIds.includes(u.ID))
+                                .map((u) => u.Username);
+                            setUsersWithUnreadMessages(unreadUsernames);
+                        }
+                    }
+                }
+            } else if (isAdmin && selectedReceiver && selectedSender) {
+                // For Admin: fetch chat between selected sender and receiver
+                const receiverUser = users.find(
+                    (u) => u.Username === selectedReceiver,
+                );
+                const senderUser = users.find(
+                    (u) => u.Username === selectedSender,
+                );
+                if (!receiverUser || !senderUser) return;
+
+                const result = await fetchUserMessages(receiverUser.ID);
+                if (result.success) {
+                    // Filter messages to only show between selected sender and receiver
+                    const filtered = result.data
+                        .filter(
+                            (msg) =>
+                                (msg.SENDER_ID === senderUser.ID &&
+                                    msg.RECEIVER_ID === receiverUser.ID) ||
+                                (msg.RECEIVER_ID === senderUser.ID &&
+                                    msg.SENDER_ID === receiverUser.ID),
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
+                        );
+                    setChatMessages(filtered);
+
+                    // Only scroll to bottom if this is a new chat selection
+                    if (selectionChanged) {
+                        setShouldScrollToBottom(true);
+                        previousSelectionRef.current = {
+                            receiver: selectedReceiver,
+                            sender: selectedSender,
+                        };
+                    }
+                }
+            }
+        };
+
+        loadMessages();
+    }, [
+        selectedReceiver,
+        selectedSender,
+        currentUserId,
+        isAdmin,
+        isEmployee,
+        fetchUserMessages,
+        users,
+        markAsRead,
+        fetchUnreadCount,
+    ]);
+
+    // Auto-refresh messages when chat is open (every 5 seconds)
+    useEffect(() => {
+        const showChat = isEmployee
+            ? selectedReceiver
+            : selectedReceiver && selectedSender;
+
+        if (!showChat) return;
+
+        const pollMessages = async () => {
+            if (isEmployee && selectedReceiver) {
+                const receiverUser = users.find(
+                    (u) => u.Username === selectedReceiver,
+                );
+                if (!receiverUser || !currentUserId) return;
+
+                const result = await fetchUserMessages(currentUserId);
+                if (result.success) {
+                    const filtered = result.data
+                        .filter(
+                            (msg) =>
+                                (msg.SENDER_ID === currentUserId &&
+                                    msg.RECEIVER_ID === receiverUser.ID) ||
+                                (msg.RECEIVER_ID === currentUserId &&
+                                    msg.SENDER_ID === receiverUser.ID),
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
+                        );
+
+                    // Only update if messages have changed
+                    if (
+                        JSON.stringify(filtered) !==
+                        JSON.stringify(chatMessages)
+                    ) {
+                        setChatMessages(filtered);
+
+                        // Mark any new unread messages as read
+                        const unreadMessages = filtered.filter(
+                            (msg) =>
+                                msg.RECEIVER_ID === currentUserId &&
+                                !msg.IS_READ,
+                        );
+                        if (unreadMessages.length > 0) {
+                            for (const msg of unreadMessages) {
+                                await markAsRead(msg.ID);
+                            }
+                            await fetchUnreadCount(currentUserId);
+
+                            // Refresh unread senders list
+                            const result =
+                                await fetchUserMessages(currentUserId);
+                            if (result.success) {
+                                const unreadSenderIds = result.data
+                                    .filter(
+                                        (msg) =>
+                                            msg.RECEIVER_ID === currentUserId &&
+                                            !msg.IS_READ,
+                                    )
+                                    .map((msg) => msg.SENDER_ID);
+                                const uniqueSenderIds = [
+                                    ...new Set(unreadSenderIds),
+                                ];
+                                const unreadUsernames = users
+                                    .filter((u) =>
+                                        uniqueSenderIds.includes(u.ID),
+                                    )
+                                    .map((u) => u.Username);
+                                setUsersWithUnreadMessages(unreadUsernames);
+                            }
+                        }
+                    }
+                }
+            } else if (isAdmin && selectedReceiver && selectedSender) {
+                const receiverUser = users.find(
+                    (u) => u.Username === selectedReceiver,
+                );
+                const senderUser = users.find(
+                    (u) => u.Username === selectedSender,
+                );
+                if (!receiverUser || !senderUser) return;
+
+                const result = await fetchUserMessages(receiverUser.ID);
+                if (result.success) {
+                    const filtered = result.data
+                        .filter(
+                            (msg) =>
+                                (msg.SENDER_ID === senderUser.ID &&
+                                    msg.RECEIVER_ID === receiverUser.ID) ||
+                                (msg.RECEIVER_ID === senderUser.ID &&
+                                    msg.SENDER_ID === receiverUser.ID),
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
+                        );
+
+                    // Only update if messages have changed
+                    if (
+                        JSON.stringify(filtered) !==
+                        JSON.stringify(chatMessages)
+                    ) {
+                        setChatMessages(filtered);
+                    }
+                }
+            }
+        };
+
+        // Poll immediately, then every 5 seconds
+        const interval = setInterval(pollMessages, 5000);
+
+        return () => clearInterval(interval);
+    }, [
+        selectedReceiver,
+        selectedSender,
+        currentUserId,
+        isEmployee,
+        isAdmin,
+        users,
+        chatMessages,
+        fetchUserMessages,
+        markAsRead,
+        fetchUnreadCount,
+    ]);
 
     const formatUsername = (username) => {
         const parts = username.split(".");
@@ -23,10 +356,151 @@ function Notifications({ onClose }) {
         return formatted;
     };
 
-    const handleBack = () => {
-        setSelectedAssignees("");
-        setEmptyText("");
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const options = {
+            weekday: "long",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        };
+        return date.toLocaleDateString("it-IT", options);
     };
+
+    const handleBack = () => {
+        setSelectedReceiver("");
+        setSelectedSender("");
+        setChatMessages([]);
+        setEmptyText("");
+        previousSelectionRef.current = { receiver: "", sender: "" };
+    };
+
+    const handleSendMessage = async () => {
+        if (!emptyText.trim()) return;
+
+        let senderId, receiverId;
+
+        if (isEmployee) {
+            // Employee/Shift Leader sends to selected user
+            senderId = currentUserId;
+            const receiver = users.find((u) => u.Username === selectedReceiver);
+            receiverId = receiver?.ID;
+        } else if (isAdmin && currentUsername === selectedReceiver) {
+            // Admin sending as themselves (selected in "Visualizza la chat di")
+            senderId = currentUserId;
+            const receiver = users.find((u) => u.Username === selectedSender);
+            receiverId = receiver?.ID;
+        }
+
+        if (!senderId || !receiverId) return;
+
+        const result = await sendMessage(senderId, receiverId, emptyText);
+        if (result.success) {
+            setEmptyText("");
+            // Reload messages
+            if (isEmployee && selectedReceiver) {
+                const receiverUser = users.find(
+                    (u) => u.Username === selectedReceiver,
+                );
+                const res = await fetchUserMessages(currentUserId);
+                if (res.success) {
+                    const filtered = res.data
+                        .filter(
+                            (msg) =>
+                                (msg.SENDER_ID === currentUserId &&
+                                    msg.RECEIVER_ID === receiverUser.ID) ||
+                                (msg.RECEIVER_ID === currentUserId &&
+                                    msg.SENDER_ID === receiverUser.ID),
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
+                        );
+                    setChatMessages(filtered);
+                    setShouldScrollToBottom(true);
+
+                    // Mark unread messages as read
+                    const unreadMessages = filtered.filter(
+                        (msg) =>
+                            msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
+                    );
+                    for (const msg of unreadMessages) {
+                        await markAsRead(msg.ID);
+                    }
+
+                    // Refresh unread count
+                    if (unreadMessages.length > 0) {
+                        await fetchUnreadCount(currentUserId);
+                    }
+                }
+            } else if (
+                isAdmin &&
+                currentUsername === selectedReceiver &&
+                selectedSender
+            ) {
+                // Admin sending as themselves - reload their chat with the other user
+                const otherUser = users.find(
+                    (u) => u.Username === selectedSender,
+                );
+                const res = await fetchUserMessages(currentUserId);
+                if (res.success) {
+                    const filtered = res.data
+                        .filter(
+                            (msg) =>
+                                (msg.SENDER_ID === currentUserId &&
+                                    msg.RECEIVER_ID === otherUser.ID) ||
+                                (msg.RECEIVER_ID === currentUserId &&
+                                    msg.SENDER_ID === otherUser.ID),
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
+                        );
+                    setChatMessages(filtered);
+                    setShouldScrollToBottom(true);
+
+                    // Mark unread messages as read
+                    const unreadMessages = filtered.filter(
+                        (msg) =>
+                            msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
+                    );
+                    for (const msg of unreadMessages) {
+                        await markAsRead(msg.ID);
+                    }
+
+                    // Refresh unread count and update dropdown indicators
+                    if (unreadMessages.length > 0) {
+                        await fetchUnreadCount(currentUserId);
+
+                        // Refresh unread senders list
+                        const result = await fetchUserMessages(currentUserId);
+                        if (result.success) {
+                            const unreadSenderIds = result.data
+                                .filter(
+                                    (msg) =>
+                                        msg.RECEIVER_ID === currentUserId &&
+                                        !msg.IS_READ,
+                                )
+                                .map((msg) => msg.SENDER_ID);
+                            const uniqueSenderIds = [
+                                ...new Set(unreadSenderIds),
+                            ];
+                            const unreadUsernames = users
+                                .filter((u) => uniqueSenderIds.includes(u.ID))
+                                .map((u) => u.Username);
+                            setUsersWithUnreadMessages(unreadUsernames);
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    const showChat = isEmployee
+        ? selectedReceiver
+        : selectedReceiver && selectedSender;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm cursor-default flex items-center justify-center z-50">
@@ -47,163 +521,204 @@ function Notifications({ onClose }) {
                     </button>
                 </div>
                 <div className="flex flex-col gap-8 max-h-[calc(60vh-4rem)] overflow-y-auto pr-1">
-                    {!selectedAssignees && (
+                    {/* Employee/Shift Leader: Show single dropdown */}
+                    {isEmployee && !selectedReceiver && (
                         <div className="flex flex-col gap-1 w-full">
                             <h3 className="text-sm text-[var(--gray)]">
-                                Visualizza la chat di
+                                Visualizza la chat con
                             </h3>
                             <div className="relative">
                                 <select
                                     name=""
                                     id=""
-                                    value={selectedAssignees}
+                                    value={selectedReceiver}
                                     onChange={(e) => {
-                                        setSelectedAssignees(e.target.value);
+                                        setSelectedReceiver(e.target.value);
                                     }}
                                     className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                 >
                                     <option value="">...</option>
-                                    {users.map((user, index) => (
-                                        <option
-                                            key={index}
-                                            value={user.Username}
-                                        >
-                                            {formatUsername(user.Username)}
-                                        </option>
-                                    ))}
+                                    {users
+                                        .filter(
+                                            (user) => user.ID !== currentUserId,
+                                        )
+                                        .map((user, index) => (
+                                            <option
+                                                key={index}
+                                                value={user.Username}
+                                                style={{
+                                                    color: usersWithUnreadMessages.includes(
+                                                        user.Username,
+                                                    )
+                                                        ? "red"
+                                                        : "inherit",
+                                                }}
+                                            >
+                                                {formatUsername(user.Username)}
+                                            </option>
+                                        ))}
                                 </select>
                                 <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                             </div>
                         </div>
                     )}
-                    {!selectedAssignees && (
-                        <div className="flex flex-col gap-1 w-full">
-                            <h3 className="text-sm text-[var(--gray)]">Con</h3>
-                            <div className="relative">
-                                <select
-                                    name=""
-                                    id=""
-                                    value={selectedAssignees}
-                                    onChange={(e) => {
-                                        setSelectedAssignees(e.target.value);
-                                    }}
-                                    className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+
+                    {/* Admin: Show two dropdowns */}
+                    {isAdmin && !showChat && (
+                        <>
+                            <div className="flex flex-col gap-1 w-full">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    Visualizza la chat di
+                                </h3>
+                                <div className="relative">
+                                    <select
+                                        name=""
+                                        id=""
+                                        value={selectedReceiver}
+                                        onChange={(e) => {
+                                            setSelectedReceiver(e.target.value);
+                                        }}
+                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                    >
+                                        <option value="">...</option>
+                                        {users.map((user, index) => (
+                                            <option
+                                                key={index}
+                                                value={user.Username}
+                                            >
+                                                {formatUsername(user.Username)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1 w-full">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    Con
+                                </h3>
+                                <div className="relative">
+                                    <select
+                                        name=""
+                                        id=""
+                                        value={selectedSender}
+                                        onChange={(e) => {
+                                            setSelectedSender(e.target.value);
+                                        }}
+                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                    >
+                                        <option value="">...</option>
+                                        {users
+                                            .filter(
+                                                (user) =>
+                                                    user.Username !==
+                                                    selectedReceiver,
+                                            )
+                                            .map((user, index) => (
+                                                <option
+                                                    key={index}
+                                                    value={user.Username}
+                                                    style={{
+                                                        color: usersWithUnreadMessages.includes(
+                                                            user.Username,
+                                                        )
+                                                            ? "red"
+                                                            : "inherit",
+                                                    }}
+                                                >
+                                                    {formatUsername(
+                                                        user.Username,
+                                                    )}
+                                                </option>
+                                            ))}
+                                    </select>
+                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Display messages */}
+                    {showChat &&
+                        chatMessages.map((msg, index) => {
+                            const isSentByCurrentUser = isEmployee
+                                ? msg.SENDER_ID === currentUserId
+                                : false;
+                            const isSentByReceiver = isAdmin
+                                ? msg.SENDER_ID ===
+                                  users.find(
+                                      (u) => u.Username === selectedReceiver,
+                                  )?.ID
+                                : false;
+
+                            const shouldAlignRight = isEmployee
+                                ? isSentByCurrentUser
+                                : isSentByReceiver;
+
+                            return (
+                                <div
+                                    key={index}
+                                    className={`flex flex-col gap-2 w-3/4 ${shouldAlignRight ? "self-end items-end" : ""}`}
                                 >
-                                    <option value="">...</option>
-                                    {users.map((user, index) => (
-                                        <option
-                                            key={index}
-                                            value={user.Username}
+                                    <h1 className="text-md text-[var(--gray)]">
+                                        {shouldAlignRight
+                                            ? isEmployee
+                                                ? "Tu:"
+                                                : `${formatUsername(selectedReceiver)}:`
+                                            : isEmployee
+                                              ? `${formatUsername(selectedReceiver)}:`
+                                              : `${formatUsername(selectedSender)}:`}
+                                    </h1>
+                                    <div className="text-md text-[var(--black)] w-full border border-[var(--light-primary)] rounded-md p-2">
+                                        <p>{msg.MESSAGE_CONTENT}</p>
+                                        <p
+                                            className={`text-xs text-[var(--gray)] mt-1 ${shouldAlignRight ? "text-right" : "text-left"}`}
                                         >
-                                            {formatUsername(user.Username)}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                            </div>
-                        </div>
-                    )}
-                    {selectedAssignees && (
-                        <div className="flex flex-col gap-2 w-3/4">
-                            <h1 className="text-md text-[var(--gray)]">
-                                Vlad B:
-                            </h1>
-                            <p className="text-sm text-[var(--black)] w-full border border-[var(--light-primary)] rounded-md p-2">
-                                Lorem ipsum dolor sit amet consectetur,
-                                adipisicing elit. Necessitatibus quas ab veniam
-                                quo iusto debitis! Dolores expedita vitae in
-                                adipisci?
+                                            {formatDate(msg.DATE_SENT)}
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                    {/* Show message if no messages exist */}
+                    {showChat && chatMessages.length === 0 && (
+                        <div className="flex items-center justify-center py-8">
+                            <p className="text-[var(--gray)]">
+                                Nessun messaggio in questa chat
                             </p>
                         </div>
                     )}
-
-                    {selectedAssignees && (
-                        <div className="flex flex-col gap-2 w-3/4">
-                            <h1 className="text-md text-[var(--gray)]">
-                                Vlad B:
-                            </h1>
-                            <div className="text-sm w-full border border-[var(--light-primary)] rounded-md p-2">
-                                <p className="text-[var(--black)] mb-4">
-                                    Cambio turno in data:{" "}
-                                    <span className="text-[var(--primary)] font-bold">
-                                        Lunedì, 2/02/2026
-                                    </span>
-                                </p>
-                                <div className="flex flex-row gap-2 items-center">
-                                    {GetColorForShift("ON").split(" ")[0] && (
-                                        <p
-                                            className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg opacity-30 ${GetColorForShift("ON")}`}
-                                        >
-                                            ON
-                                        </p>
-                                    )}
-                                    <LongArrowIcon className="w-6" />
-                                    {GetColorForShift("D").split(" ")[0] && (
-                                        <p
-                                            className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg ${GetColorForShift("D")}`}
-                                        >
-                                            D
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="text-sm w-full border border-[var(--light-primary)] rounded-md p-2 hidden">
-                                <p className="text-[var(--black)] mb-4">
-                                    Cambio turno in data:{" "}
-                                    <span className="text-[var(--primary)] font-bold">
-                                        Martedì, 3/02/2026
-                                    </span>
-                                </p>
-                                <div className="flex flex-row gap-2 items-center">
-                                    {GetColorForShift("O").split(" ")[0] && (
-                                        <p
-                                            className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg opacity-30 ${GetColorForShift("O")}`}
-                                        >
-                                            O
-                                        </p>
-                                    )}
-                                    <LongArrowIcon className="w-6" />
-                                    {GetColorForShift("CA").split(" ")[0] && (
-                                        <p
-                                            className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg ${GetColorForShift("CA")}`}
-                                        >
-                                            CA
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {selectedAssignees && (
-                        <div className="flex flex-col gap-2 justify-end items-end w-3/4 self-end">
-                            <h1 className="text-md text-[var(--gray)]">Tu:</h1>
-                            <p className="text-sm text-[var(--black)] w-full border border-[var(--light-primary)] rounded-md p-2">
-                                Lorem ipsum dolor sit amet consectetur,
-                                adipisicing elit.
-                            </p>
-                        </div>
-                    )}
+                    {/* Invisible element at the bottom for scrolling */}
+                    <div ref={messagesEndRef} />
                 </div>
-                {selectedAssignees && (
-                    <div className="flex gap-2 pt-4 mt-4">
-                        <input
-                            type="text"
-                            className="w-full h-[44px] p-3 border border-[var(--light-primary)] overflow-y-none rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                            placeholder="Scrivi qui..."
-                            value={emptyText}
-                            onChange={(e) => setEmptyText(e.target.value)}
-                        ></input>
-                        <button
-                            className={`btn flex gap-2 items-center h-[44px] ${emptyText ? "opacity-100 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
-                            disabled={!emptyText}
-                        >
-                            <SendIcon className="w-6" />
-                            Invia
-                        </button>
-                    </div>
-                )}
-                {selectedAssignees && (
+                {showChat &&
+                    (isEmployee ||
+                        (isAdmin && currentUsername === selectedReceiver)) && (
+                        <div className="flex gap-2 pt-4 mt-4">
+                            <input
+                                type="text"
+                                className="w-full h-[44px] p-3 border border-[var(--light-primary)] overflow-y-none rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                                placeholder="Scrivi qui..."
+                                value={emptyText}
+                                onChange={(e) => setEmptyText(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" && emptyText) {
+                                        handleSendMessage();
+                                    }
+                                }}
+                            ></input>
+                            <button
+                                onClick={handleSendMessage}
+                                className={`btn flex gap-2 items-center h-[44px] ${emptyText ? "opacity-100 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
+                                disabled={!emptyText}
+                            >
+                                <SendIcon className="w-6" />
+                                Invia
+                            </button>
+                        </div>
+                    )}
+                {showChat && (
                     <div className="flex items-center gap-4 pt-4 mt-4 border-t border-[var(--light-primary)]">
                         <div
                             onClick={handleBack}
@@ -213,7 +728,9 @@ function Notifications({ onClose }) {
                         </div>
 
                         <h1 className="text-lg text-[var(--black)]">
-                            {formatUsername(selectedAssignees)}
+                            {isEmployee
+                                ? formatUsername(selectedReceiver)
+                                : `${formatUsername(selectedReceiver)} - ${formatUsername(selectedSender)}`}
                         </h1>
                     </div>
                 )}

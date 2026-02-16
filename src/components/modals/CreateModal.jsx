@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
@@ -9,6 +9,7 @@ import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
+import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts.js";
 import { CheckExistingDays } from "../../functions/CheckExistingDays.jsx";
 
 function CreateModal({ onClose, onSuccess, type, initialDate }) {
@@ -43,11 +44,15 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
 
     const { addTask } = useTasks();
     const { addLogbook, fetchLogbooks } = useLogbooks();
-    const { users } = useUsers();
+    const { users, currentUsername } = useUsers();
+    const { employeeShifts } = useEmployeeShifts();
     const [selectedCategory, setSelectedCategory] = useState("Routine Task");
     const [selectedStatus, setSelectedStatus] = useState("Da definire");
     const [selectedRadio, setSelectedRadio] = useState(getDefaultShift());
-    const [selectedAssignees, setSelectedAssignees] = useState([]);
+    // For logbook entries, auto-select current user as assignee
+    const [selectedAssignees, setSelectedAssignees] = useState(
+        type === "logbook" ? [currentUsername] : [],
+    );
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [selectedSubCategory, setSelectedSubCategory] = useState("PM");
@@ -73,11 +78,58 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
         new Date().toISOString().split("T")[0],
     );
 
+    // Filter users based on selected date and shift (only for ordinary tasks, not logbook entries or recurring tasks)
+    const filteredUsers = useMemo(() => {
+        // For logbook entries, return all users without filtering
+        if (type === "logbook") {
+            return users;
+        }
+
+        // For recurring tasks, return all users without filtering
+        if (activeTab === "Ricorrente") {
+            return users;
+        }
+
+        // Define which shift types correspond to each turno
+        const dayShifts = ["O", "OP", "D"]; // Mattino, Pomeriggio, Giorno
+        const nightShifts = ["ON", "N"]; // Notturno, Notte
+
+        // For ordinary tasks, check the specific selected date
+        return users.filter((user) => {
+            const userShift = employeeShifts.find(
+                (shift) =>
+                    shift.EMPLOYEE_ID === user.ID &&
+                    shift.SELECTED_DATE &&
+                    shift.SELECTED_DATE.split("T")[0] === selectedDate,
+            );
+
+            if (!userShift) {
+                return false; // User has no shift on this date
+            }
+
+            const shiftType = userShift.SHIFT_TYPE;
+
+            // Match shift type to selected turno
+            if (selectedRadio === "Diurno") {
+                return dayShifts.includes(shiftType);
+            } else if (selectedRadio === "Notturno") {
+                return nightShifts.includes(shiftType);
+            }
+
+            return true;
+        });
+    }, [users, employeeShifts, selectedDate, selectedRadio, activeTab, type]);
+
     const handleRadioChange = (event) => {
         setSelectedRadio(event.target.value);
     };
 
     const handleCheckboxChange = (name) => {
+        // For logbook entries, prevent deselecting the current user
+        if (type === "logbook" && name === currentUsername) {
+            return; // Don't allow deselecting yourself
+        }
+
         setSelectedAssignees((prev) =>
             prev.includes(name)
                 ? prev.filter((item) => item !== name)
@@ -298,6 +350,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "Remote connection with support",
             "Remote connection without support",
             "On-Site Connection",
+            "Part Repaired",
         ],
     };
 
@@ -765,62 +818,78 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
                                         : "border border-[var(--light-primary)]"
                                 }`}
                             >
-                                {users.map((user) => (
-                                    <div
-                                        key={user.Username}
-                                        onClick={() => {
-                                            handleCheckboxChange(user.Username);
-                                            if (assigneeError) {
-                                                setAssigneeError(false);
-                                            }
-                                        }}
-                                        className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                            selectedAssignees.includes(
-                                                user.Username,
-                                            )
-                                                ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                                : "text-[var(--black)]"
-                                        }`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            name=""
-                                            id={user.Username}
-                                            checked={selectedAssignees.includes(
-                                                user.Username,
-                                            )}
-                                            onChange={() =>
+                                {filteredUsers.map((user) => {
+                                    const isCurrentUser =
+                                        type === "logbook" &&
+                                        user.Username === currentUsername;
+                                    return (
+                                        <div
+                                            key={user.Username}
+                                            onClick={() => {
                                                 handleCheckboxChange(
                                                     user.Username,
+                                                );
+                                                if (assigneeError) {
+                                                    setAssigneeError(false);
+                                                }
+                                            }}
+                                            className={`flex items-center gap-2 rounded-md p-2 flex-1 border border-transparent ${
+                                                isCurrentUser
+                                                    ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                                    : "cursor-pointer hover:bg-[var(--light-primary)]"
+                                            } ${
+                                                selectedAssignees.includes(
+                                                    user.Username,
                                                 )
-                                            }
-                                            className="hidden"
-                                        />
-                                        <UserIcon className="w-6 shrink-0" />
-                                        <label
-                                            className="cursor-pointer truncate"
-                                            htmlFor={user.Username}
+                                                    ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                                    : "text-[var(--black)]"
+                                            }`}
                                         >
-                                            {user.Username.split(".")[0]
-                                                .charAt(0)
-                                                .toUpperCase() +
-                                                user.Username.split(
+                                            <input
+                                                type="checkbox"
+                                                name=""
+                                                id={user.Username}
+                                                checked={selectedAssignees.includes(
+                                                    user.Username,
+                                                )}
+                                                onChange={() =>
+                                                    handleCheckboxChange(
+                                                        user.Username,
+                                                    )
+                                                }
+                                                disabled={isCurrentUser}
+                                                className="hidden"
+                                            />
+                                            <UserIcon className="w-6 shrink-0" />
+                                            <label
+                                                className={`truncate ${isCurrentUser ? "" : "cursor-pointer"}`}
+                                                htmlFor={user.Username}
+                                            >
+                                                {user.Username.split(".")[0]
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    user.Username.split(
+                                                        ".",
+                                                    )[0].slice(1)}
+                                                {user.Username.split(
                                                     ".",
-                                                )[0].slice(1)}
-                                            {user.Username.split(".")[1] && (
-                                                <>
-                                                    {" "}
-                                                    {user.Username.split(".")[1]
-                                                        .charAt(0)
-                                                        .toUpperCase() +
-                                                        user.Username.split(
+                                                )[1] && (
+                                                    <>
+                                                        {" "}
+                                                        {user.Username.split(
                                                             ".",
-                                                        )[1].slice(1)}
-                                                </>
-                                            )}
-                                        </label>
-                                    </div>
-                                ))}
+                                                        )[1]
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                            user.Username.split(
+                                                                ".",
+                                                            )[1].slice(1)}
+                                                    </>
+                                                )}
+                                            </label>
+                                        </div>
+                                    );
+                                })}
                             </div>
                             {assigneeError && (
                                 <p className="text-[var(--red)] text-sm mt-1">

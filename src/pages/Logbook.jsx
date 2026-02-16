@@ -3,7 +3,7 @@ import Topbar from "../components/layout/Topbar.jsx";
 import Calendar from "../components/layout/Calendar.jsx";
 import DatePickerComponent from "../functions/DatePicker.jsx";
 import Table from "../components/data/Table.jsx";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import SearchIcon from "../assets/icons/search.tsx";
 import FilterIcon from "../assets/icons/filter.tsx";
 import TaskIcon from "../assets/icons/tasks.tsx";
@@ -48,6 +48,8 @@ function Logbook() {
     const [selectedTo, setSelectedTo] = useState("");
     const [dateError, setDateError] = useState(false);
     const [viewDays, setViewDays] = useState(1);
+    const [showExportMenu, setShowExportMenu] = useState(false);
+    const exportMenuRef = useRef(null);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -60,6 +62,25 @@ function Logbook() {
             setDateError(false);
         }
     }, [selectedFrom, selectedTo]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                exportMenuRef.current &&
+                !exportMenuRef.current.contains(event.target)
+            ) {
+                setShowExportMenu(false);
+            }
+        };
+
+        if (showExportMenu) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showExportMenu]);
 
     const handleDayClick = (day) => {
         setSelectedDay(day);
@@ -100,7 +121,7 @@ function Logbook() {
         }, 2000);
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = (timeFilter = null) => {
         try {
             // Pass null as date if filters are active, otherwise pass startDate
             const hasActiveFilters =
@@ -164,6 +185,13 @@ function Logbook() {
                 });
             }
 
+            // Filter by time if timeFilter is provided
+            if (timeFilter) {
+                itemsToExport = itemsToExport.filter(
+                    (item) => item.TIME === timeFilter,
+                );
+            }
+
             const itemsExported = exportTasksToPDF(
                 itemsToExport,
                 hasActiveFilters ? null : startDate,
@@ -179,6 +207,7 @@ function Logbook() {
             setTimeout(() => {
                 setShowPopup(false);
             }, 2000);
+            setShowExportMenu(false);
         } catch (error) {
             console.error("Errore durante l'esportazione del PDF:", error);
             setPopupType("error");
@@ -187,6 +216,7 @@ function Logbook() {
             setTimeout(() => {
                 setShowPopup(false);
             }, 2000);
+            setShowExportMenu(false);
         }
     };
 
@@ -402,12 +432,36 @@ function Logbook() {
                                     />
                                 </div>
 
-                                <button
-                                    className="btn secondary"
-                                    onClick={handleExportPDF}
-                                >
-                                    Export PDF
-                                </button>
+                                <div className="relative" ref={exportMenuRef}>
+                                    <button
+                                        className="btn secondary"
+                                        onClick={() =>
+                                            setShowExportMenu(!showExportMenu)
+                                        }
+                                    >
+                                        Export PDF
+                                    </button>
+                                    {showExportMenu && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
+                                            <button
+                                                className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
+                                                onClick={() =>
+                                                    handleExportPDF("Diurno")
+                                                }
+                                            >
+                                                Giorno
+                                            </button>
+                                            <button
+                                                className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-b-lg"
+                                                onClick={() =>
+                                                    handleExportPDF("Notturno")
+                                                }
+                                            >
+                                                Notte
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="m-8 gap-8 grid grid-cols-1">
