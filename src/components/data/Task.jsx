@@ -12,6 +12,7 @@ function Task({
     wholeTask,
     onDeleteSuccess,
     isLogbook,
+    isFlagged,
 }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -29,7 +30,7 @@ function Task({
     return (
         <div
             onClick={() => handleTaskClick(wholeTask)}
-            className={`${type === "dashboard&today" ? "hover:text-[var(--weekend-text)]" : null} ${type === "dashboard&logbook" ? "hover:text-[var(--orange)]" : "hover:text-[var(--primary)]"} hover:bg-[var(--light-primary)] hover:border-[var(--light-primary)] flex flex-col items-start justify-between p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] transition-all duration-200 cursor-pointer ease-in-out text-[var(--black)]`}
+            className={`${type === "dashboard&today" ? "hover:text-[var(--weekend-text)]" : null} ${isFlagged ? "border-[var(--red)] hover:border-[var(--red)]" : null} ${type === "dashboard&logbook" ? "hover:text-[var(--orange)]" : "hover:text-[var(--primary)]"} hover:bg-[var(--light-primary)] hover:border-[var(--light-primary)] flex flex-col items-start justify-between p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] transition-all duration-200 cursor-pointer ease-in-out text-[var(--black)]`}
         >
             {type === "table" ? (
                 <>

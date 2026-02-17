@@ -129,7 +129,7 @@ function Tasks() {
         setIsSimulatorModalOpen(false);
     };
 
-    const handleExportPDF = (timeFilter = null) => {
+    const handleExportPDF = async (timeFilter = null) => {
         try {
             // Pass null as date if filters are active, otherwise pass startDate
             const hasActiveFilters =
@@ -188,11 +188,36 @@ function Tasks() {
                 );
             }
 
+            // Fetch notes for all tasks
+            const API_URL = import.meta.env.VITE_API_URL;
+            const notesMap = {};
+
+            await Promise.all(
+                tasksToExport.map(async (task) => {
+                    try {
+                        const response = await fetch(
+                            `${API_URL}/notes/${task.ID}`,
+                        );
+                        if (response.ok) {
+                            const notes = await response.json();
+                            notesMap[task.ID] = notes;
+                        }
+                    } catch (error) {
+                        console.error(
+                            `Failed to fetch notes for task ${task.ID}:`,
+                            error,
+                        );
+                    }
+                }),
+            );
+
             const tasksExported = exportTasksToPDF(
                 tasksToExport,
                 hasActiveFilters ? null : startDate,
                 simulatorsToExport,
                 "Night Activities",
+                notesMap,
+                users,
             );
             setPopupType("success");
             setPopupMessage(

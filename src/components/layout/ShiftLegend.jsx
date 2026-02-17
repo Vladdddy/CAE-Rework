@@ -109,7 +109,7 @@ function ShiftLegend() {
                 className="btn flex items-center justify-center text-center gap-1"
                 onClick={() => setShowLegend((prev) => !prev)}
             >
-                <p className="text-md">Leggenda turni</p>
+                <p className="text-md">Legenda turni</p>
             </button>
             <div
                 className={`fixed z-40 bg-[var(--white)] w-[340px] p-4 py-0 rounded-lg overflow-y-auto pr-2 overflow-hidden transition-opacity duration-300 shadow-lg border border-[var(--separator)] ${showLegend ? "max-h-[calc(100vh-20rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
@@ -122,7 +122,7 @@ function ShiftLegend() {
             >
                 <div className="legend-header flex flex-col justify-between w-auto items-start text-center cursor-grab select-none">
                     <div className="sticky top-0 bg-[var(--white)] flex items-center justify-between text-lg mb-2 text-[var(--black)] font-semibold border-b border-[var(--light-primary)] text-start w-full py-4">
-                        Leggenda Turni
+                        Legenda Turni
                         <CloseIcon
                             className="w-6 text-[var(--gray)] cursor-pointer hover:text-[var(--black)] transition-all duration-200"
                             onClick={() => setShowLegend(false)}

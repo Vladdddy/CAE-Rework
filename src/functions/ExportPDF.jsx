@@ -24,17 +24,35 @@ const formatTime = (time) => {
 };
 
 /**
+ * Gets formatted username by user ID
+ */
+const getUsernameById = (userId, users) => {
+    const user = users.find((u) => u.ID === userId);
+    if (!user || !user.Username) return "N/A";
+
+    const parts = user.Username.split(".");
+    const firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+    const lastNameInitial = parts[1] ? parts[1].charAt(0).toUpperCase() : "";
+
+    return lastNameInitial ? `${firstName} ${lastNameInitial}` : firstName;
+};
+
+/**
  * Exports tasks to a PDF file grouped by simulator
  * @param {Array} tasks - Array of task objects (can be pre-filtered)
  * @param {Date} date - The date for the report title (optional, null if using filters)
  * @param {Array} simulators - Array of simulator objects for today (optional)
  * @param {String} title - Custom title for the PDF (optional, defaults to "Report Giornaliero")
+ * @param {Object} notesMap - Map of task IDs to their notes arrays (optional)
+ * @param {Array} users - Array of user objects for name lookup (optional)
  */
 export const exportTasksToPDF = (
     tasks,
     date = null,
     simulators = [],
     title = "Report Giornaliero",
+    notesMap = {},
+    users = [],
 ) => {
     // Use the tasks as-is (already filtered by the calling component)
     const tasksForExport = tasks;
@@ -121,7 +139,7 @@ export const exportTasksToPDF = (
                 doc.setFontSize(9);
                 doc.setFont(undefined, "normal");
                 doc.setTextColor(0, 102, 204);
-                const simDetails = `  -  Orario inizio: ${formatTime(sim.END_HOUR)}   Orario fine: ${formatTime(sim.START_HOUR)}   Assegnato a: ${sim.ASSIGNED_TO || "N/A"}`;
+                const simDetails = `  -  Orario fine: ${formatTime(sim.END_HOUR)}   Orario inizio: ${formatTime(sim.START_HOUR)}   Assegnato a: ${sim.ASSIGNED_TO || "N/A"}`;
                 doc.text(
                     simDetails,
                     margin + doc.getTextWidth(simName) + 5,
@@ -176,6 +194,19 @@ export const exportTasksToPDF = (
 
                     yPosition += 8;
 
+                    // Status with color coding
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, "bold");
+                    const status = task.STATUS || "N/A";
+                    const isCompleted = status === "Completato";
+                    if (isCompleted) {
+                        doc.setTextColor(0, 128, 0); // Green for "Completato"
+                    } else {
+                        doc.setTextColor(255, 0, 0); // Red for other statuses
+                    }
+                    doc.text(`Stato: ${status}`, margin + 15, yPosition);
+                    yPosition += 6;
+
                     doc.setFontSize(10);
                     doc.setFont(undefined, "normal");
                     doc.setTextColor(0, 0, 0);
@@ -189,6 +220,48 @@ export const exportTasksToPDF = (
                         checkPageBreak(descLines.length * 5);
                         doc.text(descLines, margin + 15, yPosition);
                         yPosition += descLines.length * 5;
+                    }
+
+                    // Notes (excluding system notes)
+                    const taskNotes = (notesMap[task.ID] || []).filter(
+                        (note) => note.TYPE !== "automatico",
+                    );
+                    if (taskNotes.length > 0) {
+                        yPosition += 4;
+                        checkPageBreak(10);
+
+                        doc.setFontSize(9);
+                        doc.setFont(undefined, "bold");
+                        doc.setTextColor(0, 102, 204);
+                        doc.text("Note", margin + 15, yPosition);
+                        yPosition += 4;
+
+                        taskNotes.forEach((note) => {
+                            checkPageBreak(15);
+
+                            // Note author and description
+                            doc.setFontSize(8);
+                            doc.setFont(undefined, "bold");
+                            doc.setTextColor(0, 102, 204);
+                            const authorName = getUsernameById(
+                                note.CREATEDBY,
+                                users,
+                            );
+                            doc.text(`${authorName}:`, margin + 20, yPosition);
+                            yPosition += 4;
+
+                            // Note description
+                            doc.setFontSize(8);
+                            doc.setFont(undefined, "normal");
+                            doc.setTextColor(100, 100, 100);
+                            const noteLines = doc.splitTextToSize(
+                                note.DESCRIPTION || "",
+                                pageWidth - 2 * margin - 15,
+                            );
+                            checkPageBreak(noteLines.length * 4);
+                            doc.text(noteLines, margin + 20, yPosition);
+                            yPosition += noteLines.length * 4 + 3;
+                        });
                     }
 
                     // Light separator between tasks

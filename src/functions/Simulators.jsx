@@ -112,6 +112,9 @@ export function GetSimulators({
                                                       onDeleteSuccess={
                                                           onDeleteSuccess
                                                       }
+                                                      isFlagged={
+                                                          task?.IS_FLAGGED
+                                                      }
                                                   />
                                               ))}
                                           </>
@@ -171,6 +174,9 @@ export function GetSimulators({
                                                         onDeleteSuccess={
                                                             onDeleteSuccess
                                                         }
+                                                        isFlagged={
+                                                            task?.IS_FLAGGED
+                                                        }
                                                     />
                                                 ))}
                                             </>
@@ -228,6 +234,9 @@ export function GetSimulators({
                                                         wholeTask={task}
                                                         onDeleteSuccess={
                                                             onDeleteSuccess
+                                                        }
+                                                        isFlagged={
+                                                            task?.IS_FLAGGED
                                                         }
                                                     />
                                                 ))}
@@ -438,6 +447,7 @@ export function GetTableSimulators({
                                                       onDeleteSuccess
                                                   }
                                                   isLogbook={task.ISLOGBOOK}
+                                                  isFlagged={task?.IS_FLAGGED}
                                               />
                                           ))}
                                       </>

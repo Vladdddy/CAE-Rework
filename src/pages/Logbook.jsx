@@ -121,7 +121,7 @@ function Logbook() {
         }, 2000);
     };
 
-    const handleExportPDF = (timeFilter = null) => {
+    const handleExportPDF = async (timeFilter = null) => {
         try {
             // Pass null as date if filters are active, otherwise pass startDate
             const hasActiveFilters =
@@ -192,10 +192,37 @@ function Logbook() {
                 );
             }
 
+            // Fetch notes for all items (tasks and logbooks)
+            const API_URL = import.meta.env.VITE_API_URL;
+            const notesMap = {};
+
+            await Promise.all(
+                itemsToExport.map(async (item) => {
+                    try {
+                        const endpoint = item.ISLOGBOOK
+                            ? `${API_URL}/notesLogbook/${item.ID}`
+                            : `${API_URL}/notes/${item.ID}`;
+                        const response = await fetch(endpoint);
+                        if (response.ok) {
+                            const notes = await response.json();
+                            notesMap[item.ID] = notes;
+                        }
+                    } catch (error) {
+                        console.error(
+                            `Failed to fetch notes for item ${item.ID}:`,
+                            error,
+                        );
+                    }
+                }),
+            );
+
             const itemsExported = exportTasksToPDF(
                 itemsToExport,
                 hasActiveFilters ? null : startDate,
                 simulatorsToExport,
+                "Report Giornaliero",
+                notesMap,
+                users,
             );
             setPopupType("success");
             setPopupMessage(

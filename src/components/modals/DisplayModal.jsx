@@ -11,6 +11,9 @@ import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import ModifyModal from "./ModifyModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
 import ConvertIcon from "../../assets/icons/convert.tsx";
+import DuplicateIcon from "../../assets/icons/duplicate.tsx";
+import FlagIcon from "../../assets/icons/flag.tsx";
+import UnflagIcon from "../../assets/icons/unflag.tsx";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -18,7 +21,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isConverting, setIsConverting] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
     const [noteDescription, setNoteDescription] = useState("");
-    const { deleteTask, fetchTasks, updateTask } = useTasks();
+    const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
     const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
     const { notes, fetchNotes, createNote } = useNotes();
     const { noteLogbooks, fetchNoteLogbooks, createNoteLogbook } =
@@ -120,6 +123,228 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const handleConvertToTask = () => {
         setIsConverting(true);
         setIsModifyOpen(true);
+    };
+
+    const handleDuplicateTask = async () => {
+        const duplicatedTask = {
+            title: taskInfo.TITLE,
+            description: taskInfo.DESCRIPTION,
+            category: taskInfo.CATEGORY,
+            subcategory: taskInfo.SUBCATEGORY,
+            extradetail: taskInfo.EXTRADETAIL,
+            simulator: taskInfo.SIMULATOR,
+            date: taskInfo.DATE,
+            time: taskInfo.TIME,
+            assigned_to: taskInfo.ASSIGNED_TO,
+            status: taskInfo.STATUS,
+        };
+
+        const result = await addTask(duplicatedTask);
+
+        if (result.success) {
+            await fetchTasks();
+            if (onSuccess) {
+                onSuccess(
+                    true,
+                    `Task "${taskInfo.TITLE}" duplicata con successo`,
+                );
+            }
+            onClose();
+        } else {
+            if (onSuccess) {
+                onSuccess(false, "Errore nella duplicazione della task");
+            }
+        }
+    };
+
+    const handleFlagTask = async () => {
+        try {
+            // Update the current task to set isFlagged to 1
+            const updatedCurrentTask = {
+                title: taskInfo.TITLE,
+                description: taskInfo.DESCRIPTION,
+                category: taskInfo.CATEGORY,
+                subcategory: taskInfo.SUBCATEGORY,
+                extradetail: taskInfo.EXTRADETAIL,
+                simulator: taskInfo.SIMULATOR,
+                date: taskInfo.DATE,
+                time: taskInfo.TIME,
+                assigned_to: taskInfo.ASSIGNED_TO,
+                status: taskInfo.STATUS,
+                type: taskInfo.TYPE,
+                isFlagged: 1,
+            };
+
+            const updateResult = await updateTask(
+                taskInfo.ID,
+                updatedCurrentTask,
+            );
+
+            if (!updateResult.success) {
+                if (onSuccess) {
+                    onSuccess(false, "Errore nell'aggiornamento della task");
+                }
+                return;
+            }
+
+            // Parse the current task date
+            const currentDate = new Date(taskInfo.DATE);
+
+            // Create 5 tasks for the following 5 days
+            const createPromises = [];
+            for (let i = 1; i <= 5; i++) {
+                const nextDate = new Date(currentDate);
+                nextDate.setDate(currentDate.getDate() + i);
+
+                // Format date as YYYY-MM-DD
+                const formattedDate = nextDate.toISOString().split("T")[0];
+
+                const newTask = {
+                    title: taskInfo.TITLE,
+                    description: taskInfo.DESCRIPTION,
+                    category: taskInfo.CATEGORY,
+                    subcategory: taskInfo.SUBCATEGORY,
+                    extradetail: taskInfo.EXTRADETAIL,
+                    simulator: taskInfo.SIMULATOR,
+                    date: formattedDate,
+                    time: taskInfo.TIME,
+                    assigned_to: taskInfo.ASSIGNED_TO,
+                    status: taskInfo.STATUS,
+                    isFlagged: 1,
+                    type: taskInfo.TYPE,
+                };
+
+                createPromises.push(addTask(newTask));
+            }
+
+            const results = await Promise.all(createPromises);
+            const allSuccessful = results.every((r) => r.success);
+
+            if (allSuccessful) {
+                await fetchTasks();
+                if (onSuccess) {
+                    onSuccess(
+                        true,
+                        `Task "${taskInfo.TITLE}" contrassegnata e duplicata per i prossimi 5 giorni`,
+                    );
+                }
+                onClose();
+            } else {
+                if (onSuccess) {
+                    onSuccess(false, "Errore nella creazione di alcune task");
+                }
+            }
+        } catch {
+            if (onSuccess) {
+                onSuccess(false, "Errore nel contrassegnare la task");
+            }
+        }
+    };
+
+    const handleRemoveFlag = async () => {
+        try {
+            console.log("Removing flag from task with ID:", taskInfo.ID);
+
+            // Filter tasks with matching criteria
+            const matchingTasks = tasks.filter(
+                (task) =>
+                    task.TITLE === taskInfo.TITLE &&
+                    task.DESCRIPTION === taskInfo.DESCRIPTION &&
+                    task.ASSIGNED_TO === taskInfo.ASSIGNED_TO &&
+                    task.TIME === taskInfo.TIME &&
+                    task.IS_FLAGGED === true,
+            );
+
+            console.log("Matching flagged tasks found:", matchingTasks.length);
+
+            // Sort by date to maintain chronological order
+            const sortedTasks = matchingTasks.sort(
+                (a, b) => new Date(a.DATE) - new Date(b.DATE),
+            );
+
+            // Find the index of the current task
+            const currentTaskIndex = sortedTasks.findIndex(
+                (task) => task.ID === taskInfo.ID,
+            );
+
+            if (currentTaskIndex === -1) {
+                console.error("Current task not found in matching tasks");
+                if (onSuccess) {
+                    onSuccess(false, "Errore: task non trovata");
+                }
+                return;
+            }
+
+            // Tasks to delete (all tasks AFTER the current one)
+            const tasksToDelete = sortedTasks.slice(currentTaskIndex + 1);
+
+            // Tasks to unflag (all tasks BEFORE and INCLUDING the current one)
+            const tasksToUnflag = sortedTasks.slice(0, currentTaskIndex + 1);
+
+            console.log(`Deleting ${tasksToDelete.length} tasks after current`);
+            console.log(
+                `Unflagging ${tasksToUnflag.length} tasks up to current`,
+            );
+
+            // Delete tasks after the current one
+            const deletePromises = tasksToDelete.map((task) =>
+                deleteTask(task.ID),
+            );
+            const deleteResults = await Promise.all(deletePromises);
+            const allDeletesSuccessful = deleteResults.every((r) => r.success);
+
+            if (!allDeletesSuccessful) {
+                if (onSuccess) {
+                    onSuccess(false, "Errore nell'eliminazione di alcune task");
+                }
+                return;
+            }
+
+            // Update tasks before and including current to set IS_FLAGGED to 0
+            const updatePromises = tasksToUnflag.map((task) => {
+                const updatedTask = {
+                    title: task.TITLE,
+                    description: task.DESCRIPTION,
+                    category: task.CATEGORY,
+                    subcategory: task.SUBCATEGORY,
+                    extradetail: task.EXTRADETAIL,
+                    simulator: task.SIMULATOR,
+                    date: task.DATE,
+                    time: task.TIME,
+                    assigned_to: task.ASSIGNED_TO,
+                    status: task.STATUS,
+                    type: task.TYPE,
+                    isFlagged: 0,
+                };
+                return updateTask(task.ID, updatedTask);
+            });
+
+            const updateResults = await Promise.all(updatePromises);
+            const allUpdatesSuccessful = updateResults.every((r) => r.success);
+
+            if (allUpdatesSuccessful) {
+                await fetchTasks();
+                onClose();
+                if (onSuccess) {
+                    onSuccess(
+                        true,
+                        `Task "${taskInfo.TITLE}" non più contrassegnata.`,
+                    );
+                }
+            } else {
+                if (onSuccess) {
+                    onSuccess(
+                        false,
+                        "Errore nell'aggiornamento di alcune task",
+                    );
+                }
+            }
+        } catch (error) {
+            console.error("Error in handleRemoveFlag:", error);
+            if (onSuccess) {
+                onSuccess(false, "Errore nella rimozione del flag");
+            }
+        }
     };
 
     const handleCloseModify = () => {
@@ -291,7 +516,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                         </div>
 
                         {taskInfo.ISLOGBOOK && (
-                            <div 
+                            <div
                                 className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
                                 onClick={handleConvertToTask}
                             >
@@ -299,6 +524,19 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
                                 <p className="text-sm transition-all duration-200">
                                     Converti in Task
+                                </p>
+                            </div>
+                        )}
+
+                        {!taskInfo.ISLOGBOOK && (
+                            <div
+                                className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
+                                onClick={handleDuplicateTask}
+                            >
+                                <DuplicateIcon className="w-4" />
+
+                                <p className="text-sm transition-all duration-200">
+                                    Duplica Task
                                 </p>
                             </div>
                         )}
@@ -321,7 +559,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 </p>
                                             </div>
                                         </div>
-                                        {taskInfo.DESCRIPTION || "N/A"}
+                                        <span className="whitespace-pre-wrap break-words">
+                                            {taskInfo.DESCRIPTION || "N/A"}
+                                        </span>
                                         <div className="flex justify-between items-center mt-4">
                                             <div className="flex items-center gap-1 max-w-xs flex-wrap">
                                                 <UserIcon className="w-4 text-[var(--black)]" />
@@ -492,15 +732,34 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between border-t border-[var(--light-primary)] pt-4 mt-4">
+                            <div className="flex items-center justify-between border-t border-[var(--light-primary)] pt-4 mt-4 gap-1">
                                 {(currentUserRole === "Admin" ||
                                     currentUserRole === "Shift Leader") && (
-                                    <button
-                                        className="btn delete"
-                                        onClick={() => handleDelete()}
-                                    >
-                                        Elimina
-                                    </button>
+                                    <>
+                                        <button
+                                            className="btn delete"
+                                            onClick={() => handleDelete()}
+                                        >
+                                            Elimina
+                                        </button>
+                                        {!taskInfo?.IS_FLAGGED ? (
+                                            <button
+                                                className="btn secondary flex items-center gap-1"
+                                                onClick={handleFlagTask}
+                                            >
+                                                <FlagIcon className="w-6" />
+                                                <p>Flag task</p>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                className="btn secondary flex items-center gap-1"
+                                                onClick={handleRemoveFlag}
+                                            >
+                                                <UnflagIcon className="w-6" />
+                                                <p>Remove flag</p>
+                                            </button>
+                                        )}
+                                    </>
                                 )}
 
                                 <div className="flex gap-1 ml-auto">
