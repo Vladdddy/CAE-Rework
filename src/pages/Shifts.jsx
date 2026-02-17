@@ -112,6 +112,7 @@ function Shifts() {
                                         },
                                     )}
                                     onChangesDetected={handleChangesDetected}
+                                    currentUserRole={currentUserRole}
                                 />
                             </>
                         )}

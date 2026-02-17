@@ -5,7 +5,7 @@ import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 import { useEmployeeShifts } from "./provider/employeeShiftsAPI/useEmployeeShifts.js";
 
-function ShiftsTable({ selectedMonth, onChangesDetected }) {
+function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     const { users, loading } = useUsers();
     const [orderedUsers, setOrderedUsers] = useState([]);
     const [draggedIndex, setDraggedIndex] = useState(null);
@@ -132,26 +132,32 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
     const todayDate = today.getDate();
     const todayIndex = isCurrentMonth ? todayDate - 1 : -1;
 
-    // Auto-scroll to today's date
+    // Auto-scroll to today's date or start of table
     useEffect(() => {
-        if (
-            todayColumnRef.current &&
-            scrollContainerRef.current &&
-            isCurrentMonth
-        ) {
-            const columnElement = todayColumnRef.current;
+        if (scrollContainerRef.current) {
             const containerElement = scrollContainerRef.current;
 
-            // Calculate scroll position to center today's column
-            const scrollPosition =
-                columnElement.offsetLeft -
-                containerElement.clientWidth / 2 +
-                columnElement.clientWidth / 2;
+            if (isCurrentMonth && todayColumnRef.current) {
+                // Scroll to today's column for current month
+                const columnElement = todayColumnRef.current;
 
-            containerElement.scrollTo({
-                left: Math.max(0, scrollPosition),
-                behavior: "smooth",
-            });
+                // Calculate scroll position to center today's column
+                const scrollPosition =
+                    columnElement.offsetLeft -
+                    containerElement.clientWidth / 2 +
+                    columnElement.clientWidth / 2;
+
+                containerElement.scrollTo({
+                    left: Math.max(0, scrollPosition),
+                    behavior: "smooth",
+                });
+            } else {
+                // Scroll to start for other months
+                containerElement.scrollTo({
+                    left: 0,
+                    behavior: "smooth",
+                });
+            }
         }
     }, [selectedMonth, isCurrentMonth, todayIndex]);
 
@@ -391,7 +397,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
         const formattedDate = `${year}-${month}-${dayStr}`;
 
         // Define which shift types to count based on time
-        const shiftTypes = time === "Diurno" ? ["O", "OP", "D"] : ["ON", "N"];
+        const shiftTypes = time === "Diurno" ? ["D"] : ["N"];
 
         // Create a map to track shift values for each employee on this day
         const shiftsMap = {};
@@ -674,7 +680,13 @@ function ShiftsTable({ selectedMonth, onChangesDetected }) {
                                                                         .value,
                                                                 )
                                                             }
-                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "ND" ? "focus:text-black" : ""}`}
+                                                            disabled={
+                                                                currentUserRole !==
+                                                                    "Admin" &&
+                                                                currentUserRole !==
+                                                                    "Shift Leader"
+                                                            }
+                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none ${currentUserRole === "Admin" || currentUserRole === "Shift Leader" ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "ND" ? "focus:text-black" : ""}`}
                                                         >
                                                             <option value="--">
                                                                 --

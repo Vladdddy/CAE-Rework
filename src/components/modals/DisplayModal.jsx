@@ -742,24 +742,28 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         >
                                             Elimina
                                         </button>
-                                        {!taskInfo?.IS_FLAGGED ? (
-                                            <button
-                                                className="btn secondary flex items-center gap-1"
-                                                onClick={handleFlagTask}
-                                            >
-                                                <FlagIcon className="w-6" />
-                                                <p>Flag task</p>
-                                            </button>
-                                        ) : (
-                                            <button
-                                                className="btn secondary flex items-center gap-1"
-                                                onClick={handleRemoveFlag}
-                                            >
-                                                <UnflagIcon className="w-6" />
-                                                <p>Remove flag</p>
-                                            </button>
-                                        )}
                                     </>
+                                )}
+
+                                {!taskInfo?.IS_FLAGGED ? (
+                                    <button
+                                        className="btn secondary flex items-center gap-1"
+                                        onClick={handleFlagTask}
+                                    >
+                                        <FlagIcon className="w-6" />
+                                        <p>Flag task</p>
+                                    </button>
+                                ) : (
+                                    (currentUserRole === "Admin" ||
+                                        currentUserRole === "Shift Leader") && (
+                                        <button
+                                            className="btn secondary flex items-center gap-1"
+                                            onClick={handleRemoveFlag}
+                                        >
+                                            <UnflagIcon className="w-6" />
+                                            <p>Remove flag</p>
+                                        </button>
+                                    )
                                 )}
 
                                 <div className="flex gap-1 ml-auto">
