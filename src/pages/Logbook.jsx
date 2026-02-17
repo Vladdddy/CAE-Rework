@@ -216,11 +216,15 @@ function Logbook() {
                 }),
             );
 
+            // Determine the title based on timeFilter
+            const pdfTitle =
+                timeFilter === "Diurno" ? "Report diurno" : "Report notturno";
+
             const itemsExported = exportTasksToPDF(
                 itemsToExport,
                 hasActiveFilters ? null : startDate,
                 simulatorsToExport,
-                "Report Giornaliero",
+                pdfTitle,
                 notesMap,
                 users,
             );

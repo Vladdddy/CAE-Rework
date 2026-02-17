@@ -211,11 +211,15 @@ function Tasks() {
                 }),
             );
 
+            // Determine the title based on timeFilter
+            const pdfTitle =
+                timeFilter === "Diurno" ? "Report diurno" : "Report notturno";
+
             const tasksExported = exportTasksToPDF(
                 tasksToExport,
                 hasActiveFilters ? null : startDate,
                 simulatorsToExport,
-                "Night Activities",
+                pdfTitle,
                 notesMap,
                 users,
             );
