@@ -128,13 +128,20 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                         </button>
                     </>
                 )}
-                <div
-                    className="relative"
-                    onClick={() => setNotificationsModal(true)}
-                >
-                    <BellIcon className="w-6 cursor-pointer icon" />
+                <div className="flex items-center justify-center gap-1">
+                    <div
+                        className="relative"
+                        onClick={() => setNotificationsModal(true)}
+                    >
+                        <BellIcon className="w-6 cursor-pointer icon" />
+                        {unreadCount > 0 && (
+                            <span className="red-circle w-2 h-2 rounded-full bg-red-500 absolute top-0 right-0"></span>
+                        )}
+                    </div>
                     {unreadCount > 0 && (
-                        <span className="red-circle w-2 h-2 rounded-full bg-red-500 absolute top-0 right-0"></span>
+                        <p className="ml-2 text-xs text-white bg-red-500 rounded-full px-4 py-2">
+                            Hai {unreadCount} notifiche
+                        </p>
                     )}
                 </div>
             </div>
