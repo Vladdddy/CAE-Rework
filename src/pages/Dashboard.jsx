@@ -26,6 +26,10 @@ function Dashboard() {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
+    const [showContrast, setShowContrast] = useState(() => {
+        const saved = localStorage.getItem("showContrast");
+        return saved !== null ? JSON.parse(saved) : true;
+    });
 
     const [searchQuery, setSearchQuery] = useState("");
     const [searchQueryOverview, setSearchQueryOverview] = useState("");
@@ -175,6 +179,20 @@ function Dashboard() {
         }, 2000);
     };
 
+    useEffect(() => {
+        localStorage.setItem("showContrast", JSON.stringify(showContrast));
+    }, [showContrast]);
+
+    useEffect(() => {
+        const handleContrastChange = (event) => {
+            setShowContrast(event.detail);
+        };
+        window.addEventListener("contrastChange", handleContrastChange);
+        return () => {
+            window.removeEventListener("contrastChange", handleContrastChange);
+        };
+    }, []);
+
     return (
         <section className="flex">
             <Sidebar active="dashboard" isSidebarOpen={isSidebarOpen} />
@@ -191,7 +209,9 @@ function Dashboard() {
                             Turni di oggi
                         </p>
                         <div className="flex flex justify-between max-h-[calc(50vh-14rem)] overflow-y-auto pr-1 gap-4">
-                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-gray-500">
+                            <div
+                                className={`flex flex-col gap-2 ${showContrast ? "border-gray-500" : "border-[var(--light-primary)]"} bg-[var(--pure-white)] rounded-md p-4 flex-1 border`}
+                            >
                                 <div className="flex flex-row items-center gap-2">
                                     <UserIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
@@ -225,7 +245,9 @@ function Dashboard() {
                                         </p>
                                     )}
                             </div>
-                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-green-900">
+                            <div
+                                className={`${showContrast ? "border-green-900" : "border-[var(--light-primary)]"} flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border`}
+                            >
                                 <div className="flex flex-row items-center gap-2">
                                     <DayIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
@@ -260,7 +282,9 @@ function Dashboard() {
                                         </p>
                                     )}
                             </div>
-                            <div className="flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border border-blue-900">
+                            <div
+                                className={`${showContrast ? "border-blue-900" : "border-[var(--light-primary)]"} flex flex-col gap-2 bg-[var(--pure-white)] rounded-md p-4 flex-1 border`}
+                            >
                                 <div className="flex flex-row items-center gap-2">
                                     <NightIcon className="w-6 text-[var(--black)]" />
                                     <p className="text-l text-[var(--black)]">
@@ -299,7 +323,9 @@ function Dashboard() {
                     </div>
 
                     <div className="m-8 gap-4 grid grid-cols-3">
-                        <div className="flex flex-col gap-8 border border-[var(--purple-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                        <div
+                            className={`${showContrast ? "border-[var(--purple-panoramica)]" : "border-[var(--light-primary)]"} flex flex-col gap-8 border rounded-lg p-4 bg-[var(--bento-bg)]`}
+                        >
                             <p className="text-l text-[var(--weekend-text)] border-b border-[var(--light-primary)] pb-4">
                                 Task di oggi
                             </p>
@@ -382,7 +408,9 @@ function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-8 border border-[var(--primary-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                        <div
+                            className={`${showContrast ? "border-[var(--primary-panoramica)]" : "border-[var(--light-primary)]"} flex flex-col gap-8 border rounded-lg p-4 bg-[var(--bento-bg)]`}
+                        >
                             <div className="flex items-center flex-wrap gap-2 justify-between text-l text-[var(--primary)] border-b border-[var(--light-primary)] pb-4">
                                 <p>Panoramica task</p>
                             </div>
@@ -516,7 +544,9 @@ function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-8 border border-[var(--orange-panoramica)] rounded-lg p-4 bg-[var(--bento-bg)]">
+                        <div
+                            className={`${showContrast ? "border-[var(--orange-panoramica)]" : "border-[var(--light-primary)]"} flex flex-col gap-8 border rounded-lg p-4 bg-[var(--bento-bg)]`}
+                        >
                             <div className="flex items-center flex-wrap gap-2 justify-between text-l text-[var(--orange)] border-b border-[var(--light-primary)] pb-4">
                                 <p>Panoramica entry</p>
                             </div>

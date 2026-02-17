@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import Logo from "../../assets/cae-logo.png";
@@ -10,10 +10,24 @@ import AddUserIcon from "../../assets/icons/addUser.tsx";
 import LogoutIcon from "../../assets/icons/logout.tsx";
 import ReportIcon from "../../assets/icons/report.tsx";
 import LogoutModal from "../modals/LogoutModal.jsx";
+import SettingsIcon from "../../assets/icons/settings.tsx";
+import CloseIcon from "../../assets/icons/close.tsx";
 
 function Sidebar(props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { currentUsername, currentUserRole } = useUsers();
+    const [showExportMenu, setShowExportMenu] = useState(false);
+    const [showContrast, setShowContrast] = useState(() => {
+        const saved = localStorage.getItem("showContrast");
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    useEffect(() => {
+        localStorage.setItem("showContrast", JSON.stringify(showContrast));
+        window.dispatchEvent(
+            new CustomEvent("contrastChange", { detail: showContrast }),
+        );
+    }, [showContrast]);
 
     const handleLogoutClick = () => {
         setIsModalOpen(true);
@@ -21,6 +35,10 @@ function Sidebar(props) {
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+    };
+
+    const handleContrastChange = (e) => {
+        setShowContrast(e.target.checked);
     };
 
     return (
@@ -202,6 +220,51 @@ function Sidebar(props) {
                     </Link>
                 </div>
             </div>
+
+            <div
+                className={`flex flex-row items-center gap-2 w-full transition-all text-l text-[var(--black)] duration-300 mt-auto mb-4 cursor-pointer relative ${
+                    props.active === "settings"
+                        ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md ${
+                              !props.isSidebarOpen ? "px-2" : "pr-8 pl-2 w-48"
+                          } py-2`
+                        : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
+                onClick={() => setShowExportMenu(!showExportMenu)}
+            >
+                <SettingsIcon className={`w-6`} />
+                <p
+                    className={`transition-opacity duration-300 ${
+                        props.isSidebarOpen ? "opacity-100" : "opacity-0 hidden"
+                    }`}
+                >
+                    Impostazioni
+                </p>
+            </div>
+
+            {showExportMenu && (
+                <div className="absolute left-4 right-4 bottom-32 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
+                    <div className="flex items-center justify-between px-2 py-2 border-b border-[var(--light-primary)]">
+                        <span className="text-sm font-medium">
+                            Impostazioni
+                        </span>
+                        <button
+                            onClick={() => setShowExportMenu(false)}
+                            className="hover:bg-[var(--light-primary)] rounded transition-colors duration-200"
+                        >
+                            <CloseIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <label className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={showContrast}
+                            onChange={handleContrastChange}
+                            className="w-4 h-4 appearance-none border border-[var(--pure-white)] bg-[var(--light-primary)] rounded cursor-pointer checked:bg-[var(--primary)] checked:border-[var(--primary)] relative checked:after:content-['✓'] checked:after:text-white checked:after:text-xs checked:after:absolute checked:after:top-1/2 checked:after:left-1/2 checked:after:-translate-x-1/2 checked:after:-translate-y-1/2"
+                        />
+                        <span>Mostra contrasto</span>
+                    </label>
+                </div>
+            )}
 
             <div className="flex flex-row items-center justify-between gap-2 border-t border-[var(--separator)] pt-4 w-full">
                 <div
