@@ -12,6 +12,7 @@ import ReportIcon from "../../assets/icons/report.tsx";
 import LogoutModal from "../modals/LogoutModal.jsx";
 import SettingsIcon from "../../assets/icons/settings.tsx";
 import CloseIcon from "../../assets/icons/close.tsx";
+import AccessibilityIcon from "../../assets/icons/accessibility.tsx";
 
 function Sidebar(props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -231,29 +232,30 @@ function Sidebar(props) {
                 } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
                 onClick={() => setShowExportMenu(!showExportMenu)}
             >
-                <SettingsIcon className={`w-6`} />
+                <AccessibilityIcon className={`w-6`} />
                 <p
                     className={`transition-opacity duration-300 ${
                         props.isSidebarOpen ? "opacity-100" : "opacity-0 hidden"
                     }`}
                 >
-                    Impostazioni
+                    Accessibilità
                 </p>
             </div>
 
             {showExportMenu && (
-                <div className="absolute left-4 right-4 bottom-32 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
-                    <div className="flex items-center justify-between px-2 py-2 border-b border-[var(--light-primary)]">
-                        <span className="text-sm font-medium">
-                            Impostazioni
-                        </span>
+                <div className="absolute left-4 right-4 bottom-32 w-64 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
+                    <div className="flex items-center justify-between px-2 py-2 border-b border-[var(--light-primary)] mb-2">
+                        <span className="text-lg font-medium">Gestisci</span>
                         <button
                             onClick={() => setShowExportMenu(false)}
                             className="hover:bg-[var(--light-primary)] rounded transition-colors duration-200"
                         >
-                            <CloseIcon className="w-4 h-4" />
+                            <CloseIcon className="w-6 h-6" />
                         </button>
                     </div>
+                    <span className="px-4 py-4 text-sm text-[var(--gray)] mt-4">
+                        Opzioni
+                    </span>
                     <label className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 cursor-pointer">
                         <input
                             type="checkbox"
