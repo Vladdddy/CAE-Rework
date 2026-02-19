@@ -2,6 +2,7 @@ import { useState } from "react";
 import SimulatorIcon from "../../assets/icons/simulator.tsx";
 import CloseIcon from "../../assets/icons/close.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
+import UserIcon from "../../assets/icons/user.tsx";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import { useSimulators } from "../data/provider/simulatorAPI/useSimulators.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
@@ -18,7 +19,9 @@ function SimulatorModal({
     const [name, setName] = useState(simulatorInfo || "FTD");
     const [startHour, setStartHour] = useState("");
     const [endHour, setEndHour] = useState("");
-    const [assignedTo, setAssignedTo] = useState("");
+    const [assignedTo, setAssignedTo] = useState(
+        assignee ? assignee.split(",").map((a) => a.trim()) : [],
+    );
     const simulators = GetSimulatorsList();
     const { createSimulator, updateSimulator } = useSimulators();
     const { users } = useUsers();
@@ -26,8 +29,16 @@ function SimulatorModal({
     const [editSimulator, setEditSimulator] = useState(false);
     const [existingSimulatorError, setExistingSimulatorError] = useState(false);
 
+    const handleCheckboxChange = (username) => {
+        setAssignedTo((prev) =>
+            prev.includes(username)
+                ? prev.filter((item) => item !== username)
+                : [...prev, username],
+        );
+    };
+
     const handleSave = async () => {
-        if (!name || !startHour || !endHour || !assignedTo) {
+        if (!name || !startHour || !endHour || assignedTo.length === 0) {
             setEmptyError(true);
             return;
         }
@@ -43,7 +54,7 @@ function SimulatorModal({
             name: name,
             startHour: startHour,
             endHour: endHour,
-            assignedTo: assignedTo,
+            assignedTo: assignedTo.join(", "),
             creationDate: localDate,
         };
 
@@ -65,7 +76,8 @@ function SimulatorModal({
         const finalName = name || simulatorInfo;
         const finalStartHour = startHour || toTimeInputValue(startTime);
         const finalEndHour = endHour || toTimeInputValue(endTime);
-        const finalAssignedTo = assignedTo || assignee;
+        const finalAssignedTo =
+            assignedTo.length > 0 ? assignedTo.join(", ") : assignee || "";
 
         console.log("Editing Simulator with data:", {
             name: finalName,
@@ -230,48 +242,76 @@ function SimulatorModal({
 
                     <div className="flex flex-col gap-1">
                         <h3 className="text-sm text-[var(--gray)]">
-                            Assegnatario
+                            Assegnatario/i
                         </h3>
-                        <div className="relative">
-                            <select
-                                name="assignedTo"
-                                id="assignedTo"
-                                value={assignedTo || assignee}
-                                onChange={(e) => {
-                                    setAssignedTo(e.target.value);
-                                    setEditSimulator(true);
-                                }}
-                                required
-                                className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                            >
-                                <option value="">...</option>
-                                {users.map((user, index) => (
-                                    <option key={index} value={user.Username}>
-                                        {user.Username.split(".")[0]
-                                            .charAt(0)
-                                            .toUpperCase() +
-                                            user.Username.split(".")[0].slice(
-                                                1,
+                        <div
+                            className={`grid grid-cols-3 gap-2 rounded-md p-2 ${
+                                emptyError
+                                    ? "border border-[var(--red)]"
+                                    : "border border-[var(--light-primary)]"
+                            }`}
+                        >
+                            {users.map((user) => {
+                                return (
+                                    <div
+                                        key={user.Username}
+                                        onClick={() => {
+                                            handleCheckboxChange(user.Username);
+                                            setEditSimulator(true);
+                                            if (emptyError) {
+                                                setEmptyError(false);
+                                            }
+                                        }}
+                                        className={`flex items-center gap-2 rounded-md p-2 flex-1 border border-transparent cursor-pointer hover:bg-[var(--light-primary)] ${
+                                            assignedTo.includes(user.Username)
+                                                ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                                : "text-[var(--black)]"
+                                        }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            name=""
+                                            id={user.Username}
+                                            checked={assignedTo.includes(
+                                                user.Username,
                                             )}
-                                        {user.Username.split(".")[1] && (
-                                            <>
-                                                {" "}
-                                                {user.Username.split(".")[1]
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    user.Username.split(
-                                                        ".",
-                                                    )[1].slice(1)}
-                                            </>
-                                        )}
-                                    </option>
-                                ))}
-                            </select>
-                            <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                            onChange={() =>
+                                                handleCheckboxChange(
+                                                    user.Username,
+                                                )
+                                            }
+                                            className="hidden"
+                                        />
+                                        <UserIcon className="w-6 shrink-0" />
+                                        <label
+                                            className="truncate cursor-pointer"
+                                            htmlFor={user.Username}
+                                        >
+                                            {user.Username.split(".")[0]
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                user.Username.split(
+                                                    ".",
+                                                )[0].slice(1)}
+                                            {user.Username.split(".")[1] && (
+                                                <>
+                                                    {" "}
+                                                    {user.Username.split(".")[1]
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                        user.Username.split(
+                                                            ".",
+                                                        )[1].slice(1)}
+                                                </>
+                                            )}
+                                        </label>
+                                    </div>
+                                );
+                            })}
                         </div>
                         {emptyError && (
                             <p className="text-[var(--red)] text-sm mt-1">
-                                Per favore, compila tutti i campi.
+                                Seleziona almeno un assegnatario
                             </p>
                         )}
                         {existingSimulatorError && (
