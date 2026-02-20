@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
@@ -50,8 +50,46 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
         task.SIMULATOR || simulators[0],
     );
     const { updateTask, addTask } = useTasks();
-    const { updateLogbook, deleteLogbook } = useLogbooks();
+    const { updateLogbook } = useLogbooks();
     const { users, currentUserId } = useUsers();
+
+    // Check if any changes have been made
+    const hasChanges = useMemo(() => {
+        const originalAssignees = task.ASSIGNED_TO
+            ? typeof task.ASSIGNED_TO === "string"
+                ? task.ASSIGNED_TO.split(", ").filter((name) => name.trim())
+                : task.ASSIGNED_TO
+            : [];
+
+        const originalDate = task.DATE ? task.DATE.split("T")[0] : "";
+
+        return (
+            selectedCategory !== (task.CATEGORY || "Routine Task") ||
+            selectedStatus !== (task.STATUS || "Da definire") ||
+            selectedRadio !== (task.TIME || "Diurno") ||
+            JSON.stringify(selectedAssignees.sort()) !==
+                JSON.stringify(originalAssignees.sort()) ||
+            title !== (task.TITLE || "") ||
+            description !== (task.DESCRIPTION || "") ||
+            selectedSubCategory !== (task.SUBCATEGORY || "PM") ||
+            selectedDetail !== (task.EXTRADETAIL || "VISUAL") ||
+            selectedDate !== originalDate ||
+            selectedSimulator !== (task.SIMULATOR || simulators[0])
+        );
+    }, [
+        selectedCategory,
+        selectedStatus,
+        selectedRadio,
+        selectedAssignees,
+        title,
+        description,
+        selectedSubCategory,
+        selectedDetail,
+        selectedDate,
+        selectedSimulator,
+        task,
+        simulators,
+    ]);
 
     const handleRadioChange = (event) => {
         setSelectedRadio(event.target.value);
@@ -201,14 +239,14 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
 
             if (createResult.success) {
                 // Delete the original logbook
-                const deleteResult = await deleteLogbook(task.ID);
+                //const deleteResult = await deleteLogbook(task.ID);
 
                 onClose();
 
                 if (onSuccess) {
                     onSuccess(
-                        deleteResult.success,
-                        deleteResult.success
+                        createResult.success,
+                        createResult.success
                             ? `Entry "${title}" convertita in Task con successo`
                             : "Errore durante la conversione in Task",
                     );
@@ -274,7 +312,12 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
             "Refill DPI",
             "Toolbox check",
             "STG",
+            "RoRo",
+            "LOAD EVAL",
+            "PRE-CERT",
         ],
+        COMMENT: [],
+        REPAIR: [],
         Investigation: ["HW", "SW"],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
@@ -283,6 +326,8 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
             "Remote connection with support",
             "Remote connection without support",
             "On-Site Connection",
+            "Part Repaired",
+            "EXTRA TASK",
         ],
     };
 
@@ -390,7 +435,7 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
                     </div>
 
                     <div className="flex flex-row gap-4 justify-between items-center">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 flex-1">
                             <h3 className="text-sm text-[var(--gray)]">
                                 Categoria
                             </h3>
@@ -418,60 +463,73 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
                                 <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <h3 className="text-sm text-[var(--gray)]">
-                                Sotto-Categoria
-                            </h3>
-                            <div className="relative">
-                                <select
-                                    name=""
-                                    id=""
-                                    value={selectedSubCategory}
-                                    onChange={(e) =>
-                                        setSelectedSubCategory(e.target.value)
-                                    }
-                                    className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                >
-                                    {categories[selectedCategory]?.map(
-                                        (subCategory, index) => (
-                                            <option
-                                                key={index}
-                                                value={subCategory}
-                                            >
-                                                {subCategory}
-                                            </option>
-                                        ),
-                                    )}
-                                </select>
-                                <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                            </div>
-                        </div>
 
-                        <div className="flex flex-col gap-1">
-                            <h3 className="text-sm text-[var(--gray)]">
-                                Dettaglio Extra
-                            </h3>
-                            <div className="relative">
-                                <select
-                                    name=""
-                                    id=""
-                                    value={selectedDetail}
-                                    onChange={(e) =>
-                                        setSelectedDetail(e.target.value)
-                                    }
-                                    className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                >
-                                    {troubleshootingDetails.map(
-                                        (detail, index) => (
-                                            <option key={index} value={detail}>
-                                                {detail}
-                                            </option>
-                                        ),
-                                    )}
-                                </select>
-                                <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                        {selectedCategory !== "COMMENT" &&
+                            selectedCategory !== "REPAIR" && (
+                                <div className="flex flex-col gap-1 flex-1">
+                                    <h3 className="text-sm text-[var(--gray)]">
+                                        Sotto-Categoria
+                                    </h3>
+                                    <div className="relative">
+                                        <select
+                                            name=""
+                                            id=""
+                                            value={selectedSubCategory}
+                                            onChange={(e) =>
+                                                setSelectedSubCategory(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                        >
+                                            {categories[selectedCategory]?.map(
+                                                (subCategory, index) => (
+                                                    <option
+                                                        key={index}
+                                                        value={subCategory}
+                                                    >
+                                                        {subCategory}
+                                                    </option>
+                                                ),
+                                            )}
+                                        </select>
+                                        <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                    </div>
+                                </div>
+                            )}
+
+                        {(selectedCategory === "Investigation" ||
+                            selectedCategory === "Troubleshooting" ||
+                            selectedCategory === "Recurrent Issues") && (
+                            <div className="flex flex-col gap-1 flex-1">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    Dettaglio Extra
+                                </h3>
+                                <div className="relative">
+                                    <select
+                                        name=""
+                                        id=""
+                                        value={selectedDetail}
+                                        onChange={(e) =>
+                                            setSelectedDetail(e.target.value)
+                                        }
+                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                    >
+                                        {troubleshootingDetails.map(
+                                            (detail, index) => (
+                                                <option
+                                                    key={index}
+                                                    value={detail}
+                                                >
+                                                    {detail}
+                                                </option>
+                                            ),
+                                        )}
+                                    </select>
+                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-1">
@@ -629,7 +687,11 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
                         Chiudi
                     </button>
 
-                    <button className="btn" onClick={handleModify}>
+                    <button
+                        className="btn"
+                        onClick={handleModify}
+                        disabled={!hasChanges}
+                    >
                         <p>Salva modifiche</p>
                     </button>
                 </div>

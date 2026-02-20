@@ -733,7 +733,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                             </div>
 
                             <div className="flex items-center justify-between border-t border-[var(--light-primary)] pt-4 mt-4 gap-1">
-                                {(currentUserRole === "Admin" ||
+                                {/*(currentUserRole === "Admin" ||
                                     currentUserRole === "Shift Leader") && (
                                     <>
                                         <button
@@ -743,6 +743,26 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             Elimina
                                         </button>
                                     </>
+                                )*/}
+
+                                {(currentUserRole === "Admin" ||
+                                    currentUserRole === "Shift Leader" ||
+                                    (taskInfo.ASSIGNED_TO &&
+                                        taskInfo.ISLOGBOOK &&
+                                        users.find(
+                                            (u) => u.ID === currentUserId,
+                                        )?.Username &&
+                                        taskInfo.ASSIGNED_TO.includes(
+                                            users.find(
+                                                (u) => u.ID === currentUserId,
+                                            ).Username,
+                                        ))) && (
+                                    <button
+                                        className="btn delete"
+                                        onClick={() => handleDelete()}
+                                    >
+                                        Elimina
+                                    </button>
                                 )}
 
                                 {!taskInfo?.IS_FLAGGED ? (

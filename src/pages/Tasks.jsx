@@ -347,7 +347,12 @@ function Tasks() {
             "Refill DPI",
             "Toolbox check",
             "STG",
+            "RoRo",
+            "LOAD EVAL",
+            "PRE-CERT",
         ],
+        COMMENT: [],
+        REPAIR: [],
         Investigation: ["HW", "SW"],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
@@ -356,6 +361,8 @@ function Tasks() {
             "Remote connection with support",
             "Remote connection without support",
             "On-Site Connection",
+            "Part Repaired",
+            "EXTRA TASK",
         ],
     };
 

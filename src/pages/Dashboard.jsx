@@ -105,7 +105,7 @@ function Dashboard() {
             // Filter out future tasks
             if (task.DATE) {
                 const taskDate = task.DATE.split("T")[0];
-                if (taskDate > todayDate) {
+                if (taskDate >= todayDate) {
                     return false;
                 }
             }
