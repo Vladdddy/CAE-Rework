@@ -12,7 +12,13 @@ import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks.js";
 
-function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
+function ModifyModal({
+    onClose,
+    onSuccess,
+    task,
+    isConverting = false,
+    isDuplicating = false,
+}) {
     const [selectedCategory, setSelectedCategory] = useState(
         task.CATEGORY || "Routine Task",
     );
@@ -50,7 +56,7 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
         task.SIMULATOR || simulators[0],
     );
     const { updateTask, addTask } = useTasks();
-    const { updateLogbook } = useLogbooks();
+    const { updateLogbook, addLogbook } = useLogbooks();
     const { users, currentUserId } = useUsers();
 
     // Check if any changes have been made
@@ -231,6 +237,38 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
             assigned_to: selectedAssignees.join(", ") || null,
             status: selectedStatus,
         };
+
+        // Handle task duplication
+        if (isDuplicating) {
+            const isLogbook = task.ISLOGBOOK;
+            // Create a new task or logbook with the modified data
+            const createResult = isLogbook
+                ? await addLogbook(modifiedTask)
+                : await addTask(modifiedTask);
+
+            if (createResult.success) {
+                onClose();
+
+                if (onSuccess) {
+                    onSuccess(
+                        createResult.success,
+                        createResult.success
+                            ? `${isLogbook ? "Entry" : "Task"} "${title}" duplicata con successo`
+                            : `Errore nella duplicazione ${isLogbook ? "dell'entry" : "della task"}`,
+                    );
+                }
+                return;
+            } else {
+                onClose();
+                if (onSuccess) {
+                    onSuccess(
+                        false,
+                        `Errore nella duplicazione ${isLogbook ? "dell'entry" : "della task"}`,
+                    );
+                }
+                return;
+            }
+        }
 
         // Handle conversion from logbook to task
         if (isConverting && isLogbook) {
@@ -690,7 +728,9 @@ function ModifyModal({ onClose, onSuccess, task, isConverting = false }) {
                     <button
                         className="btn"
                         onClick={handleModify}
-                        disabled={!hasChanges}
+                        disabled={
+                            !isConverting && !isDuplicating && !hasChanges
+                        }
                     >
                         <p>Salva modifiche</p>
                     </button>

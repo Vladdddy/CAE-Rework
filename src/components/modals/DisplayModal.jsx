@@ -19,6 +19,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isModifyOpen, setIsModifyOpen] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
+    const [isDuplicating, setIsDuplicating] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
     const [noteDescription, setNoteDescription] = useState("");
     const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
@@ -125,36 +126,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         setIsModifyOpen(true);
     };
 
-    const handleDuplicateTask = async () => {
-        const duplicatedTask = {
-            title: taskInfo.TITLE,
-            description: taskInfo.DESCRIPTION,
-            category: taskInfo.CATEGORY,
-            subcategory: taskInfo.SUBCATEGORY,
-            extradetail: taskInfo.EXTRADETAIL,
-            simulator: taskInfo.SIMULATOR,
-            date: taskInfo.DATE,
-            time: taskInfo.TIME,
-            assigned_to: taskInfo.ASSIGNED_TO,
-            status: taskInfo.STATUS,
-        };
-
-        const result = await addTask(duplicatedTask);
-
-        if (result.success) {
-            await fetchTasks();
-            if (onSuccess) {
-                onSuccess(
-                    true,
-                    `Task "${taskInfo.TITLE}" duplicata con successo`,
-                );
-            }
-            onClose();
-        } else {
-            if (onSuccess) {
-                onSuccess(false, "Errore nella duplicazione della task");
-            }
-        }
+    const handleDuplicateTask = () => {
+        setIsDuplicating(true);
+        setIsModifyOpen(true);
     };
 
     const handleFlagTask = async () => {
@@ -350,6 +324,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const handleCloseModify = () => {
         setIsModifyOpen(false);
         setIsConverting(false);
+        setIsDuplicating(false);
     };
 
     const handleModifyPopup = async () => {
@@ -939,6 +914,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     onSuccess={handleModifyPopup}
                     task={taskInfo}
                     isConverting={isConverting}
+                    isDuplicating={isDuplicating}
                 />
             )}
         </div>

@@ -167,7 +167,7 @@ function Table({
                                         ))
                                     ) : (
                                         <span className="italic">
-                                            Nessun dipendente assegnato
+                                            Nessun dipendente in turno
                                         </span>
                                     )}
                                 </div>
@@ -294,7 +294,7 @@ function Table({
                                         ))
                                     ) : (
                                         <span className="italic">
-                                            Nessun dipendente assegnato
+                                            Nessun dipendente in turno
                                         </span>
                                     )}
                                 </div>
