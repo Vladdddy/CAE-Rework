@@ -662,7 +662,7 @@ function ShiftsPattern({ onClose }) {
                         </div>
                     )}
 
-                    {activeTab === "Crea" && (
+                    {activeTab === "Crea" ? (
                         <div className="flex flex-col gap-8 max-h-[calc(60vh-1rem)] overflow-y-auto pr-1">
                             <div className="flex flex-row flex-1 w-full justify-between gap-4">
                                 <div className="flex flex-col gap-1 flex-1">
@@ -692,7 +692,9 @@ function ShiftsPattern({ onClose }) {
                                     />
                                     {titleError && (
                                         <p className="text-[var(--red)] text-sm mt-1">
-                                            Il nome è obbligatorio
+                                            {titleError === "duplicate"
+                                                ? "Esiste già un pattern con questo nome"
+                                                : "Il nome è obbligatorio"}
                                         </p>
                                     )}
                                 </div>
@@ -770,7 +772,7 @@ function ShiftsPattern({ onClose }) {
                                 </div>
                             </div>
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
@@ -798,6 +800,27 @@ function ShiftsPattern({ onClose }) {
                                     setTitleError(true);
                                     return;
                                 }
+
+                                // Check for duplicate pattern name
+                                const isDuplicate =
+                                    // Check in default patterns
+                                    Object.keys(defaultPatterns).some(
+                                        (patternName) =>
+                                            patternName.toLowerCase() ===
+                                            title.trim().toLowerCase(),
+                                    ) ||
+                                    // Check in personalized patterns from DB
+                                    patternShifts.some(
+                                        (pattern) =>
+                                            pattern.NAME.toLowerCase() ===
+                                            title.trim().toLowerCase(),
+                                    );
+
+                                if (isDuplicate) {
+                                    setTitleError("duplicate");
+                                    return;
+                                }
+
                                 setTitleError(false);
                                 setSaving(true);
                                 const shift_list = customShiftInputs
