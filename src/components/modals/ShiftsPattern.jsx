@@ -1,15 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PatternIcon from "../../assets/icons/pattern.tsx";
 import CloseIcon from "../../assets/icons/close.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
+import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
+import DeleteIcon from "../../assets/icons/delete.tsx";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts.js";
+import { usePatternShifts } from "../data/provider/patternShiftAPI/usePatternShifts.js";
+import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 
 function ShiftsPattern({ onClose }) {
     const [activeTab, setActiveTab] = useState("Seleziona");
     const { users } = useUsers();
     const { addEmployeeShift, updateEmployeeShift, employeeShifts } =
         useEmployeeShifts();
+    const { patternShifts, addPatternShift, deletePatternShift } =
+        usePatternShifts();
     const [selectedAssignees, setSelectedAssignees] = useState([]);
     const [selectedPattern, setSelectedPattern] = useState(null);
     const [selectedFrom, setSelectedFrom] = useState(
@@ -22,6 +28,27 @@ function ShiftsPattern({ onClose }) {
     const [selectedRadio, setSelectedRadio] = useState(false);
     const [duration, setDuration] = useState("");
     const [saving, setSaving] = useState(false);
+    const [titleError, setTitleError] = useState(false);
+    const [title, setTitle] = useState("");
+    const [selectedAmount, setSelectedAmount] = useState(1);
+    const [customShiftInputs, setCustomShiftInputs] = useState(["--"]);
+
+    const shiftMeanings = [
+        "O",
+        "OP",
+        "ON",
+        "D",
+        "N",
+        "F",
+        "M",
+        "R",
+        "C",
+        "CA",
+        "T",
+        "P",
+        "CG",
+        "ND",
+    ];
 
     const defaultPatterns = {
         "Shift Leader": ["ON", "OP", "O", "ON", "OP"],
@@ -43,9 +70,48 @@ function ShiftsPattern({ onClose }) {
         setSelectedRadio(event.target.value);
     };
 
+    const getShiftValue = (shiftIndex) => {
+        return customShiftInputs[shiftIndex] || "--";
+    };
+
+    const handleShiftChange = (shiftIndex, value) => {
+        setCustomShiftInputs((prev) => {
+            const newShifts = [...prev];
+            newShifts[shiftIndex] = value;
+            return newShifts;
+        });
+    };
+
+    useEffect(() => {
+        const amount = Number(selectedAmount);
+        setCustomShiftInputs((prev) => {
+            const newShifts = Array(amount).fill("--");
+            // Preserve existing values where possible
+            for (let i = 0; i < Math.min(prev.length, amount); i++) {
+                newShifts[i] = prev[i];
+            }
+            return newShifts;
+        });
+    }, [selectedAmount]);
+
     const isWeekend = (date) => {
         const day = date.getDay();
         return day === 0 || day === 6; // Sunday = 0, Saturday = 6
+    };
+
+    const getPatternArray = (patternName) => {
+        // Check if it's a default pattern
+        if (defaultPatterns[patternName]) {
+            return defaultPatterns[patternName];
+        }
+        // Check if it's a personalized pattern
+        const personalizedPattern = patternShifts.find(
+            (p) => p.NAME === patternName,
+        );
+        if (personalizedPattern && personalizedPattern.SHIFT_LIST) {
+            return personalizedPattern.SHIFT_LIST.split(",");
+        }
+        return null;
     };
 
     const applyPattern = async () => {
@@ -54,7 +120,11 @@ function ShiftsPattern({ onClose }) {
             return;
         }
 
-        const pattern = defaultPatterns[selectedPattern];
+        const pattern = getPatternArray(selectedPattern);
+
+        if (!pattern) {
+            return;
+        }
 
         // Duration is only required for patterns with more than 1 shift
         let durationNum = 1;
@@ -216,7 +286,7 @@ function ShiftsPattern({ onClose }) {
                 </div>
 
                 <div className="flex flex-col gap-8">
-                    {/* <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
+                    <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
                         <div
                             className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
                                 activeTab === "Seleziona"
@@ -240,232 +310,467 @@ function ShiftsPattern({ onClose }) {
                         >
                             <p className="text-sm">Aggiungi pattern</p>
                         </div>
-                    </div> */}
+                    </div>
 
-                    <div className="flex flex-col gap-8 max-h-[calc(60vh-1rem)] overflow-y-auto pr-1">
-                        <div className="flex flex-col gap-1">
-                            <h3 className="text-sm text-[var(--gray)]">
-                                Pattern disponibili
-                            </h3>
-                            <div className="flex flex-col flex-1 gap-2 border border-[var(--light-primary)] rounded-md p-2">
-                                {Object.entries(defaultPatterns).map(
-                                    ([name, pattern]) => (
-                                        <div
-                                            key={name}
-                                            onClick={() =>
-                                                setSelectedPattern(name)
-                                            }
-                                            className={`flex items-center justify-between cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                                selectedPattern === name
-                                                    ? "bg-[var(--light-primary)] transition-all duration-300"
-                                                    : ""
-                                            }`}
-                                        >
-                                            <label
-                                                className={`cursor-pointer truncate transition-all duration-300 ${
+                    {activeTab === "Seleziona" && (
+                        <div className="flex flex-col gap-8 max-h-[calc(60vh-1rem)] overflow-y-auto pr-1">
+                            <div className="flex flex-col gap-1">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    Pattern disponibili
+                                </h3>
+                                <div className="flex flex-col flex-1 gap-2 border border-[var(--light-primary)] rounded-md p-2">
+                                    {Object.entries(defaultPatterns).map(
+                                        ([name, pattern]) => (
+                                            <div
+                                                key={name}
+                                                onClick={() =>
+                                                    setSelectedPattern(name)
+                                                }
+                                                className={`flex items-center justify-between cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
                                                     selectedPattern === name
-                                                        ? "text-[var(--primary)]"
-                                                        : "text-[var(--black)]"
+                                                        ? "bg-[var(--light-primary)] transition-all duration-300"
+                                                        : ""
                                                 }`}
-                                                htmlFor={name}
                                             >
-                                                {name}
-                                            </label>
-                                            <label
-                                                className={`cursor-pointer text-xs truncate transition-all duration-300 ${
-                                                    selectedPattern === name
-                                                        ? "text-[var(--black)]"
-                                                        : "text-[var(--gray)]"
+                                                <label
+                                                    className={`cursor-pointer truncate transition-all duration-300 ${
+                                                        selectedPattern === name
+                                                            ? "text-[var(--primary)]"
+                                                            : "text-[var(--black)]"
+                                                    }`}
+                                                    htmlFor={name}
+                                                >
+                                                    {name}
+                                                </label>
+                                                <label
+                                                    className={`cursor-pointer text-xs truncate transition-all duration-300 ${
+                                                        selectedPattern === name
+                                                            ? "text-[var(--black)]"
+                                                            : "text-[var(--gray)]"
+                                                    }`}
+                                                    htmlFor={name}
+                                                >
+                                                    {pattern.join(", ")}
+                                                </label>
+                                            </div>
+                                        ),
+                                    )}
+                                    {patternShifts.map((patternShift) => {
+                                        // Safety check for SHIFT_LIST
+                                        if (!patternShift.SHIFT_LIST)
+                                            return null;
+
+                                        const pattern =
+                                            patternShift.SHIFT_LIST.split(",");
+                                        return (
+                                            <div
+                                                key={patternShift.ID}
+                                                onClick={() =>
+                                                    setSelectedPattern(
+                                                        patternShift.NAME,
+                                                    )
+                                                }
+                                                className={`flex items-center justify-between cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
+                                                    selectedPattern ===
+                                                    patternShift.NAME
+                                                        ? "bg-[var(--light-primary)] transition-all duration-300"
+                                                        : ""
                                                 }`}
-                                                htmlFor={name}
                                             >
-                                                {pattern.join(", ")}
-                                            </label>
-                                        </div>
-                                    ),
-                                )}
-                            </div>
-                        </div>
+                                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                    {selectedPattern ===
+                                                        patternShift.NAME && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deletePatternShift(
+                                                                    patternShift.ID,
+                                                                );
+                                                                if (
+                                                                    selectedPattern ===
+                                                                    patternShift.NAME
+                                                                ) {
+                                                                    setSelectedPattern(
+                                                                        null,
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className="text-[var(--gray)] hover:text-[var(--red)] transition-all duration-200 p-1 shrink-0"
+                                                            title="Elimina pattern"
+                                                        >
+                                                            <CloseIcon className="w-4" />
+                                                        </button>
+                                                    )}
 
-                        {selectedPattern &&
-                            defaultPatterns[selectedPattern].length > 1 && (
-                                <div className="flex flex-col gap-1">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        Durata turno
-                                    </h3>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="7"
-                                        value={duration}
-                                        onChange={(e) => {
-                                            setDuration(e.target.value);
-                                        }}
-                                        className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 border border-[var(--light-primary)] focus:border-[var(--separator)]`}
-                                        placeholder="Inserisci il numero di cicli a settimana per turno (max. 7)"
-                                        required
-                                    />
-                                </div>
-                            )}
-
-                        <div className="flex flex-col gap-1">
-                            <h3 className="text-sm text-[var(--gray)]">
-                                Comportamento pattern
-                            </h3>
-                            <div className="flex flex-row items-center gap-1 gap-2 border border-[var(--light-primary)] rounded-md p-2">
-                                <div
-                                    onClick={() => setSelectedRadio(true)}
-                                    className={`flex items-center p-2 gap-2 rounded-md cursor-pointer border border-transparent text-[var(--black)] hover:bg-[var(--light-primary)] flex-1 ${
-                                        selectedRadio === true
-                                            ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                            : ""
-                                    }`}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="turno"
-                                        id="include"
-                                        value={selectedRadio}
-                                        checked={selectedRadio === true}
-                                        onChange={handleRadioChange}
-                                        className="hidden"
-                                    />
-                                    <label
-                                        className="cursor-pointer"
-                                        htmlFor="include"
-                                    >
-                                        Includi i weekend
-                                    </label>
-                                </div>
-                                <div
-                                    onClick={() => setSelectedRadio(false)}
-                                    className={`flex items-center p-2 gap-2 rounded-md cursor-pointer border border-transparent text-[var(--black)] hover:bg-[var(--light-primary)] flex-1 ${
-                                        selectedRadio === false
-                                            ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                            : ""
-                                    }`}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="turno"
-                                        id="ignore"
-                                        value={selectedRadio}
-                                        checked={selectedRadio === false}
-                                        onChange={handleRadioChange}
-                                        className="hidden"
-                                    />
-                                    <label
-                                        className="cursor-pointer"
-                                        htmlFor="ignore"
-                                    >
-                                        Ignora i weekend
-                                    </label>
+                                                    <label
+                                                        className={`cursor-pointer truncate transition-all duration-300 ${
+                                                            selectedPattern ===
+                                                            patternShift.NAME
+                                                                ? "text-[var(--primary)]"
+                                                                : "text-[var(--black)]"
+                                                        }`}
+                                                    >
+                                                        {patternShift.NAME}
+                                                    </label>
+                                                </div>
+                                                <label
+                                                    className={`cursor-pointer text-xs truncate transition-all duration-300 ${
+                                                        selectedPattern ===
+                                                        patternShift.NAME
+                                                            ? "text-[var(--black)]"
+                                                            : "text-[var(--gray)]"
+                                                    }`}
+                                                >
+                                                    {pattern.join(", ")}
+                                                </label>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="flex flex-col gap-1">
-                            <div className="flex flex-row justify-between gap-4">
-                                <div className="flex flex-col gap-1 w-full">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        Da
-                                    </h3>
-                                    <input
-                                        type="date"
-                                        value={selectedFrom}
-                                        onChange={(e) =>
-                                            setSelectedFrom(e.target.value)
-                                        }
-                                        className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1 w-full">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        A
-                                    </h3>
-                                    <input
-                                        type="date"
-                                        value={selectedTo}
-                                        onChange={(e) =>
-                                            setSelectedTo(e.target.value)
-                                        }
-                                        className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 ${
-                                            dateError
-                                                ? "border border-[var(--red)] focus:border-[var(--red)]"
-                                                : "border border-[var(--light-primary)] focus:border-[var(--separator)]"
-                                        }`}
-                                    />
-                                </div>
-                            </div>
-                            {dateError && (
-                                <p className="text-[var(--red)] text-sm mt-1">
-                                    La data di inizio deve essere precedente
-                                    alla data di fine
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <h3 className="text-sm text-[var(--gray)]">
-                                Seleziona utenti
-                            </h3>
-                            <div className="grid grid-cols-3 gap-2 border border-[var(--light-primary)] rounded-md p-2">
-                                {users.map((user) => (
+                            {selectedPattern &&
+                                (() => {
+                                    // Check if it's a default pattern
+                                    const defaultPattern =
+                                        defaultPatterns[selectedPattern];
+                                    if (
+                                        defaultPattern &&
+                                        defaultPattern.length > 1
+                                    ) {
+                                        return (
+                                            <div className="flex flex-col gap-1">
+                                                <h3 className="text-sm text-[var(--gray)]">
+                                                    Durata turno
+                                                </h3>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="7"
+                                                    value={duration}
+                                                    onChange={(e) => {
+                                                        setDuration(
+                                                            e.target.value,
+                                                        );
+                                                    }}
+                                                    className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 border border-[var(--light-primary)] focus:border-[var(--separator)]`}
+                                                    placeholder="Inserisci il numero di cicli a settimana per turno (max. 7)"
+                                                    required
+                                                />
+                                            </div>
+                                        );
+                                    }
+                                    // Check if it's a personalized pattern
+                                    const personalizedPattern =
+                                        patternShifts.find(
+                                            (p) => p.NAME === selectedPattern,
+                                        );
+                                    if (
+                                        personalizedPattern &&
+                                        personalizedPattern.SHIFT_LIST &&
+                                        personalizedPattern.SHIFT_LIST.split(
+                                            ",",
+                                        ).length > 1
+                                    ) {
+                                        return (
+                                            <div className="flex flex-col gap-1">
+                                                <h3 className="text-sm text-[var(--gray)]">
+                                                    Durata turno
+                                                </h3>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="7"
+                                                    value={duration}
+                                                    onChange={(e) => {
+                                                        setDuration(
+                                                            e.target.value,
+                                                        );
+                                                    }}
+                                                    className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 border border-[var(--light-primary)] focus:border-[var(--separator)]`}
+                                                    placeholder="Inserisci il numero di cicli a settimana per turno (max. 7)"
+                                                    required
+                                                />
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            <div className="flex flex-col gap-1">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    Comportamento pattern
+                                </h3>
+                                <div className="flex flex-row items-center gap-1 gap-2 border border-[var(--light-primary)] rounded-md p-2">
                                     <div
-                                        key={user.Username}
-                                        onClick={() =>
-                                            handleCheckboxChange(user.Username)
-                                        }
-                                        className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
-                                            selectedAssignees.includes(
-                                                user.Username,
-                                            )
+                                        onClick={() => setSelectedRadio(true)}
+                                        className={`flex items-center p-2 gap-2 rounded-md cursor-pointer border border-transparent text-[var(--black)] hover:bg-[var(--light-primary)] flex-1 ${
+                                            selectedRadio === true
                                                 ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
-                                                : "text-[var(--black)]"
+                                                : ""
                                         }`}
                                     >
                                         <input
-                                            type="checkbox"
-                                            name=""
-                                            id={user.Username}
-                                            checked={selectedAssignees.includes(
-                                                user.Username,
-                                            )}
-                                            onChange={() =>
+                                            type="radio"
+                                            name="turno"
+                                            id="include"
+                                            value={selectedRadio}
+                                            checked={selectedRadio === true}
+                                            onChange={handleRadioChange}
+                                            className="hidden"
+                                        />
+                                        <label
+                                            className="cursor-pointer"
+                                            htmlFor="include"
+                                        >
+                                            Includi i weekend
+                                        </label>
+                                    </div>
+                                    <div
+                                        onClick={() => setSelectedRadio(false)}
+                                        className={`flex items-center p-2 gap-2 rounded-md cursor-pointer border border-transparent text-[var(--black)] hover:bg-[var(--light-primary)] flex-1 ${
+                                            selectedRadio === false
+                                                ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                                : ""
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="turno"
+                                            id="ignore"
+                                            value={selectedRadio}
+                                            checked={selectedRadio === false}
+                                            onChange={handleRadioChange}
+                                            className="hidden"
+                                        />
+                                        <label
+                                            className="cursor-pointer"
+                                            htmlFor="ignore"
+                                        >
+                                            Ignora i weekend
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                                <div className="flex flex-row justify-between gap-4">
+                                    <div className="flex flex-col gap-1 w-full">
+                                        <h3 className="text-sm text-[var(--gray)]">
+                                            Da
+                                        </h3>
+                                        <input
+                                            type="date"
+                                            value={selectedFrom}
+                                            onChange={(e) =>
+                                                setSelectedFrom(e.target.value)
+                                            }
+                                            className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-1 w-full">
+                                        <h3 className="text-sm text-[var(--gray)]">
+                                            A
+                                        </h3>
+                                        <input
+                                            type="date"
+                                            value={selectedTo}
+                                            onChange={(e) =>
+                                                setSelectedTo(e.target.value)
+                                            }
+                                            className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 ${
+                                                dateError
+                                                    ? "border border-[var(--red)] focus:border-[var(--red)]"
+                                                    : "border border-[var(--light-primary)] focus:border-[var(--separator)]"
+                                            }`}
+                                        />
+                                    </div>
+                                </div>
+                                {dateError && (
+                                    <p className="text-[var(--red)] text-sm mt-1">
+                                        La data di inizio deve essere precedente
+                                        alla data di fine
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    Seleziona utenti
+                                </h3>
+                                <div className="grid grid-cols-3 gap-2 border border-[var(--light-primary)] rounded-md p-2">
+                                    {users.map((user) => (
+                                        <div
+                                            key={user.Username}
+                                            onClick={() =>
                                                 handleCheckboxChange(
                                                     user.Username,
                                                 )
                                             }
-                                            className="hidden"
-                                        />
-                                        <UserIcon className="w-6 shrink-0" />
-                                        <label
-                                            className="cursor-pointer truncate"
-                                            htmlFor={user.Username}
+                                            className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
+                                                selectedAssignees.includes(
+                                                    user.Username,
+                                                )
+                                                    ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                                    : "text-[var(--black)]"
+                                            }`}
                                         >
-                                            {user.Username.split(".")[0]
-                                                .charAt(0)
-                                                .toUpperCase() +
-                                                user.Username.split(
+                                            <input
+                                                type="checkbox"
+                                                name=""
+                                                id={user.Username}
+                                                checked={selectedAssignees.includes(
+                                                    user.Username,
+                                                )}
+                                                onChange={() =>
+                                                    handleCheckboxChange(
+                                                        user.Username,
+                                                    )
+                                                }
+                                                className="hidden"
+                                            />
+                                            <UserIcon className="w-6 shrink-0" />
+                                            <label
+                                                className="cursor-pointer truncate"
+                                                htmlFor={user.Username}
+                                            >
+                                                {user.Username.split(".")[0]
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    user.Username.split(
+                                                        ".",
+                                                    )[0].slice(1)}
+                                                {user.Username.split(
                                                     ".",
-                                                )[0].slice(1)}
-                                            {user.Username.split(".")[1] && (
-                                                <>
-                                                    {" "}
-                                                    {user.Username.split(".")[1]
-                                                        .charAt(0)
-                                                        .toUpperCase() +
-                                                        user.Username.split(
+                                                )[1] && (
+                                                    <>
+                                                        {" "}
+                                                        {user.Username.split(
                                                             ".",
-                                                        )[1].slice(1)}
-                                                </>
-                                            )}
-                                        </label>
-                                    </div>
-                                ))}
+                                                        )[1]
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                            user.Username.split(
+                                                                ".",
+                                                            )[1].slice(1)}
+                                                    </>
+                                                )}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
+
+                    {activeTab === "Crea" && (
+                        <div className="flex flex-col gap-8 max-h-[calc(60vh-1rem)] overflow-y-auto pr-1">
+                            <div className="flex flex-row flex-1 w-full justify-between gap-4">
+                                <div className="flex flex-col gap-1 flex-1">
+                                    <h3 className="text-sm text-[var(--gray)]">
+                                        Nome*
+                                    </h3>
+                                    <input
+                                        type="text"
+                                        value={title}
+                                        onChange={(e) => {
+                                            setTitle(e.target.value);
+                                            if (
+                                                titleError &&
+                                                e.target.value.trim()
+                                            ) {
+                                                setTitleError(false);
+                                            }
+                                        }}
+                                        className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 ${
+                                            titleError
+                                                ? "border border-[var(--red)] focus:border-[var(--red)]"
+                                                : "border border-[var(--light-primary)] focus:border-[var(--separator)]"
+                                        }`}
+                                        placeholder="Inserisci il nome del pattern"
+                                        maxLength={200}
+                                        required
+                                    />
+                                    {titleError && (
+                                        <p className="text-[var(--red)] text-sm mt-1">
+                                            Il nome è obbligatorio
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-col gap-1 w-1/4">
+                                    <h3 className="text-sm text-[var(--gray)]">
+                                        Numero dei turni
+                                    </h3>
+                                    <div className="relative ">
+                                        <select
+                                            name=""
+                                            id=""
+                                            value={selectedAmount}
+                                            onChange={(e) =>
+                                                setSelectedAmount(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                        >
+                                            {Array.from(
+                                                { length: 14 },
+                                                (_, i) => i + 1,
+                                            ).map((num) => (
+                                                <option key={num} value={num}>
+                                                    {num}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    Imposta il pattern
+                                </h3>
+
+                                <div className="border border-[var(--light-primary)] rounded-md p-2 grid grid-cols-1 md:grid-cols-4 gap-2">
+                                    {Array.from(
+                                        { length: Number(selectedAmount) },
+                                        (_, i) => i,
+                                    ).map((shiftIndex) => (
+                                        <div
+                                            key={shiftIndex}
+                                            className="relative"
+                                        >
+                                            <select
+                                                value={getShiftValue(
+                                                    shiftIndex,
+                                                )}
+                                                onChange={(e) =>
+                                                    handleShiftChange(
+                                                        shiftIndex,
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className={`px-8 py-2 font-bold text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(shiftIndex))} ${getShiftValue(shiftIndex) === "R" ? "focus:text-black" : ""} ${getShiftValue(shiftIndex) === "ND" ? "focus:text-black" : ""}`}
+                                            >
+                                                <option value="--">--</option>
+                                                {shiftMeanings.map((value) => (
+                                                    <option
+                                                        key={value}
+                                                        value={value}
+                                                    >
+                                                        {value === "CG"
+                                                            ? "C"
+                                                            : value}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
@@ -477,13 +782,45 @@ function ShiftsPattern({ onClose }) {
                         Chiudi
                     </button>
 
-                    <button
-                        className="btn"
-                        onClick={applyPattern}
-                        disabled={saving}
-                    >
-                        <p>{saving ? "Caricamento..." : "Salva"}</p>
-                    </button>
+                    {activeTab === "Seleziona" ? (
+                        <button
+                            className="btn"
+                            onClick={applyPattern}
+                            disabled={saving}
+                        >
+                            <p>{saving ? "Caricamento..." : "Salva"}</p>
+                        </button>
+                    ) : (
+                        <button
+                            className="btn"
+                            onClick={async () => {
+                                if (!title.trim()) {
+                                    setTitleError(true);
+                                    return;
+                                }
+                                setTitleError(false);
+                                setSaving(true);
+                                const shift_list = customShiftInputs
+                                    .filter((s) => s !== "--")
+                                    .join(",");
+                                const result = await addPatternShift(
+                                    title,
+                                    shift_list,
+                                    "Personalized",
+                                );
+                                setSaving(false);
+                                if (result.success) {
+                                    setTitle("");
+                                    setCustomShiftInputs(["--"]);
+                                    setSelectedAmount(1);
+                                    setActiveTab("Seleziona");
+                                }
+                            }}
+                            disabled={saving}
+                        >
+                            <p>{saving ? "Caricamento..." : "Aggiungi"}</p>
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -491,3 +828,9 @@ function ShiftsPattern({ onClose }) {
 }
 
 export default ShiftsPattern;
+
+/* if (!title.trim()) {
+    setTitleError(true);
+    return;
+}
+setTitleError(false); */
