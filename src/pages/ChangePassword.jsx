@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Logo from "../../src/assets/cae-logo.png";
 import ViewIcon from "../assets/icons/view";
 import HideIcon from "../assets/icons/hide";
@@ -6,6 +6,10 @@ import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useNavigate } from "react-router-dom";
 
 function ChangePassword() {
+    const [isDarkMode] = useState(() => {
+        const savedMode = localStorage.getItem("darkMode");
+        return savedMode === "true";
+    });
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +18,14 @@ function ChangePassword() {
     const [passwordMismatch, setPasswordMismatch] = useState(false);
     const { changePassword, currentUserId, loading } = useUsers();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (isDarkMode) {
+            document.body.classList.add("dark-mode");
+        } else {
+            document.body.classList.remove("dark-mode");
+        }
+    }, []);
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();

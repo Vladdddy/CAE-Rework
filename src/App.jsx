@@ -12,6 +12,7 @@ import Signin from "./pages/Signin";
 import Shifts from "./pages/Shifts";
 import Register from "./pages/Register";
 import ChangePassword from "./pages/ChangePassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import { TaskProvider } from "./components/data/provider/taskAPI/TaskContext.jsx";
 import { LogbookProvider } from "./components/data/provider/logbookAPI/LogbookContext.jsx";
 import { UserProvider } from "./components/data/provider/userAPI/UserContext.jsx";
@@ -67,6 +68,14 @@ function App() {
                                                                 <ProtectedRoute>
                                                                     <ChangePassword />
                                                                 </ProtectedRoute>
+                                                            }
+                                                        />
+                                                        <Route
+                                                            path="/verify-email"
+                                                            element={
+                                                                <PublicRoute>
+                                                                    <VerifyEmail />
+                                                                </PublicRoute>
                                                             }
                                                         />
                                                         <Route

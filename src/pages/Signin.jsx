@@ -101,6 +101,16 @@ function Signin() {
                                 )}
                             </button>
                         </div>
+
+                        <div className="flex justify-start">
+                            <p
+                                onClick={() => navigate("/verify-email")}
+                                className="mt-4 text-sm text-[var(--gray)] text-start cursor-pointer hover:text-[var(--black)] transition-colors"
+                            >
+                                Password dimenticata?
+                            </p>
+                        </div>
+
                         {loginError && (
                             <p className="text-sm text-red-500 mt-1">
                                 Inserisci username e password validi.
