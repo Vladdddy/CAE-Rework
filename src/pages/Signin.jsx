@@ -104,7 +104,7 @@ function Signin() {
 
                         <div className="flex justify-start">
                             <p
-                                onClick={() => navigate("/verify-email")}
+                                onClick={() => navigate("/change-password")}
                                 className="mt-4 text-sm text-[var(--gray)] text-start cursor-pointer hover:text-[var(--black)] transition-colors"
                             >
                                 Password dimenticata?

@@ -10,13 +10,15 @@ function ChangePassword() {
         const savedMode = localStorage.getItem("darkMode");
         return savedMode === "true";
     });
+    const [username, setUsername] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [passwordError, setPasswordError] = useState(false);
     const [passwordMismatch, setPasswordMismatch] = useState(false);
-    const { changePassword, currentUserId, loading } = useUsers();
+    const [loginError, setLoginError] = useState(false);
+    const { changePassword, currentUserId, loading, users } = useUsers();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -29,6 +31,11 @@ function ChangePassword() {
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();
+
+        if (username.trim() === "") {
+            setLoginError(true);
+            return;
+        }
 
         // Validate passwords are not empty
         if (newPassword.trim() === "" || confirmPassword.trim() === "") {
@@ -47,6 +54,38 @@ function ChangePassword() {
         // Check if currentUserId is available
         if (!currentUserId) {
             console.error("Current user ID not found");
+
+            // Search for the user by username
+            const findUserByUsername = (username) => {
+                for (const user of users) {
+                    console.log(
+                        "Checking user:",
+                        user.Username,
+                        "against input:",
+                        username,
+                    );
+                    if (user.Username === username.trim()) {
+                        return user;
+                    }
+                }
+                return null;
+            };
+
+            const foundUser = findUserByUsername(username);
+
+            if (!foundUser) {
+                console.error("User not found with username:", username);
+                return;
+            }
+
+            // Use the found user's ID
+            const result = await changePassword(foundUser.ID, newPassword);
+
+            if (result.success) {
+                navigate("/signin");
+            } else {
+                console.error("Failed to update password:", result.error);
+            }
             return;
         }
 
@@ -54,7 +93,7 @@ function ChangePassword() {
         const result = await changePassword(currentUserId, newPassword);
 
         if (result.success) {
-            // Navigate to dashboard after successful password change
+            // Navigate to login after successful password change
             navigate("/dashboard");
         } else {
             console.error("Failed to update password:", result.error);
@@ -70,6 +109,32 @@ function ChangePassword() {
                     <img className="w-32" src={Logo} alt="Logo" />
 
                     <form className="flex flex-col gap-8 w-80">
+                        {!currentUserId && (
+                            <div className="flex flex-col gap-1">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    Username
+                                </h3>
+                                <input
+                                    type="text"
+                                    name="username"
+                                    value={username}
+                                    onChange={(e) => {
+                                        setUsername(e.target.value);
+                                        if (
+                                            loginError &&
+                                            e.target.value.trim()
+                                        ) {
+                                            setLoginError(false);
+                                        }
+                                    }}
+                                    className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--bento-bg)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 placeholder:text-[var(--placeholder)]"
+                                    maxLength={50}
+                                    placeholder="Inserisci lo username"
+                                    required
+                                />
+                            </div>
+                        )}
+
                         <div className="flex flex-col gap-1">
                             <h3 className="text-sm text-[var(--gray)]">
                                 Password nuova
@@ -158,6 +223,11 @@ function ChangePassword() {
                                     )}
                                 </button>
                             </div>
+                            {loginError && (
+                                <p className="text-sm text-red-500 mt-1">
+                                    Inserisci username e password validi.
+                                </p>
+                            )}
                             {passwordError && (
                                 <p className="text-sm text-red-500 mt-1">
                                     Inserisci una password valida.
