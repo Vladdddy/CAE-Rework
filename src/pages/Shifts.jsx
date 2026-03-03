@@ -6,6 +6,7 @@ import Topbar from "../components/layout/Topbar.jsx";
 import ShiftMonthPicker from "../functions/ShiftMonthPicker.jsx";
 import ShiftLegend from "../components/layout/ShiftLegend.jsx";
 import ShiftsTable from "../components/data/ShiftsTable.jsx";
+import HoursCountTableTest from "../components/data/HoursCountTableTest.jsx";
 import SaveChangesModal from "../components/modals/SaveChanges.jsx";
 import PatternIcon from "../assets/icons/pattern.tsx";
 import ShiftsPattern from "../components/modals/ShiftsPattern.jsx";
@@ -116,13 +117,17 @@ function Shifts() {
                                 />
                             </>
                         )}
-                        {impagination === 2 && (
-                            <div className="flex flex-col items-center gap-2 mt-16 flex-1">
-                                <h2 className="text-lg text-center text-[var(--gray)]">
-                                    Pagina in fase di sviluppo!
-                                </h2>
-                            </div>
-                        )}
+                        {/*impagination === 2 && (
+                            <HoursCountTableTest
+                                selectedMonth={startDate.toLocaleString(
+                                    "it-IT",
+                                    {
+                                        month: "long",
+                                        year: "numeric",
+                                    },
+                                )}
+                            />
+                        )*/}
                     </div>
                 </div>
             </div>
