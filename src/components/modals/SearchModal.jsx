@@ -83,6 +83,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                 const noteMatches = notes?.some(
                     (note) =>
                         note.TASKID === task.ID &&
+                        note.TYPE === "creato" &&
                         note.DESCRIPTION?.toLowerCase().includes(query),
                 );
 
@@ -178,6 +179,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                 const noteMatches = noteLogbooks?.some(
                     (note) =>
                         note.LOGBOOKID === logbook.ID &&
+                        note.TYPE === "creato" &&
                         note.DESCRIPTION?.toLowerCase().includes(query),
                 );
 
