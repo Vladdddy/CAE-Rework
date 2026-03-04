@@ -32,9 +32,11 @@ function ChangePassword() {
     const handlePasswordChange = async (e) => {
         e.preventDefault();
 
-        if (username.trim() === "") {
-            setLoginError(true);
-            return;
+        if (!currentUserId) {
+            if (username.trim() === "") {
+                setLoginError(true);
+                return;
+            }
         }
 
         // Validate passwords are not empty

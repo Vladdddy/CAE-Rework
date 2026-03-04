@@ -490,31 +490,35 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                             </div>
                         </div>
 
-                        {taskInfo.ISLOGBOOK && (
-                            <div
-                                className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
-                                onClick={handleConvertToTask}
-                            >
-                                <ConvertIcon className="w-4" />
+                        {(currentUserRole === "Admin" ||
+                            currentUserRole === "Shift Leader") &&
+                            taskInfo.ISLOGBOOK && (
+                                <div
+                                    className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
+                                    onClick={handleConvertToTask}
+                                >
+                                    <ConvertIcon className="w-4" />
 
-                                <p className="text-sm transition-all duration-200">
-                                    Converti in Task
-                                </p>
-                            </div>
-                        )}
+                                    <p className="text-sm transition-all duration-200">
+                                        Converti in Task
+                                    </p>
+                                </div>
+                            )}
 
-                        {!taskInfo.ISLOGBOOK && (
-                            <div
-                                className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
-                                onClick={handleDuplicateTask}
-                            >
-                                <DuplicateIcon className="w-4" />
+                        {(currentUserRole === "Admin" ||
+                            currentUserRole === "Shift Leader") &&
+                            !taskInfo.ISLOGBOOK && (
+                                <div
+                                    className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
+                                    onClick={handleDuplicateTask}
+                                >
+                                    <DuplicateIcon className="w-4" />
 
-                                <p className="text-sm transition-all duration-200">
-                                    Duplica Task
-                                </p>
-                            </div>
-                        )}
+                                    <p className="text-sm transition-all duration-200">
+                                        Duplica Task
+                                    </p>
+                                </div>
+                            )}
                     </div>
 
                     {activeTab === "dettagli" && (
@@ -585,6 +589,28 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
                                     <div className="relative">
                                         <select
+                                            disabled={
+                                                !(
+                                                    currentUserRole ===
+                                                        "Admin" ||
+                                                    currentUserRole ===
+                                                        "Shift Leader"
+                                                ) ||
+                                                (taskInfo.ASSIGNED_TO &&
+                                                    taskInfo.ISLOGBOOK &&
+                                                    users.find(
+                                                        (u) =>
+                                                            u.ID ===
+                                                            currentUserId,
+                                                    )?.Username &&
+                                                    taskInfo.ASSIGNED_TO.includes(
+                                                        users.find(
+                                                            (u) =>
+                                                                u.ID ===
+                                                                currentUserId,
+                                                        ).Username,
+                                                    ))
+                                            }
                                             defaultValue={
                                                 taskInfo?.STATUS ||
                                                 "Da definire"
@@ -740,26 +766,29 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     </button>
                                 )}
 
-                                {!taskInfo?.IS_FLAGGED ? (
-                                    <button
-                                        className="btn secondary flex items-center gap-1"
-                                        onClick={handleFlagTask}
-                                    >
-                                        <FlagIcon className="w-6" />
-                                        <p>Flag task</p>
-                                    </button>
-                                ) : (
-                                    (currentUserRole === "Admin" ||
-                                        currentUserRole === "Shift Leader") && (
-                                        <button
-                                            className="btn secondary flex items-center gap-1"
-                                            onClick={handleRemoveFlag}
-                                        >
-                                            <UnflagIcon className="w-6" />
-                                            <p>Remove flag</p>
-                                        </button>
-                                    )
-                                )}
+                                {!taskInfo?.IS_FLAGGED
+                                    ? (currentUserRole === "Admin" ||
+                                          currentUserRole ===
+                                              "Shift Leader") && (
+                                          <button
+                                              className="btn secondary flex items-center gap-1"
+                                              onClick={handleFlagTask}
+                                          >
+                                              <FlagIcon className="w-6" />
+                                              <p>Flag task</p>
+                                          </button>
+                                      )
+                                    : (currentUserRole === "Admin" ||
+                                          currentUserRole ===
+                                              "Shift Leader") && (
+                                          <button
+                                              className="btn secondary flex items-center gap-1"
+                                              onClick={handleRemoveFlag}
+                                          >
+                                              <UnflagIcon className="w-6" />
+                                              <p>Remove flag</p>
+                                          </button>
+                                      )}
 
                                 <div className="flex gap-1 ml-auto">
                                     <button
