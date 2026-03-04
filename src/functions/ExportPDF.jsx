@@ -201,11 +201,21 @@ export const exportTasksToPDF = (
                 if (sim) {
                     doc.setFontSize(9);
                     doc.setFont(undefined, "normal");
+                    const simDetailsPrefix = `  -  End time: ${formatTime(sim.START_HOUR)}   Start time: ${formatTime(sim.END_TIME)}   `;
+                    const simDetailsAssigned = `Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
                     doc.setTextColor(139, 0, 0);
-                    const simDetails = `  -  End time: ${formatTime(sim.END_HOUR)}   Start time: ${formatTime(sim.START_HOUR)}   Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
                     doc.text(
-                        simDetails,
+                        simDetailsPrefix,
                         margin + doc.getTextWidth(macroSimName) + 5,
+                        yPosition,
+                    );
+                    doc.setTextColor(139, 0, 0);
+                    doc.text(
+                        simDetailsAssigned,
+                        margin +
+                            doc.getTextWidth(macroSimName) +
+                            5 +
+                            doc.getTextWidth(simDetailsPrefix),
                         yPosition,
                     );
                 }
@@ -249,7 +259,7 @@ export const exportTasksToPDF = (
                         // Assigned To inline
                         doc.setFontSize(9);
                         doc.setFont(undefined, "normal");
-                        doc.setTextColor(0, 0, 0);
+                        doc.setTextColor(139, 0, 0);
                         const assignedText = ` (Assigned to: ${task.ASSIGNED_TO || "N/A"})`;
                         // Calculate width with the bold font size
                         doc.setFontSize(10);
@@ -262,6 +272,9 @@ export const exportTasksToPDF = (
                             margin + 10 + titleWidth,
                             yPosition,
                         );
+
+                        // Reset color to black for subsequent text
+                        doc.setTextColor(0, 0, 0);
 
                         yPosition += 8;
 
@@ -392,11 +405,22 @@ export const exportTasksToPDF = (
                         if (sim) {
                             doc.setFontSize(9);
                             doc.setFont(undefined, "normal");
+                            const simDetailsPrefix = `  -  End time: ${formatTime(sim.START_HOUR)}   Start time: ${formatTime(sim.END_HOUR)}   `;
+                            const simDetailsAssigned = `Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
                             doc.setTextColor(0, 102, 204);
-                            const simDetails = `  -  End time: ${formatTime(sim.END_HOUR)}   Start time: ${formatTime(sim.START_HOUR)}   Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
                             doc.text(
-                                simDetails,
+                                simDetailsPrefix,
                                 margin + 10 + doc.getTextWidth(simName) + 5,
+                                yPosition,
+                            );
+                            doc.setTextColor(139, 0, 0);
+                            doc.text(
+                                simDetailsAssigned,
+                                margin +
+                                    10 +
+                                    doc.getTextWidth(simName) +
+                                    5 +
+                                    doc.getTextWidth(simDetailsPrefix),
                                 yPosition,
                             );
                         } else {
@@ -438,7 +462,7 @@ export const exportTasksToPDF = (
                             // Assigned To inline
                             doc.setFontSize(9);
                             doc.setFont(undefined, "normal");
-                            doc.setTextColor(0, 0, 0);
+                            doc.setTextColor(139, 0, 0);
                             const assignedText = ` (Assigned to: ${task.ASSIGNED_TO || "N/A"})`;
                             // Calculate width with the bold font size
                             doc.setFontSize(10);
@@ -451,6 +475,9 @@ export const exportTasksToPDF = (
                                 margin + 15 + titleWidth,
                                 yPosition,
                             );
+
+                            // Reset color to black for subsequent text
+                            doc.setTextColor(0, 0, 0);
 
                             yPosition += 8;
 
