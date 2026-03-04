@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { NoteContext } from "./noteContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -27,7 +27,7 @@ export const NoteProvider = ({ children }) => {
         }
     };
 
-    const fetchAllNotes = async () => {
+    const fetchAllNotes = useCallback(async () => {
         console.log("Fetching all notes");
         try {
             setLoading(true);
@@ -44,7 +44,7 @@ export const NoteProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     const createNote = async (taskId, userId, description, type) => {
         console.log("Creating note for task ID:", taskId);

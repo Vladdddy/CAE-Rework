@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { NoteLogbookContext } from "./noteLogbookContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -27,7 +27,7 @@ export const NoteLogbookProvider = ({ children }) => {
         }
     };
 
-    const fetchAllNoteLogbooks = async () => {
+    const fetchAllNoteLogbooks = useCallback(async () => {
         console.log("Fetching all logbook notes");
         try {
             setLoading(true);
@@ -45,7 +45,7 @@ export const NoteLogbookProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     const createNoteLogbook = async (logbookId, userId, description, type) => {
         console.log("Creating note for logbook ID:", logbookId);
