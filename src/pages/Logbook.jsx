@@ -34,53 +34,43 @@ function Logbook() {
     const [popupMessage, setPopupMessage] = useState("");
     const [startDate, setStartDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(true);
-    const [selectedAssignees, setSelectedAssignees] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("");
-    const [selectedSubCategory, setSelectedSubCategory] = useState("");
     // eslint-disable-next-line no-unused-vars
     const [selectedDay, setSelectedDay] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState("");
     const { users } = useUsers();
-    const [showFilters, setShowFilters] = useState(false);
-    const simulators = GetSimulatorsList();
-    const [selectedSimulator, setSelectedSimulator] = useState("");
-    const [selectedFrom, setSelectedFrom] = useState("");
-    const [selectedTo, setSelectedTo] = useState("");
-    const [dateError, setDateError] = useState(false);
     const [viewDays, setViewDays] = useState(1);
-    const [showExportMenu, setShowExportMenu] = useState(false);
-    const exportMenuRef = useRef(null);
+    const [showExportReportMenu, setShowExportReportMenu] = useState(false);
+    const [showExportActivityMenu, setShowExportActivityMenu] = useState(false);
+    const exportReportMenuRef = useRef(null);
+    const exportActivityMenuRef = useRef(null);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
 
     useEffect(() => {
-        if (selectedFrom && selectedTo) {
-            setDateError(new Date(selectedFrom) > new Date(selectedTo));
-        } else {
-            setDateError(false);
-        }
-    }, [selectedFrom, selectedTo]);
-
-    useEffect(() => {
         const handleClickOutside = (event) => {
             if (
-                exportMenuRef.current &&
-                !exportMenuRef.current.contains(event.target)
+                exportReportMenuRef.current &&
+                !exportReportMenuRef.current.contains(event.target)
             ) {
-                setShowExportMenu(false);
+                setShowExportReportMenu(false);
+            }
+            if (
+                exportActivityMenuRef.current &&
+                !exportActivityMenuRef.current.contains(event.target)
+            ) {
+                setShowExportActivityMenu(false);
             }
         };
 
-        if (showExportMenu) {
+        if (showExportReportMenu || showExportActivityMenu) {
             document.addEventListener("mousedown", handleClickOutside);
         }
 
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [showExportMenu]);
+    }, [showExportReportMenu, showExportActivityMenu]);
 
     const handleDayClick = (day) => {
         setSelectedDay(day);
@@ -121,25 +111,20 @@ function Logbook() {
         }, 2000);
     };
 
-    const handleExportPDF = async (timeFilter = null) => {
+    const handleExportPDF = async (
+        timeFilter = null,
+        exportType = "report",
+    ) => {
         try {
             // Pass null as date if filters are active, otherwise pass startDate
-            const hasActiveFilters =
-                selectedFrom ||
-                selectedTo ||
-                selectedCategory ||
-                selectedSubCategory ||
-                selectedStatus ||
-                selectedSimulator ||
-                selectedAssignees ||
-                searchQuery.trim();
+            const hasActiveFilters = false;
 
             let itemsToExport;
             let simulatorsToExport;
 
             if (hasActiveFilters) {
                 // If filters are active, use the filtered results
-                itemsToExport = [...filteredTasks, ...filteredLogbooks];
+                itemsToExport = [...tasks, ...logbooks];
                 simulatorsToExport = [];
             } else {
                 // If no filters are active, filter by the selected date only
@@ -147,14 +132,14 @@ function Logbook() {
                 selectedDate.setHours(0, 0, 0, 0);
 
                 // Filter tasks by selected date
-                const tasksForDate = filteredTasks.filter((task) => {
+                const tasksForDate = tasks.filter((task) => {
                     const taskDate = new Date(task.DATE);
                     taskDate.setHours(0, 0, 0, 0);
                     return taskDate.getTime() === selectedDate.getTime();
                 });
 
                 // Filter logbooks by selected date
-                const logbooksForDate = filteredLogbooks.filter((logbook) => {
+                const logbooksForDate = logbooks.filter((logbook) => {
                     const logbookDate = new Date(logbook.DATE);
                     logbookDate.setHours(0, 0, 0, 0);
                     return logbookDate.getTime() === selectedDate.getTime();
@@ -216,9 +201,17 @@ function Logbook() {
                 }),
             );
 
-            // Determine the title based on timeFilter
-            const pdfTitle =
-                timeFilter === "Diurno" ? "Report diurno" : "Report notturno";
+            // Determine the title based on timeFilter and exportType
+            let pdfTitle;
+            if (exportType === "activity") {
+                pdfTitle =
+                    timeFilter === "Diurno"
+                        ? "Day Activities"
+                        : "Night Activities";
+            } else {
+                pdfTitle =
+                    timeFilter === "Diurno" ? "Day Report" : "Night Report";
+            }
 
             const itemsExported = exportTasksToPDF(
                 itemsToExport,
@@ -238,7 +231,8 @@ function Logbook() {
             setTimeout(() => {
                 setShowPopup(false);
             }, 2000);
-            setShowExportMenu(false);
+            setShowExportReportMenu(false);
+            setShowExportActivityMenu(false);
         } catch (error) {
             console.error("Errore durante l'esportazione del PDF:", error);
             setPopupType("error");
@@ -247,133 +241,10 @@ function Logbook() {
             setTimeout(() => {
                 setShowPopup(false);
             }, 2000);
-            setShowExportMenu(false);
+            setShowExportReportMenu(false);
+            setShowExportActivityMenu(false);
         }
     };
-
-    const showFiltersFunction = () => {
-        setShowFilters(!showFilters);
-    };
-
-    const [searchQuery, setSearchQuery] = useState("");
-
-    const filteredTasks = useMemo(() => {
-        let result = tasks;
-
-        if (selectedSimulator) {
-            result = result.filter(
-                (task) => task.SIMULATOR === selectedSimulator,
-            );
-        }
-
-        if (selectedAssignees) {
-            result = result.filter(
-                (task) => task.ASSIGNED_TO === selectedAssignees,
-            );
-        }
-
-        if (selectedStatus) {
-            result = result.filter((task) => task.STATUS === selectedStatus);
-        }
-
-        // Apply search query
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (task) =>
-                    task.TITLE?.toLowerCase().includes(query) ||
-                    task.DESCRIPTION?.toLowerCase().includes(query) ||
-                    task.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                    task.STATUS?.toLowerCase().includes(query),
-            );
-        }
-
-        return result;
-    }, [
-        tasks,
-        searchQuery,
-        selectedSimulator,
-        selectedAssignees,
-        selectedStatus,
-    ]);
-
-    const filteredLogbooks = useMemo(() => {
-        let result = logbooks;
-
-        if (selectedSimulator) {
-            result = result.filter(
-                (logbook) => logbook.SIMULATOR === selectedSimulator,
-            );
-        }
-
-        if (selectedAssignees) {
-            result = result.filter(
-                (logbook) => logbook.ASSIGNED_TO === selectedAssignees,
-            );
-        }
-
-        if (selectedStatus) {
-            result = result.filter(
-                (logbook) => logbook.STATUS === selectedStatus,
-            );
-        }
-
-        if (selectedCategory) {
-            result = result.filter(
-                (logbook) => logbook.CATEGORY === selectedCategory,
-            );
-        }
-
-        if (selectedSubCategory) {
-            result = result.filter(
-                (logbook) => logbook.SUBCATEGORY === selectedSubCategory,
-            );
-        }
-
-        if (selectedFrom) {
-            result = result.filter((logbook) => {
-                const logbookDate = new Date(logbook.DATE);
-                logbookDate.setHours(0, 0, 0, 0);
-                const fromDate = new Date(selectedFrom);
-                fromDate.setHours(0, 0, 0, 0);
-                return logbookDate >= fromDate;
-            });
-        }
-
-        if (selectedTo) {
-            result = result.filter((logbook) => {
-                const logbookDate = new Date(logbook.DATE);
-                logbookDate.setHours(0, 0, 0, 0);
-                const toDate = new Date(selectedTo);
-                toDate.setHours(23, 59, 59, 999);
-                return logbookDate <= toDate;
-            });
-        }
-
-        // Apply search query
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (logbook) =>
-                    logbook.TITLE?.toLowerCase().includes(query) ||
-                    logbook.DESCRIPTION?.toLowerCase().includes(query) ||
-                    logbook.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                    logbook.STATUS?.toLowerCase().includes(query),
-            );
-        }
-
-        return result;
-    }, [
-        logbooks,
-        searchQuery,
-        selectedSimulator,
-        selectedAssignees,
-        selectedStatus,
-        selectedCategory,
-        selectedSubCategory,
-        selectedFrom,
-        selectedTo,
-    ]);
 
     const datesList = useMemo(() => {
         return Array.from({ length: viewDays }).map((_, index) => {
@@ -382,36 +253,6 @@ function Logbook() {
             return currentDate;
         });
     }, [startDate, viewDays]);
-
-    const categories = {
-        "Routine Task": [
-            "PM",
-            "MR",
-            "Backup",
-            "QTG",
-            "FMS & Parsing",
-            "First AID check",
-            "Refill DPI",
-            "Toolbox check",
-            "STG",
-            "RoRo",
-            "LOAD EVAL",
-            "PRE-CERT",
-        ],
-        COMMENT: [],
-        REPAIR: [],
-        Investigation: ["HW", "SW"],
-        "Recurrent Issues": ["HW", "SW"],
-        Troubleshooting: ["HW", "SW"],
-        Others: [
-            "Part test",
-            "Remote connection with support",
-            "Remote connection without support",
-            "On-Site Connection",
-            "Part Repaired",
-            "EXTRA TASK",
-        ],
-    };
 
     const getSelectedDateString = (currentDate) => {
         return (
@@ -473,25 +314,26 @@ function Logbook() {
                                 <div className="flex items-center gap-2">
                                     <div
                                         className="relative"
-                                        ref={exportMenuRef}
+                                        ref={exportReportMenuRef}
                                     >
                                         <button
                                             className="btn secondary"
                                             onClick={() =>
-                                                setShowExportMenu(
-                                                    !showExportMenu,
+                                                setShowExportReportMenu(
+                                                    !showExportReportMenu,
                                                 )
                                             }
                                         >
                                             Export Report
                                         </button>
-                                        {showExportMenu && (
+                                        {showExportReportMenu && (
                                             <div className="absolute right-0 mt-2 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
                                                 <button
                                                     className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
                                                     onClick={() =>
                                                         handleExportPDF(
                                                             "Diurno",
+                                                            "report",
                                                         )
                                                     }
                                                 >
@@ -502,6 +344,7 @@ function Logbook() {
                                                     onClick={() =>
                                                         handleExportPDF(
                                                             "Notturno",
+                                                            "report",
                                                         )
                                                     }
                                                 >
@@ -513,25 +356,26 @@ function Logbook() {
 
                                     <div
                                         className="relative"
-                                        ref={exportMenuRef}
+                                        ref={exportActivityMenuRef}
                                     >
                                         <button
                                             className="btn secondary"
                                             onClick={() =>
-                                                setShowExportMenu(
-                                                    !showExportMenu,
+                                                setShowExportActivityMenu(
+                                                    !showExportActivityMenu,
                                                 )
                                             }
                                         >
                                             Export Activity
                                         </button>
-                                        {showExportMenu && (
+                                        {showExportActivityMenu && (
                                             <div className="absolute right-0 mt-2 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
                                                 <button
                                                     className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
                                                     onClick={() =>
                                                         handleExportPDF(
                                                             "Diurno",
+                                                            "activities",
                                                         )
                                                     }
                                                 >
@@ -542,6 +386,7 @@ function Logbook() {
                                                     onClick={() =>
                                                         handleExportPDF(
                                                             "Notturno",
+                                                            "activities",
                                                         )
                                                     }
                                                 >
@@ -561,27 +406,6 @@ function Logbook() {
 
                                     <div className="flex items-center w-full justify-between gap-4">
                                         <div className="flex items-center gap-4">
-                                            <div
-                                                className="flex items-center bg-[var(--bento-bg)] border border-[var(--light-primary)] rounded-md p-2 cursor-pointer transition-all duration-200"
-                                                onClick={showFiltersFunction}
-                                            >
-                                                <FilterIcon className="w-6 text-[var(--black)] icon cursor-pointer" />
-                                            </div>
-                                            <div className="relative w-[20vw]">
-                                                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
-                                                <input
-                                                    value={searchQuery}
-                                                    onChange={(e) =>
-                                                        setSearchQuery(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    type="search"
-                                                    placeholder="Cerca task o entry"
-                                                    className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
-                                                />
-                                            </div>
-
                                             <button
                                                 className="btn flex gap-2 items-center"
                                                 onClick={handleTaskClick}
@@ -619,310 +443,6 @@ function Logbook() {
                                         </div>
                                     </div>
 
-                                    {showFilters && (
-                                        <div className="flex flex-row gap-4">
-                                            <div className="flex flex-col gap-1 w-full">
-                                                <h3 className="text-sm text-[var(--gray)]">
-                                                    Stato
-                                                </h3>
-
-                                                <div className="relative">
-                                                    <select
-                                                        name=""
-                                                        id=""
-                                                        value={selectedStatus}
-                                                        onChange={(e) => {
-                                                            setSelectedStatus(
-                                                                e.target.value,
-                                                            );
-                                                        }}
-                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                                    >
-                                                        <option value="">
-                                                            ...
-                                                        </option>
-                                                        <option value="Non iniziato">
-                                                            Non iniziato
-                                                        </option>
-                                                        <option value="In corso">
-                                                            In corso
-                                                        </option>
-                                                        <option value="Completato">
-                                                            Completato
-                                                        </option>
-                                                        <option value="Non completato">
-                                                            Non completato
-                                                        </option>
-                                                        <option value="Da definire">
-                                                            Da definire
-                                                        </option>
-                                                    </select>
-                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col gap-1 w-full">
-                                                <h3 className="text-sm text-[var(--gray)]">
-                                                    Simulatore
-                                                </h3>
-                                                <div className="relative">
-                                                    <select
-                                                        name=""
-                                                        id=""
-                                                        value={
-                                                            selectedSimulator
-                                                        }
-                                                        onChange={(e) => {
-                                                            setSelectedSimulator(
-                                                                e.target.value,
-                                                            );
-                                                        }}
-                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                                    >
-                                                        <option value="">
-                                                            ...
-                                                        </option>
-                                                        {simulators.map(
-                                                            (
-                                                                simulator,
-                                                                index,
-                                                            ) => (
-                                                                <option
-                                                                    key={index}
-                                                                    value={
-                                                                        simulator
-                                                                    }
-                                                                >
-                                                                    {simulator}
-                                                                </option>
-                                                            ),
-                                                        )}
-                                                    </select>
-                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col gap-1 w-full">
-                                                <h3 className="text-sm text-[var(--gray)]">
-                                                    Assegnatario
-                                                </h3>
-                                                <div className="relative">
-                                                    <select
-                                                        name=""
-                                                        id=""
-                                                        value={
-                                                            selectedAssignees
-                                                        }
-                                                        onChange={(e) => {
-                                                            setSelectedAssignees(
-                                                                e.target.value,
-                                                            );
-                                                        }}
-                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                                    >
-                                                        <option value="">
-                                                            ...
-                                                        </option>
-                                                        {users.map(
-                                                            (user, index) => (
-                                                                <option
-                                                                    key={index}
-                                                                    value={
-                                                                        user.Username
-                                                                    }
-                                                                >
-                                                                    {user.Username.split(
-                                                                        ".",
-                                                                    )[0]
-                                                                        .charAt(
-                                                                            0,
-                                                                        )
-                                                                        .toUpperCase() +
-                                                                        user.Username.split(
-                                                                            ".",
-                                                                        )[0].slice(
-                                                                            1,
-                                                                        )}
-                                                                    {user.Username.split(
-                                                                        ".",
-                                                                    )[1] && (
-                                                                        <>
-                                                                            {" "}
-                                                                            {user.Username.split(
-                                                                                ".",
-                                                                            )[1]
-                                                                                .charAt(
-                                                                                    0,
-                                                                                )
-                                                                                .toUpperCase() +
-                                                                                user.Username.split(
-                                                                                    ".",
-                                                                                )[1].slice(
-                                                                                    1,
-                                                                                )}
-                                                                        </>
-                                                                    )}
-                                                                </option>
-                                                            ),
-                                                        )}
-                                                    </select>
-                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-1 w-full">
-                                                <h3 className="text-sm text-[var(--gray)]">
-                                                    Categoria
-                                                </h3>
-                                                <div className="relative">
-                                                    <select
-                                                        name=""
-                                                        id=""
-                                                        value={selectedCategory}
-                                                        onChange={(e) =>
-                                                            setSelectedCategory(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                                    >
-                                                        <option value="">
-                                                            ...
-                                                        </option>
-                                                        {Object.keys(
-                                                            categories,
-                                                        ).map(
-                                                            (
-                                                                category,
-                                                                index,
-                                                            ) => (
-                                                                <option
-                                                                    key={index}
-                                                                    value={
-                                                                        category
-                                                                    }
-                                                                >
-                                                                    {category}
-                                                                </option>
-                                                            ),
-                                                        )}
-                                                    </select>
-                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-1 w-full">
-                                                <h3 className="text-sm text-[var(--gray)]">
-                                                    Sotto-Categoria
-                                                </h3>
-                                                <div className="relative">
-                                                    <select
-                                                        name=""
-                                                        id=""
-                                                        value={
-                                                            selectedSubCategory
-                                                        }
-                                                        onChange={(e) =>
-                                                            setSelectedSubCategory(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                                    >
-                                                        {categories[
-                                                            selectedCategory
-                                                        ]?.map(
-                                                            (
-                                                                subCategory,
-                                                                index,
-                                                            ) => (
-                                                                <option
-                                                                    key={index}
-                                                                    value={
-                                                                        subCategory
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        subCategory
-                                                                    }
-                                                                </option>
-                                                            ),
-                                                        )}
-                                                    </select>
-                                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {showFilters && (
-                                        <div className="flex flex-row gap-4">
-                                            <div className="flex flex-col gap-1 w-1/2">
-                                                <div className="flex flex-row justify-between gap-4">
-                                                    <div className="flex flex-col gap-1 w-full">
-                                                        <h3 className="text-sm text-[var(--gray)]">
-                                                            Da
-                                                        </h3>
-                                                        <input
-                                                            type="date"
-                                                            value={selectedFrom}
-                                                            onChange={(e) =>
-                                                                setSelectedFrom(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1 w-full">
-                                                        <h3 className="text-sm text-[var(--gray)]">
-                                                            A
-                                                        </h3>
-                                                        <input
-                                                            type="date"
-                                                            value={selectedTo}
-                                                            onChange={(e) =>
-                                                                setSelectedTo(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className={`error-display w-full text-[var(--black)] p-2 rounded-md bg-[var(--white)] focus:outline-[var(--gray)] transition-all duration-200 ${
-                                                                dateError
-                                                                    ? "border border-[var(--red)] focus:border-[var(--red)]"
-                                                                    : "border border-[var(--light-primary)] focus:border-[var(--separator)]"
-                                                            }`}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {dateError && (
-                                                    <p className="text-[var(--red)] text-sm mt-1">
-                                                        La data di inizio deve
-                                                        essere precedente alla
-                                                        data di fine
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <button
-                                                className="btn delete flex gap-2 items-center h-[40px] mt-6"
-                                                onClick={() => {
-                                                    setSelectedCategory("");
-                                                    setSelectedSubCategory("");
-                                                    setSelectedFrom("");
-                                                    setSelectedTo("");
-                                                    setSelectedStatus("");
-                                                    setSelectedSimulator("");
-                                                    setSelectedAssignees("");
-                                                    setSearchQuery("");
-                                                }}
-                                            >
-                                                <CloseIcon className="w-6" />
-                                                <p>Togli filtri</p>
-                                            </button>
-                                        </div>
-                                    )}
-
                                     {datesList.map((currentDate, index) => (
                                         <div key={currentDate.toISOString()}>
                                             {viewDays > 1 && (
@@ -941,16 +461,9 @@ function Logbook() {
                                                 <Table
                                                     type="tasks&logbook"
                                                     loading={loading}
-                                                    taskList={filteredTasks}
-                                                    logbookList={
-                                                        filteredLogbooks
-                                                    }
-                                                    date={
-                                                        selectedFrom ||
-                                                        selectedTo
-                                                            ? null
-                                                            : currentDate
-                                                    }
+                                                    taskList={tasks}
+                                                    logbookList={logbooks}
+                                                    date={currentDate}
                                                     onDeleteSuccess={
                                                         handleSuccess
                                                     }
