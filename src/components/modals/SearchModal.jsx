@@ -9,10 +9,14 @@ import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import CloseIcon from "../../assets/icons/close.tsx";
 import { useUsers } from "../../components/data/provider/userAPI/useUsers";
+import { useNotes } from "../data/provider/noteAPI/useNotes";
+import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks";
 
 function SearchModal({ onClose, onDeleteSuccess }) {
     const { tasks, loading, fetchTasks } = useTasks();
     const { logbooks, loading: logbooksLoading, fetchLogbooks } = useLogbooks();
+    const { notes, fetchAllNotes } = useNotes();
+    const { noteLogbooks, fetchAllNoteLogbooks } = useNoteLogbooks();
     const [searchQuery, setSearchQuery] = useState("");
     const [showFilters, setShowFilters] = useState(false);
     const [selectedSimulator, setSelectedSimulator] = useState("");
@@ -29,7 +33,9 @@ function SearchModal({ onClose, onDeleteSuccess }) {
 
     useEffect(() => {
         inputRef.current?.focus();
-    }, []);
+        fetchAllNotes();
+        fetchAllNoteLogbooks();
+    }, [fetchAllNotes, fetchAllNoteLogbooks]);
 
     useEffect(() => {
         if (selectedFrom && selectedTo) {
@@ -65,13 +71,23 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         // Apply search query
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(
-                (task) =>
+            filtered = filtered.filter((task) => {
+                // Check if task fields match
+                const taskMatches =
                     task.TITLE?.toLowerCase().includes(query) ||
                     task.DESCRIPTION?.toLowerCase().includes(query) ||
                     task.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                    task.STATUS?.toLowerCase().includes(query),
-            );
+                    task.STATUS?.toLowerCase().includes(query);
+
+                // Check if any of the task's notes match
+                const noteMatches = notes?.some(
+                    (note) =>
+                        note.TASKID === task.ID &&
+                        note.DESCRIPTION?.toLowerCase().includes(query),
+                );
+
+                return taskMatches || noteMatches;
+            });
         }
 
         // Apply status filter
@@ -141,6 +157,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         selectedFrom,
         selectedTo,
         dateError,
+        notes,
     ]);
 
     const filteredLogbooks = useMemo(() => {
@@ -149,13 +166,23 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         // Apply search query
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(
-                (logbook) =>
+            filtered = filtered.filter((logbook) => {
+                // Check if logbook fields match
+                const logbookMatches =
                     logbook.TITLE?.toLowerCase().includes(query) ||
                     logbook.DESCRIPTION?.toLowerCase().includes(query) ||
                     logbook.ASSIGNED_TO?.toLowerCase().includes(query) ||
-                    logbook.STATUS?.toLowerCase().includes(query),
-            );
+                    logbook.STATUS?.toLowerCase().includes(query);
+
+                // Check if any of the logbook's notes match
+                const noteMatches = noteLogbooks?.some(
+                    (note) =>
+                        note.LOGBOOKID === logbook.ID &&
+                        note.DESCRIPTION?.toLowerCase().includes(query),
+                );
+
+                return logbookMatches || noteMatches;
+            });
         }
 
         // Apply status filter
@@ -225,6 +252,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         selectedFrom,
         selectedTo,
         dateError,
+        noteLogbooks,
     ]);
 
     const showFiltersFunction = () => {
@@ -540,7 +568,9 @@ function SearchModal({ onClose, onDeleteSuccess }) {
 
                 <div className="bg-[var(--bento-bg)] rounded-xl p-4 w-full shadow-xl border border-[var(--light-primary)] mt-4">
                     <div className="flex items-start gap-4">
-                        <div className="flex flex-col gap-1 max-h-[calc(80vh-20rem)] overflow-y-auto pr-1 flex-1">
+                        <div
+                            className={`flex flex-col gap-1 ${showFilters ? "max-h-[calc(80vh-20rem)]" : "max-h-[calc(100vh-20rem)]"}  overflow-y-auto pr-1 flex-1`}
+                        >
                             <div className="sticky top-0 flex items-center justify-start gap-2 border-b border-[var(--light-primary)] pb-2 mb-4 bg-[var(--bento-bg)]">
                                 <h1 className="text-md text-[var(--gray)]">
                                     Risultato
@@ -575,7 +605,9 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                             )}
                         </div>
 
-                        <div className="flex flex-col gap-1 max-h-[calc(80vh-20rem)] overflow-y-auto pr-1 flex-1">
+                        <div
+                            className={`flex flex-col gap-1 ${showFilters ? "max-h-[calc(80vh-20rem)]" : "max-h-[calc(100vh-20rem)]"}  overflow-y-auto pr-1 flex-1`}
+                        >
                             <div className="sticky top-0 flex items-center justify-start gap-2 border-b border-[var(--light-primary)] pb-2 mb-4 bg-[var(--bento-bg)]">
                                 <h1 className="text-md text-[var(--gray)]">
                                     Risultato

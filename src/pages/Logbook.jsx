@@ -4,9 +4,6 @@ import Calendar from "../components/layout/Calendar.jsx";
 import DatePickerComponent from "../functions/DatePicker.jsx";
 import Table from "../components/data/Table.jsx";
 import { useState, useEffect, useMemo, useRef } from "react";
-import SearchIcon from "../assets/icons/search.tsx";
-import FilterIcon from "../assets/icons/filter.tsx";
-import TaskIcon from "../assets/icons/tasks.tsx";
 import LogbookIcon from "../assets/icons/logbook.tsx";
 import BackIcon from "../assets/icons/back.tsx";
 import CreateModal from "../components/modals/CreateModal.jsx";
@@ -16,9 +13,6 @@ import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks"
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
-import ArrowRightIcon from "../assets/icons/arrow-right.tsx";
-import CloseIcon from "../assets/icons/close.tsx";
-import { GetSimulatorsList } from "../functions/Simulators.jsx";
 
 function Logbook() {
     const { tasks, loading, fetchTasks } = useTasks();

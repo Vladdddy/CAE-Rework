@@ -27,6 +27,26 @@ export const NoteLogbookProvider = ({ children }) => {
         }
     };
 
+    const fetchAllNoteLogbooks = async () => {
+        console.log("Fetching all logbook notes");
+        try {
+            setLoading(true);
+
+            const response = await fetch(`${API_URL}/notesLogbook`);
+            if (!response.ok)
+                throw new Error("Failed to fetch all logbook notes");
+            const data = await response.json();
+
+            setNoteLogbooks(data);
+            return data;
+        } catch (err) {
+            setError(err.message);
+            return [];
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const createNoteLogbook = async (logbookId, userId, description, type) => {
         console.log("Creating note for logbook ID:", logbookId);
         try {
@@ -66,6 +86,7 @@ export const NoteLogbookProvider = ({ children }) => {
                 loading,
                 error,
                 fetchNoteLogbooks,
+                fetchAllNoteLogbooks,
                 createNoteLogbook,
             }}
         >

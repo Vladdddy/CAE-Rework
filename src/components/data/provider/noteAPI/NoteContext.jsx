@@ -27,6 +27,25 @@ export const NoteProvider = ({ children }) => {
         }
     };
 
+    const fetchAllNotes = async () => {
+        console.log("Fetching all notes");
+        try {
+            setLoading(true);
+
+            const response = await fetch(`${API_URL}/notes`);
+            if (!response.ok) throw new Error("Failed to fetch all notes");
+            const data = await response.json();
+
+            setNotes(data);
+            return data;
+        } catch (err) {
+            setError(err.message);
+            return [];
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const createNote = async (taskId, userId, description, type) => {
         console.log("Creating note for task ID:", taskId);
         try {
@@ -63,6 +82,7 @@ export const NoteProvider = ({ children }) => {
                 loading,
                 error,
                 fetchNotes,
+                fetchAllNotes,
                 createNote,
             }}
         >
