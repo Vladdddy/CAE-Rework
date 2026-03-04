@@ -343,12 +343,10 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "Toolbox check",
             "STG",
             "RoRo",
-            "LOAD EVAL",
-            "PRE-CERT",
+            "Load EVAL",
+            "Pre-Cert",
         ],
-        COMMENT: [],
-        REPAIR: [],
-        Investigation: ["HW", "SW"],
+        Comment: [],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
         Others: [
@@ -357,11 +355,11 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "Remote connection without support",
             "On-Site Connection",
             "Part Repaired",
-            "EXTRA TASK",
+            "Extra Task",
         ],
     };
 
-    const troubleshootingDetails = [
+    /* const troubleshootingDetails = [
         "VISUAL",
         "COMPUTER",
         "AVIONIC",
@@ -376,6 +374,23 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
         "COMMS",
         "IOS",
         "OTHERS",
+    ]; */
+
+    const troubleshootingDetails = [
+        "Visual",
+        "Computer",
+        "Avionic",
+        "Env",
+        "Building",
+        "Power Loss",
+        "Motion",
+        "Interface",
+        "Controls",
+        "Vibration",
+        "Sound",
+        "Comms",
+        "IOS",
+        "Others",
     ];
 
     const weekDays = [

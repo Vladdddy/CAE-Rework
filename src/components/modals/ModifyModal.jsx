@@ -351,12 +351,10 @@ function ModifyModal({
             "Toolbox check",
             "STG",
             "RoRo",
-            "LOAD EVAL",
-            "PRE-CERT",
+            "Load EVAL",
+            "Pre-Cert",
         ],
-        COMMENT: [],
-        REPAIR: [],
-        Investigation: ["HW", "SW"],
+        Comment: [],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
         Others: [
@@ -365,11 +363,11 @@ function ModifyModal({
             "Remote connection without support",
             "On-Site Connection",
             "Part Repaired",
-            "EXTRA TASK",
+            "Extra Task",
         ],
     };
 
-    const troubleshootingDetails = [
+    /* const troubleshootingDetails = [
         "VISUAL",
         "COMPUTER",
         "AVIONIC",
@@ -384,6 +382,24 @@ function ModifyModal({
         "COMMS",
         "IOS",
         "OTHERS",
+    ]; */
+
+    const troubleshootingDetails = [
+        "Visual",
+        "Computer",
+        "Building",
+        "Power Loss",
+        "Motion",
+        "Interface",
+        "Controls",
+        "Vibration",
+        "Sound",
+        "Comms",
+        "IOS",
+        "Cockpit Panels",
+        "Cockpit Structure",
+        "NSA Area",
+        "Others",
     ];
 
     return (

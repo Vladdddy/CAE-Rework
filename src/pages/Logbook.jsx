@@ -171,6 +171,24 @@ function Logbook() {
                 );
             }
 
+            // Filter out logbooks if exporting activities only
+            if (exportType === "activities" || exportType === "activity") {
+                itemsToExport = itemsToExport.filter((item) => !item.ISLOGBOOK);
+            }
+
+            // Sort items by status priority: Completato, In corso, Non completato, others
+            const statusPriority = {
+                Completato: 1,
+                "In corso": 2,
+                "Non completato": 3,
+            };
+
+            itemsToExport.sort((a, b) => {
+                const priorityA = statusPriority[a.STATUS] || 999;
+                const priorityB = statusPriority[b.STATUS] || 999;
+                return priorityA - priorityB;
+            });
+
             // Fetch notes for all items (tasks and logbooks)
             const API_URL = import.meta.env.VITE_API_URL;
             const notesMap = {};
@@ -197,7 +215,7 @@ function Logbook() {
 
             // Determine the title based on timeFilter and exportType
             let pdfTitle;
-            if (exportType === "activity") {
+            if (exportType === "activity" || exportType === "activities") {
                 pdfTitle =
                     timeFilter === "Diurno"
                         ? "Day Activities"
@@ -214,6 +232,7 @@ function Logbook() {
                 pdfTitle,
                 notesMap,
                 users,
+                exportType !== "activity" && exportType !== "activities", // showStatus only for reports, not activities
             );
             setPopupType("success");
             setPopupMessage(
