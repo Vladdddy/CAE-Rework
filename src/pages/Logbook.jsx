@@ -470,35 +470,86 @@ function Logbook() {
                                     />
                                 </div>
 
-                                <div className="relative" ref={exportMenuRef}>
-                                    <button
-                                        className="btn secondary"
-                                        onClick={() =>
-                                            setShowExportMenu(!showExportMenu)
-                                        }
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className="relative"
+                                        ref={exportMenuRef}
                                     >
-                                        Export PDF
-                                    </button>
-                                    {showExportMenu && (
-                                        <div className="absolute right-0 mt-2 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
-                                            <button
-                                                className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
-                                                onClick={() =>
-                                                    handleExportPDF("Diurno")
-                                                }
-                                            >
-                                                Giorno
-                                            </button>
-                                            <button
-                                                className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-b-lg"
-                                                onClick={() =>
-                                                    handleExportPDF("Notturno")
-                                                }
-                                            >
-                                                Notte
-                                            </button>
-                                        </div>
-                                    )}
+                                        <button
+                                            className="btn secondary"
+                                            onClick={() =>
+                                                setShowExportMenu(
+                                                    !showExportMenu,
+                                                )
+                                            }
+                                        >
+                                            Export Report
+                                        </button>
+                                        {showExportMenu && (
+                                            <div className="absolute right-0 mt-2 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
+                                                <button
+                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
+                                                    onClick={() =>
+                                                        handleExportPDF(
+                                                            "Diurno",
+                                                        )
+                                                    }
+                                                >
+                                                    Giorno
+                                                </button>
+                                                <button
+                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-b-lg"
+                                                    onClick={() =>
+                                                        handleExportPDF(
+                                                            "Notturno",
+                                                        )
+                                                    }
+                                                >
+                                                    Notte
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div
+                                        className="relative"
+                                        ref={exportMenuRef}
+                                    >
+                                        <button
+                                            className="btn secondary"
+                                            onClick={() =>
+                                                setShowExportMenu(
+                                                    !showExportMenu,
+                                                )
+                                            }
+                                        >
+                                            Export Activity
+                                        </button>
+                                        {showExportMenu && (
+                                            <div className="absolute right-0 mt-2 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
+                                                <button
+                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
+                                                    onClick={() =>
+                                                        handleExportPDF(
+                                                            "Diurno",
+                                                        )
+                                                    }
+                                                >
+                                                    Giorno
+                                                </button>
+                                                <button
+                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-b-lg"
+                                                    onClick={() =>
+                                                        handleExportPDF(
+                                                            "Notturno",
+                                                        )
+                                                    }
+                                                >
+                                                    Notte
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
