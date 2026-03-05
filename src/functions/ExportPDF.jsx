@@ -285,6 +285,7 @@ export const exportTasksToPDF = (
                                 pageWidth - 2 * margin - 10,
                             );
                             checkPageBreak(6);
+                            doc.setFontSize(9);
                             doc.text(descLines, margin + 15, yPosition);
                             yPosition += descLines.length * 5;
                         }
@@ -488,6 +489,7 @@ export const exportTasksToPDF = (
                                     pageWidth - 2 * margin - 15,
                                 );
                                 checkPageBreak(5);
+                                doc.setFontSize(9);
                                 doc.text(descLines, margin + 20, yPosition);
                                 yPosition += descLines.length * 5;
                             }

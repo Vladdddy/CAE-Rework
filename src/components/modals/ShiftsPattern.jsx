@@ -5,15 +5,14 @@ import UserIcon from "../../assets/icons/user.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import DeleteIcon from "../../assets/icons/delete.tsx";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
-import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts.js";
+import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI_variant/useEmployeeShifts.js";
 import { usePatternShifts } from "../data/provider/patternShiftAPI/usePatternShifts.js";
 import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 
-function ShiftsPattern({ onClose }) {
+function ShiftsPattern({ onClose, onPatternApply }) {
     const [activeTab, setActiveTab] = useState("Seleziona");
     const { users } = useUsers();
-    const { addEmployeeShift, updateEmployeeShift, employeeShifts } =
-        useEmployeeShifts();
+    const { employeeShifts } = useEmployeeShifts();
     const { patternShifts, addPatternShift, deletePatternShift } =
         usePatternShifts();
     const [selectedAssignees, setSelectedAssignees] = useState([]);
@@ -51,7 +50,7 @@ function ShiftsPattern({ onClose }) {
     ];
 
     const defaultPatterns = {
-        "Shift Leader": ["ON", "OP", "O", "ON", "OP"],
+        "Shift Leader": ["O", "ON", "OP"],
         DRNR: ["D", "R", "N", "R"],
         NRDR: ["N", "R", "D", "R"],
         Ferie: ["F"],
@@ -114,7 +113,7 @@ function ShiftsPattern({ onClose }) {
         return null;
     };
 
-    const applyPattern = async () => {
+    const applyPattern = () => {
         // Validation
         if (!selectedPattern) {
             return;
@@ -204,7 +203,7 @@ function ShiftsPattern({ onClose }) {
                     if (existingShift) {
                         shiftOperations.push({
                             type: "update",
-                            id: existingShift.id,
+                            id: existingShift.ID || existingShift.id,
                             data: {
                                 EMPLOYEE_ID: user.ID,
                                 SELECTED_DATE: formattedDate,
@@ -243,19 +242,35 @@ function ShiftsPattern({ onClose }) {
                 }
             }
 
-            // Execute all operations in parallel
-            await Promise.all(
-                shiftOperations.map((operation) => {
-                    if (operation.type === "update") {
-                        return updateEmployeeShift(
-                            operation.id,
-                            operation.data,
-                        );
-                    } else {
-                        return addEmployeeShift(operation.data);
-                    }
-                }),
+            // Prepare changes for save modal instead of directly saving
+            const addOperations = shiftOperations.filter(
+                (op) => op.type === "add",
             );
+            const updateOperations = shiftOperations.filter(
+                (op) => op.type === "update",
+            );
+
+            // Convert to postChanges and putChanges format
+            const newPostChanges = {};
+            const newPutChanges = {};
+
+            addOperations.forEach((op) => {
+                const key = `${op.data.EMPLOYEE_ID}-${op.data.SELECTED_DATE}`;
+                newPostChanges[key] = op.data;
+            });
+
+            updateOperations.forEach((op) => {
+                const key = `${op.data.EMPLOYEE_ID}-${op.data.SELECTED_DATE}`;
+                newPutChanges[key] = {
+                    ID: op.id,
+                    ...op.data,
+                };
+            });
+
+            // Trigger the save changes modal via callback
+            if (onPatternApply) {
+                onPatternApply(newPostChanges, newPutChanges);
+            }
 
             onClose();
         } catch (error) {

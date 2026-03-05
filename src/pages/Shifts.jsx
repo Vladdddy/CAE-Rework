@@ -10,6 +10,7 @@ import HoursCountTableTest from "../components/data/HoursCountTableTest.jsx";
 import SaveChangesModal from "../components/modals/SaveChanges.jsx";
 import PatternIcon from "../assets/icons/pattern.tsx";
 import ShiftsPattern from "../components/modals/ShiftsPattern.jsx";
+import ShiftsTableVariant from "../components/data/ShiftsTableVariant.jsx";
 
 function Shifts() {
     const { currentUserRole } = useContext(UserContext);
@@ -32,6 +33,16 @@ function Shifts() {
         setPostChanges(postData);
         setPutChanges(putData);
         setIsModalOpen(hasChanges);
+    };
+
+    const handlePatternApply = (newPostChanges, newPutChanges) => {
+        // Use window function to apply pattern changes to ShiftsTableVariant
+        if (window.applyPatternChanges) {
+            window.applyPatternChanges(newPostChanges, newPutChanges);
+        }
+
+        // The ShiftsTableVariant will update its state and trigger handleChangesDetected
+        // which will automatically open the save modal
     };
 
     const handleModalClose = () => {
@@ -104,7 +115,18 @@ function Shifts() {
                     <div className="m-8 flex flex-row items-start justify-between gap-8">
                         {impagination === 1 && (
                             <>
-                                <ShiftsTable
+                                {/* <ShiftsTable
+                                    selectedMonth={startDate.toLocaleString(
+                                        "it-IT",
+                                        {
+                                            month: "long",
+                                            year: "numeric",
+                                        },
+                                    )}
+                                    onChangesDetected={handleChangesDetected}
+                                    currentUserRole={currentUserRole}
+                                /> */}
+                                <ShiftsTableVariant
                                     selectedMonth={startDate.toLocaleString(
                                         "it-IT",
                                         {
@@ -141,7 +163,10 @@ function Shifts() {
             )}
 
             {patternsModalOpen && (
-                <ShiftsPattern onClose={() => setPatternsModalOpen(false)} />
+                <ShiftsPattern
+                    onClose={() => setPatternsModalOpen(false)}
+                    onPatternApply={handlePatternApply}
+                />
             )}
         </section>
     );

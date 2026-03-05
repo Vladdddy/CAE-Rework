@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import DoneIcon from "../../assets/icons/done";
 import WarningIcon from "../../assets/icons/warning";
 import Close from "../../assets/icons/close";
-import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts";
+import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI_variant/useEmployeeShifts";
 
 function SaveChanges({ onClose, postChanges, putChanges }) {
     const { addEmployeeShift, updateEmployeeShift, deleteEmployeeShift } =
@@ -13,26 +13,29 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
         setIsProcessing(true);
 
         try {
-            // Process POST requests (new shifts)
-            const postPromises = Object.values(postChanges).map(
-                async (change) => {
-                    return await addEmployeeShift({
+            // Batch all POST requests into single API call
+            if (Object.keys(postChanges).length > 0) {
+                const shiftsToAdd = Object.values(postChanges).map(
+                    (change) => ({
                         EMPLOYEE_ID: change.EMPLOYEE_ID,
                         SELECTED_DATE: change.SELECTED_DATE,
                         SHIFT_TYPE: change.SHIFT_TYPE,
-                    });
-                },
-            );
+                    }),
+                );
+                await addEmployeeShift(shiftsToAdd);
+            }
 
             // Process PUT requests (update existing shifts or delete if null)
             const putPromises = Object.values(putChanges).map(
                 async (change) => {
                     // If SHIFT_TYPE is null, delete the shift
                     if (change.SHIFT_TYPE === null) {
-                        return await deleteEmployeeShift(change.id);
+                        return await deleteEmployeeShift(
+                            change.ID || change.id,
+                        );
                     }
                     // Otherwise, update the shift
-                    return await updateEmployeeShift(change.id, {
+                    return await updateEmployeeShift(change.ID || change.id, {
                         EMPLOYEE_ID: change.EMPLOYEE_ID,
                         SELECTED_DATE: change.SELECTED_DATE,
                         SHIFT_TYPE: change.SHIFT_TYPE,
@@ -40,8 +43,10 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
                 },
             );
 
-            // Wait for all API calls to complete
-            await Promise.all([...postPromises, ...putPromises]);
+            // Wait for all PUT/DELETE calls to complete
+            if (putPromises.length > 0) {
+                await Promise.all(putPromises);
+            }
 
             // Clear the changes from localStorage
             if (window.clearShiftChanges) {
