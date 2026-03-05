@@ -199,7 +199,7 @@ export const exportTasksToPDF = (
                 const firstSimInOthers = simulatorNamesInMacro[0];
                 const sim = simulatorMap[firstSimInOthers];
                 if (sim) {
-                    doc.setFontSize(9);
+                    doc.setFontSize(12);
                     doc.setFont(undefined, "normal");
                     const simDetailsPrefix = `  -  End time: ${formatTime(sim.START_HOUR)}   Start time: ${formatTime(sim.END_TIME)}   `;
                     const simDetailsAssigned = `Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
@@ -403,7 +403,7 @@ export const exportTasksToPDF = (
                     if (!showStatus) {
                         const sim = simulatorMap[simName];
                         if (sim) {
-                            doc.setFontSize(9);
+                            doc.setFontSize(12);
                             doc.setFont(undefined, "normal");
                             const simDetailsPrefix = `  -  End time: ${formatTime(sim.START_HOUR)}   Start time: ${formatTime(sim.END_HOUR)}   `;
                             const simDetailsAssigned = `Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
