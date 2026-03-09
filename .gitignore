@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 .env
+backup-code.bat
+backup-sql.bat
+backup-master.bat
+BACKUP_SETUP.md
+backup-exclude.txt
