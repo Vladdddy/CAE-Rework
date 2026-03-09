@@ -590,26 +590,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     <div className="relative">
                                         <select
                                             disabled={
-                                                !(
-                                                    currentUserRole ===
-                                                        "Admin" ||
-                                                    currentUserRole ===
-                                                        "Shift Leader"
-                                                ) ||
-                                                (taskInfo.ASSIGNED_TO &&
-                                                    taskInfo.ISLOGBOOK &&
-                                                    users.find(
-                                                        (u) =>
-                                                            u.ID ===
-                                                            currentUserId,
-                                                    )?.Username &&
-                                                    taskInfo.ASSIGNED_TO.includes(
-                                                        users.find(
-                                                            (u) =>
-                                                                u.ID ===
-                                                                currentUserId,
-                                                        ).Username,
-                                                    ))
+                                                currentUserRole ===
+                                                    "Employee" &&
+                                                !taskInfo.ISLOGBOOK
                                             }
                                             defaultValue={
                                                 taskInfo?.STATUS ||

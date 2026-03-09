@@ -27,5 +27,6 @@ dist-ssr
 backup-code.bat
 backup-sql.bat
 backup-master.bat
+backup-master-remote.bat
 BACKUP_SETUP.md
 backup-exclude.txt
