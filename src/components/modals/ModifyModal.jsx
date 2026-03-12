@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
@@ -47,8 +47,10 @@ function ModifyModal({
             : new Date().toISOString().split("T")[0],
     );
     const [titleError, setTitleError] = useState(false);
-    const { createNote } = useNotes();
-    const { createNoteLogbook } = useNoteLogbooks();
+    const [importNotes, setImportNotes] = useState("No");
+    const { createNote, fetchNotes, notes } = useNotes();
+    const { createNoteLogbook, fetchNoteLogbooks, noteLogbooks } =
+        useNoteLogbooks();
     // eslint-disable-next-line no-unused-vars
     const [noteDescription, setNoteDescription] = useState("");
     const simulators = GetSimulatorsList();
@@ -58,6 +60,18 @@ function ModifyModal({
     const { updateTask, addTask } = useTasks();
     const { updateLogbook, addLogbook } = useLogbooks();
     const { users, currentUserId } = useUsers();
+
+    // Fetch notes when duplicating
+    useEffect(() => {
+        if (isDuplicating && task.ID) {
+            if (task.ISLOGBOOK) {
+                fetchNoteLogbooks(task.ID);
+            } else {
+                fetchNotes(task.ID);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isDuplicating, task.ID, task.ISLOGBOOK]);
 
     // Check if any changes have been made
     const hasChanges = useMemo(() => {
@@ -247,6 +261,42 @@ function ModifyModal({
                 : await addTask(modifiedTask);
 
             if (createResult.success) {
+                // Copy notes if user selected "Si"
+                if (importNotes === "Si") {
+                    const newTaskId =
+                        createResult.data?.id || createResult.data?.insertId;
+
+                    if (newTaskId) {
+                        // Get the appropriate notes array based on task type
+                        const notesToCopy = isLogbook ? noteLogbooks : notes;
+
+                        // Filter only "creato" type notes
+                        const creatoNotes =
+                            notesToCopy?.filter(
+                                (note) => note.TYPE === "creato",
+                            ) || [];
+
+                        // Copy each "creato" note to the new task
+                        for (const note of creatoNotes) {
+                            if (isLogbook) {
+                                await createNoteLogbook(
+                                    newTaskId,
+                                    note.CREATEDBY,
+                                    note.DESCRIPTION,
+                                    "creato",
+                                );
+                            } else {
+                                await createNote(
+                                    newTaskId,
+                                    note.CREATEDBY,
+                                    note.DESCRIPTION,
+                                    "creato",
+                                );
+                            }
+                        }
+                    }
+                }
+
                 onClose();
 
                 if (onSuccess) {
@@ -676,6 +726,68 @@ function ModifyModal({
                             </div>
                         </div>
                     </div>
+
+                    {isDuplicating && (
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-sm text-[var(--gray)]">
+                                Importare note
+                            </h3>
+                            <div className="flex flex-row items-center gap-1 gap-2 border border-[var(--light-primary)] rounded-md p-2">
+                                <div
+                                    onClick={() => setImportNotes("No")}
+                                    className={`flex items-center justify-center p-2 gap-2 rounded-md cursor-pointer border border-transparent text-[var(--black)] hover:bg-[var(--light-primary)] flex-1 ${
+                                        importNotes === "No"
+                                            ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                            : ""
+                                    }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="importNotes"
+                                        id="importNotesNo"
+                                        value="No"
+                                        checked={importNotes === "No"}
+                                        onChange={(e) =>
+                                            setImportNotes(e.target.value)
+                                        }
+                                        className="hidden"
+                                    />
+                                    <label
+                                        className="cursor-pointer"
+                                        htmlFor="importNotesNo"
+                                    >
+                                        No
+                                    </label>
+                                </div>
+                                <div
+                                    onClick={() => setImportNotes("Si")}
+                                    className={`flex items-center justify-center p-2 gap-2 rounded-md cursor-pointer border border-transparent text-[var(--black)] hover:bg-[var(--light-primary)] flex-1 ${
+                                        importNotes === "Si"
+                                            ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                            : ""
+                                    }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="importNotes"
+                                        id="importNotesSi"
+                                        value="Si"
+                                        checked={importNotes === "Si"}
+                                        onChange={(e) =>
+                                            setImportNotes(e.target.value)
+                                        }
+                                        className="hidden"
+                                    />
+                                    <label
+                                        className="cursor-pointer"
+                                        htmlFor="importNotesSi"
+                                    >
+                                        Si
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex flex-col gap-1">
                         <h3 className="text-sm text-[var(--gray)]">

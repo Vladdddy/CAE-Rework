@@ -57,7 +57,7 @@ export const LogbookProvider = ({ children }) => {
             const savedLogbook = await response.json();
             newLogbook.id = savedLogbook.id;
             setLogbooks((prev) => [...prev, newLogbook]);
-            return { success: true };
+            return { success: true, data: savedLogbook };
         } catch (err) {
             setError(err.message);
             return { success: false, error: err.message };

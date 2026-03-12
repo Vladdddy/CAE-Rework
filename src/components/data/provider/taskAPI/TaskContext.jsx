@@ -58,7 +58,7 @@ export const TaskProvider = ({ children }) => {
             const savedTask = await response.json();
             newTask.id = savedTask.id;
             setTasks((prev) => [...prev, newTask]);
-            return { success: true };
+            return { success: true, data: savedTask };
         } catch (err) {
             setError(err.message);
             return { success: false, error: err.message };
