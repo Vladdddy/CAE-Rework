@@ -4,9 +4,12 @@ import DragIcon from "../../assets/icons/drag.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 import { useEmployeeShifts } from "./provider/employeeShiftsAPI_variant/useEmployeeShifts.js";
+import { useShiftOrder } from "./provider/shiftOrderAPI/useShiftOrder.js";
+import Popup from "../modals/Popup.jsx";
 
 function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     const { users, loading } = useUsers();
+    const { shiftOrders, saveShiftOrders } = useShiftOrder();
     const [orderedUsers, setOrderedUsers] = useState([]);
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -18,6 +21,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     const { employeeShifts } = useEmployeeShifts();
     const scrollContainerRef = useRef(null);
     const todayColumnRef = useRef(null);
+    const [popup, setPopup] = useState({ show: false, type: "", message: "" });
 
     // Track POST and PUT changes
     const [postChanges, setPostChanges] = useState(() => {
@@ -46,9 +50,34 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         "ND",
     ];
 
+    // Apply shift order from database
     useEffect(() => {
-        setOrderedUsers(users);
-    }, [users]);
+        if (users.length === 0) {
+            setOrderedUsers([]);
+            return;
+        }
+
+        // If no shift orders exist, use default user order
+        if (shiftOrders.length === 0) {
+            setOrderedUsers(users);
+            return;
+        }
+
+        // Create a map of user ID to position
+        const positionMap = {};
+        shiftOrders.forEach((order) => {
+            positionMap[order.POSITIONED_USER_ID] = order.POSITION;
+        });
+
+        // Sort users by position, putting users without position at the end
+        const sorted = [...users].sort((a, b) => {
+            const posA = positionMap[a.ID] || 9999;
+            const posB = positionMap[b.ID] || 9999;
+            return posA - posB;
+        });
+
+        setOrderedUsers(sorted);
+    }, [users, shiftOrders]);
 
     // Save changes to localStorage and notify parent
     useEffect(() => {
@@ -296,6 +325,50 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
 
         setOrderedUsers(newUsers);
         setDragOverIndex(null);
+
+        // Save the new order to backend
+        const orderedUserIds = newUsers.map((user) => user.ID);
+        saveShiftOrders(orderedUserIds)
+            .then((result) => {
+                if (result.success) {
+                    console.log("Shift order saved successfully");
+                    setPopup({
+                        show: true,
+                        type: "success",
+                        message:
+                            "Hai spostato con successo la posizione del tecnico",
+                    });
+                    setTimeout(
+                        () => setPopup({ show: false, type: "", message: "" }),
+                        3000,
+                    );
+                } else {
+                    console.error("Failed to save shift order:", result.error);
+                    setPopup({
+                        show: true,
+                        type: "error",
+                        message:
+                            "Non è stato possibile spostare la posizione del tecnico",
+                    });
+                    setTimeout(
+                        () => setPopup({ show: false, type: "", message: "" }),
+                        3000,
+                    );
+                }
+            })
+            .catch((err) => {
+                console.error("Error saving shift order:", err);
+                setPopup({
+                    show: true,
+                    type: "error",
+                    message:
+                        "Non è stato possibile spostare la posizione del tecnico",
+                });
+                setTimeout(
+                    () => setPopup({ show: false, type: "", message: "" }),
+                    3000,
+                );
+            });
     };
 
     const handleDragEnd = () => {
@@ -815,6 +888,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                     </h1>
                 )}
             </div>
+            {popup.show && <Popup type={popup.type} message={popup.message} />}
         </div>
     );
 }

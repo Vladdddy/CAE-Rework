@@ -24,6 +24,7 @@ import { EmployeeOverviewProvider } from "./components/data/provider/employeeOve
 import { EmployeeMessageProvider } from "./components/data/provider/employeeMessageAPI/EmployeeMessageContext.jsx";
 import { PatternShiftProvider } from "./components/data/provider/patternShiftAPI/PatternShiftContext.jsx";
 import { EmployeeShiftsProvider as EmployeeShiftsProviderMonthly } from "./components/data/provider/employeeShiftsAPI_variant/EmployeeShiftsContext.jsx";
+import { ShiftOrderProvider } from "./components/data/provider/shiftOrderAPI/ShiftOrderContext.jsx";
 import "./App.css";
 
 const ProtectedRoute = ({ children }) => {
@@ -43,103 +44,105 @@ const PublicRoute = ({ children }) => {
 function App() {
     return (
         <EmployeeShiftsProviderMonthly>
-            <PatternShiftProvider>
-                <NoteLogbookProvider>
-                    <LogbookProvider>
-                        <NoteProvider>
-                            <UserProvider>
-                                <TaskProvider>
-                                    <SimulatorProvider>
-                                        <EmployeeShiftsProvider>
-                                            <EmployeeOverviewProvider>
-                                                <EmployeeMessageProvider>
-                                                    <Router>
-                                                        <Routes>
-                                                            <Route
-                                                                path="/"
-                                                                element={
-                                                                    <Navigate
-                                                                        to="/dashboard"
-                                                                        replace
-                                                                    />
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path="/change-password"
-                                                                element={
-                                                                    <PublicRoute>
-                                                                        <ChangePassword />
-                                                                    </PublicRoute>
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path="/verify-email"
-                                                                element={
-                                                                    <PublicRoute>
-                                                                        <VerifyEmail />
-                                                                    </PublicRoute>
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path="/dashboard"
-                                                                element={
-                                                                    <ProtectedRoute>
-                                                                        <Dashboard />
-                                                                    </ProtectedRoute>
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path="/tasks"
-                                                                element={
-                                                                    <ProtectedRoute>
-                                                                        <Tasks />
-                                                                    </ProtectedRoute>
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path="/logbook"
-                                                                element={
-                                                                    <ProtectedRoute>
-                                                                        <Logbook />
-                                                                    </ProtectedRoute>
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path="/signin"
-                                                                element={
-                                                                    <PublicRoute>
-                                                                        <Signin />
-                                                                    </PublicRoute>
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path="/register"
-                                                                element={
-                                                                    <PublicRoute>
-                                                                        <Register />
-                                                                    </PublicRoute>
-                                                                }
-                                                            />
-                                                            <Route
-                                                                path="/shifts"
-                                                                element={
-                                                                    <ProtectedRoute>
-                                                                        <Shifts />
-                                                                    </ProtectedRoute>
-                                                                }
-                                                            />
-                                                        </Routes>
-                                                    </Router>
-                                                </EmployeeMessageProvider>
-                                            </EmployeeOverviewProvider>
-                                        </EmployeeShiftsProvider>
-                                    </SimulatorProvider>
-                                </TaskProvider>
-                            </UserProvider>
-                        </NoteProvider>
-                    </LogbookProvider>
-                </NoteLogbookProvider>
-            </PatternShiftProvider>
+            <ShiftOrderProvider>
+                <PatternShiftProvider>
+                    <NoteLogbookProvider>
+                        <LogbookProvider>
+                            <NoteProvider>
+                                <UserProvider>
+                                    <TaskProvider>
+                                        <SimulatorProvider>
+                                            <EmployeeShiftsProvider>
+                                                <EmployeeOverviewProvider>
+                                                    <EmployeeMessageProvider>
+                                                        <Router>
+                                                            <Routes>
+                                                                <Route
+                                                                    path="/"
+                                                                    element={
+                                                                        <Navigate
+                                                                            to="/dashboard"
+                                                                            replace
+                                                                        />
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="/change-password"
+                                                                    element={
+                                                                        <PublicRoute>
+                                                                            <ChangePassword />
+                                                                        </PublicRoute>
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="/verify-email"
+                                                                    element={
+                                                                        <PublicRoute>
+                                                                            <VerifyEmail />
+                                                                        </PublicRoute>
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="/dashboard"
+                                                                    element={
+                                                                        <ProtectedRoute>
+                                                                            <Dashboard />
+                                                                        </ProtectedRoute>
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="/tasks"
+                                                                    element={
+                                                                        <ProtectedRoute>
+                                                                            <Tasks />
+                                                                        </ProtectedRoute>
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="/logbook"
+                                                                    element={
+                                                                        <ProtectedRoute>
+                                                                            <Logbook />
+                                                                        </ProtectedRoute>
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="/signin"
+                                                                    element={
+                                                                        <PublicRoute>
+                                                                            <Signin />
+                                                                        </PublicRoute>
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="/register"
+                                                                    element={
+                                                                        <PublicRoute>
+                                                                            <Register />
+                                                                        </PublicRoute>
+                                                                    }
+                                                                />
+                                                                <Route
+                                                                    path="/shifts"
+                                                                    element={
+                                                                        <ProtectedRoute>
+                                                                            <Shifts />
+                                                                        </ProtectedRoute>
+                                                                    }
+                                                                />
+                                                            </Routes>
+                                                        </Router>
+                                                    </EmployeeMessageProvider>
+                                                </EmployeeOverviewProvider>
+                                            </EmployeeShiftsProvider>
+                                        </SimulatorProvider>
+                                    </TaskProvider>
+                                </UserProvider>
+                            </NoteProvider>
+                        </LogbookProvider>
+                    </NoteLogbookProvider>
+                </PatternShiftProvider>
+            </ShiftOrderProvider>
         </EmployeeShiftsProviderMonthly>
     );
 }
