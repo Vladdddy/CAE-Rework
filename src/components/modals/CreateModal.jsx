@@ -335,6 +335,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
         "Routine Task": [
             "PM",
             "MR",
+            "MDR",
             "Backup",
             "QTG",
             "FMS & Parsing",

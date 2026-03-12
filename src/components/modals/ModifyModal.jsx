@@ -343,6 +343,7 @@ function ModifyModal({
         "Routine Task": [
             "PM",
             "MR",
+            "MDR",
             "Backup",
             "QTG",
             "FMS & Parsing",

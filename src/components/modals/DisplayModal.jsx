@@ -589,11 +589,6 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
                                     <div className="relative">
                                         <select
-                                            disabled={
-                                                currentUserRole ===
-                                                    "Employee" &&
-                                                !taskInfo.ISLOGBOOK
-                                            }
                                             defaultValue={
                                                 taskInfo?.STATUS ||
                                                 "Da definire"
