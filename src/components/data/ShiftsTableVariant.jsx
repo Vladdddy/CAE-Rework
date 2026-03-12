@@ -694,7 +694,11 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                             <div
                                 key={`user-${userIndex}`}
                                 className={`flex ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""}`}
-                                draggable={isEmployee}
+                                draggable={
+                                    isEmployee &&
+                                    (currentUserRole === "Admin" ||
+                                        currentUserRole === "Shift Leader")
+                                }
                                 onDragStart={(e) =>
                                     handleDragStart(e, userIndex)
                                 }
@@ -711,9 +715,11 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                 >
                                     <div className="flex justify-between min-w-[240px] w-[240px]">
                                         <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
-                                            {isEmployee && (
-                                                <DragIcon className="w-6 text-[var(--black)]" />
-                                            )}
+                                            {isEmployee &&
+                                                currentUserRole !==
+                                                    "Employee" && (
+                                                    <DragIcon className="w-6 text-[var(--black)]" />
+                                                )}
                                             {formatUsername(user.Username)}
                                         </p>
                                         {/*<ArrowRightIcon

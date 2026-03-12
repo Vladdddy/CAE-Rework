@@ -468,7 +468,7 @@ function Logbook() {
                                             <div
                                                 className={
                                                     viewDays > 1 &&
-                                                    "p-4 bg-[var(--white)] rounded-xl"
+                                                    "p-4 bg-[var(--pure-white)] rounded-xl"
                                                 }
                                             >
                                                 <Table
