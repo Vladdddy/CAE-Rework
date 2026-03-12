@@ -75,6 +75,30 @@ export const NoteProvider = ({ children }) => {
         }
     };
 
+    const editNote = async (noteId, description) => {
+        console.log("Editing note ID:", noteId);
+        try {
+            const response = await fetch(`${API_URL}/notes/${noteId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ description }),
+            });
+
+            if (!response.ok) throw new Error("Failed to edit note");
+            const data = await response.json();
+
+            // Refresh notes after editing
+            await fetchAllNotes();
+
+            return { success: true, data };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
     return (
         <NoteContext.Provider
             value={{
@@ -84,6 +108,7 @@ export const NoteProvider = ({ children }) => {
                 fetchNotes,
                 fetchAllNotes,
                 createNote,
+                editNote,
             }}
         >
             {children}

@@ -14,6 +14,7 @@ import ConvertIcon from "../../assets/icons/convert.tsx";
 import DuplicateIcon from "../../assets/icons/duplicate.tsx";
 import FlagIcon from "../../assets/icons/flag.tsx";
 import UnflagIcon from "../../assets/icons/unflag.tsx";
+import EditIcon from "../../assets/icons/edit.tsx";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -22,11 +23,16 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDuplicating, setIsDuplicating] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
     const [noteDescription, setNoteDescription] = useState("");
+    const [editingNoteId, setEditingNoteId] = useState(null);
     const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
     const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
-    const { notes, fetchNotes, createNote } = useNotes();
-    const { noteLogbooks, fetchNoteLogbooks, createNoteLogbook } =
-        useNoteLogbooks();
+    const { notes, fetchNotes, createNote, editNote } = useNotes();
+    const {
+        noteLogbooks,
+        fetchNoteLogbooks,
+        createNoteLogbook,
+        editNoteLogbook,
+    } = useNoteLogbooks();
     const { users, currentUserId } = useUsers();
     const { currentUserRole } = useUsers();
 
@@ -406,6 +412,32 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
         const isLogbook = taskInfo.ISLOGBOOK;
 
+        // If editing, update the existing note
+        if (editingNoteId) {
+            const result = isLogbook
+                ? await editNoteLogbook(editingNoteId, noteDescription)
+                : await editNote(editingNoteId, noteDescription);
+
+            if (result.success) {
+                setNoteDescription("");
+                setEditingNoteId(null);
+                if (isLogbook) {
+                    await fetchNoteLogbooks(taskInfo.ID);
+                } else {
+                    await fetchNotes(taskInfo.ID);
+                }
+                if (onSuccess) {
+                    onSuccess(true, "Nota modificata con successo");
+                }
+            } else {
+                if (onSuccess) {
+                    onSuccess(false, "Errore nella modifica della nota");
+                }
+            }
+            return;
+        }
+
+        // Otherwise, create a new note
         const result = isLogbook
             ? await createNoteLogbook(
                   taskInfo.ID,
@@ -430,6 +462,16 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                 onSuccess(false, "Errore nel salvataggio della nota");
             }
         }
+    };
+
+    const handleEditNote = (note) => {
+        setNoteDescription(note.DESCRIPTION);
+        setEditingNoteId(note.ID);
+    };
+
+    const handleCancelEdit = () => {
+        setNoteDescription("");
+        setEditingNoteId(null);
     };
 
     return (
@@ -811,12 +853,28 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             key={note.ID}
                                             className={`flex justify-between gap-4`}
                                         >
-                                            <h3 className="text-sm text-[var(--gray)] truncate w-20">
-                                                {getUsernameById(
-                                                    note.CREATEDBY,
-                                                )}
-                                                :
-                                            </h3>
+                                            <div className="flex items-center gap-2">
+                                                {note.CREATEDBY ===
+                                                    currentUserId &&
+                                                    note.TYPE !==
+                                                        "automatico" && (
+                                                        <EditIcon
+                                                            className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
+                                                            onClick={() =>
+                                                                handleEditNote(
+                                                                    note,
+                                                                )
+                                                            }
+                                                        />
+                                                    )}
+
+                                                <h3 className="text-sm text-[var(--gray)] truncate w-20">
+                                                    {getUsernameById(
+                                                        note.CREATEDBY,
+                                                    )}
+                                                    :
+                                                </h3>
+                                            </div>
                                             <div
                                                 className={`flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden}`}
                                             >
@@ -847,12 +905,28 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             key={note.ID}
                                             className="flex justify-between gap-4"
                                         >
-                                            <h3 className="text-sm text-[var(--gray)] truncate w-20">
-                                                {getUsernameById(
-                                                    note.CREATEDBY,
-                                                )}
-                                                :
-                                            </h3>
+                                            <div className="flex items-center gap-2">
+                                                {note.CREATEDBY ===
+                                                    currentUserId &&
+                                                    note.TYPE !==
+                                                        "automatico" && (
+                                                        <EditIcon
+                                                            className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
+                                                            onClick={() =>
+                                                                handleEditNote(
+                                                                    note,
+                                                                )
+                                                            }
+                                                        />
+                                                    )}
+
+                                                <h3 className="text-sm text-[var(--gray)] truncate w-20">
+                                                    {getUsernameById(
+                                                        note.CREATEDBY,
+                                                    )}
+                                                    :
+                                                </h3>
+                                            </div>
                                             <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
                                                 <div
                                                     className={`break-words whitespace-pre-wrap ${note.TYPE === "automatico" && "text-[var(--black)]"}`}
@@ -882,7 +956,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
                             <div className="flex flex-col gap-2 border-t border-[var(--light-primary)] pt-4">
                                 <h3 className="text-sm text-[var(--gray)]">
-                                    Aggiungi Nota
+                                    {editingNoteId
+                                        ? "Modifica Nota"
+                                        : "Aggiungi Nota"}
                                 </h3>
                                 <textarea
                                     className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
@@ -895,19 +971,32 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                             </div>
 
                             <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
-                                <button
-                                    className="btn gray-btn"
-                                    onClick={onClose}
-                                >
-                                    Chiudi
-                                </button>
+                                {editingNoteId ? (
+                                    <button
+                                        className="btn gray-btn"
+                                        onClick={handleCancelEdit}
+                                    >
+                                        Annulla
+                                    </button>
+                                ) : (
+                                    <button
+                                        className="btn gray-btn"
+                                        onClick={onClose}
+                                    >
+                                        Chiudi
+                                    </button>
+                                )}
 
                                 <button
                                     className="btn"
                                     onClick={handleSaveNote}
                                     disabled={!noteDescription.trim()}
                                 >
-                                    <p>Salva nota</p>
+                                    <p>
+                                        {editingNoteId
+                                            ? "Modifica nota"
+                                            : "Salva nota"}
+                                    </p>
                                 </button>
                             </div>
                         </div>

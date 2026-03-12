@@ -79,6 +79,30 @@ export const NoteLogbookProvider = ({ children }) => {
         }
     };
 
+    const editNoteLogbook = async (noteId, description) => {
+        console.log("Editing logbook note ID:", noteId);
+        try {
+            const response = await fetch(`${API_URL}/notesLogbook/${noteId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ description }),
+            });
+
+            if (!response.ok) throw new Error("Failed to edit logbook note");
+            const data = await response.json();
+
+            // Refresh notes after editing
+            await fetchAllNoteLogbooks();
+
+            return { success: true, data };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
     return (
         <NoteLogbookContext.Provider
             value={{
@@ -88,6 +112,7 @@ export const NoteLogbookProvider = ({ children }) => {
                 fetchNoteLogbooks,
                 fetchAllNoteLogbooks,
                 createNoteLogbook,
+                editNoteLogbook,
             }}
         >
             {children}
