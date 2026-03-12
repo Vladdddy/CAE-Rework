@@ -143,6 +143,59 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         return dayOfWeekLabels[currentDate.getDay()];
     });
 
+    // Calculate Easter Sunday using Computus algorithm
+    const calculateEaster = (year) => {
+        const a = year % 19;
+        const b = Math.floor(year / 100);
+        const c = year % 100;
+        const d = Math.floor(b / 4);
+        const e = b % 4;
+        const f = Math.floor((b + 8) / 25);
+        const g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30;
+        const i = Math.floor(c / 4);
+        const k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7;
+        const m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31);
+        const day = ((h + l - 7 * m + 114) % 31) + 1;
+        return { month, day };
+    };
+
+    const isHoliday = (day) => {
+        const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
+        const month = currentDate.getMonth() + 1;
+        const dayOfMonth = currentDate.getDate();
+        const year = date.getFullYear();
+
+        // Calculate Easter for the current year
+        const easter = calculateEaster(year);
+
+        // Calculate Easter Monday (day after Easter)
+        const easterDate = new Date(year, easter.month - 1, easter.day);
+        const easterMonday = new Date(easterDate);
+        easterMonday.setDate(easterDate.getDate() + 1);
+
+        const holidays = [
+            { month: 1, day: 1 }, // New Year's Day (Capodanno)
+            { month: 1, day: 6 }, // Epiphany (Epifania)
+            { month: easter.month, day: easter.day }, // Easter Sunday (Pasqua)
+            { month: easterMonday.getMonth() + 1, day: easterMonday.getDate() }, // Easter Monday (Pasquetta)
+            { month: 4, day: 25 }, // Liberation Day (Festa della Liberazione)
+            { month: 5, day: 1 }, // Labor Day (Festa del Lavoro)
+            { month: 6, day: 2 }, // Republic Day (Festa della Repubblica)
+            { month: 8, day: 15 }, // Assumption of Mary (Ferragosto)
+            { month: 11, day: 1 }, // All Saints' Day (Ognissanti)
+            { month: 12, day: 8 }, // Immaculate Conception (Immacolata Concezione)
+            { month: 12, day: 25 }, // Christmas Day (Natale)
+            { month: 12, day: 26 }, // Saint Stephen's Day (Santo Stefano)
+        ];
+
+        return holidays.some(
+            (holiday) => holiday.month === month && holiday.day === dayOfMonth,
+        );
+    };
+
     // Check if today is in the current displayed month
     const today = new Date();
     const isCurrentMonth =
@@ -540,13 +593,14 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                         {dayOfWeek.map((day, index) => {
                             const isWeekend =
                                 day === "Sabato" || day === "Domenica";
+                            const isHolidayDay = isHoliday(index + 1);
                             return (
                                 <div
                                     key={`dow-${index}`}
                                     className="min-w-[8rem] w-[8rem]"
                                 >
                                     <p
-                                        className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                        className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
                                         {day}
                                     </p>
@@ -570,6 +624,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                             const isWeekend =
                                 dayOfWeek[index] === "Sabato" ||
                                 dayOfWeek[index] === "Domenica";
+                            const isHolidayDay = isHoliday(day);
                             return (
                                 <div
                                     key={`day-${index}`}
@@ -581,7 +636,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                     className="min-w-[8rem] w-[8rem]"
                                 >
                                     <p
-                                        className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                                        className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
                                         {day}
                                     </p>
@@ -677,13 +732,14 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                         const isWeekend =
                                             dayOfWeek[index] === "Sabato" ||
                                             dayOfWeek[index] === "Domenica";
+                                        const isHolidayDay = isHoliday(day);
                                         return (
                                             <div
                                                 key={`user-${userIndex}-day-${index}`}
                                                 className="min-w-[8rem] w-[8rem]"
                                             >
                                                 <div
-                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
+                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
                                                 >
                                                     <div className="relative ">
                                                         <select

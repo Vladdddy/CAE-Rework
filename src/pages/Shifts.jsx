@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useCallback } from "react";
 import { UserContext } from "../components/data/provider/userAPI/userContext";
 import Sidebar from "../components/layout/Sidebar.jsx";
 import Topbar from "../components/layout/Topbar.jsx";
@@ -29,11 +29,14 @@ function Shifts() {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
 
-    const handleChangesDetected = (hasChanges, postData, putData) => {
-        setPostChanges(postData);
-        setPutChanges(putData);
-        setIsModalOpen(hasChanges);
-    };
+    const handleChangesDetected = useCallback(
+        (hasChanges, postData, putData) => {
+            setPostChanges(postData);
+            setPutChanges(putData);
+            setIsModalOpen(hasChanges);
+        },
+        [],
+    );
 
     const handlePatternApply = (newPostChanges, newPutChanges) => {
         // Use window function to apply pattern changes to ShiftsTableVariant
