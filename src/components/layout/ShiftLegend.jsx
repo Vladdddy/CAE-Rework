@@ -136,7 +136,7 @@ function ShiftLegend() {
                             <p
                                 className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg ${GetColorForShift(shift)}`}
                             >
-                                {shift === "CG" ? "C" : shift}
+                                {shift === "CG" ? "CD" : shift}
                             </p>
                             <p className="text-[var(--black)] text-sm">
                                 {meaning}

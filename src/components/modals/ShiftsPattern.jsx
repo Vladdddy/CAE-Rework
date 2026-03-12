@@ -777,7 +777,7 @@ function ShiftsPattern({ onClose, onPatternApply }) {
                                                         value={value}
                                                     >
                                                         {value === "CG"
-                                                            ? "C"
+                                                            ? "CD"
                                                             : value}
                                                     </option>
                                                 ))}

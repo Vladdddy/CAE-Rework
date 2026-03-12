@@ -857,7 +857,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                                                     >
                                                                         {value ===
                                                                         "CG"
-                                                                            ? "C"
+                                                                            ? "CD"
                                                                             : value}
                                                                     </option>
                                                                 ),
