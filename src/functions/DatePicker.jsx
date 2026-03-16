@@ -89,7 +89,7 @@ export default function DatePickerComponent({
             className={`flex items-center justify-between ${
                 isCalendar
                     ? "w-full"
-                    : "bg-[var(--bento-bg)] border border-[var(--light-primary)] rounded-md"
+                    : "bg-[var(--bento-bg)] border border-[var(--light-primary)] rounded-md min-w-80"
             }`}
         >
             <div
@@ -119,8 +119,8 @@ export default function DatePickerComponent({
                     ref={datePickerRef}
                     selected={startDate}
                     onChange={(date) => setStartDate(date)}
-                    showMonthYearPicker
-                    dateFormat="MM/yyyy"
+                    showMonthYearPicker={isCalendar}
+                    dateFormat={isCalendar ? "MM/yyyy" : "dd/MM/yyyy"}
                     className="hidden"
                 />
             </div>
