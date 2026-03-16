@@ -38,7 +38,7 @@ function SimulatorModal({
     };
 
     const handleSave = async () => {
-        if (!name || !startHour || !endHour || assignedTo.length === 0) {
+        if (!name || !startHour || !endHour) {
             setEmptyError(true);
             return;
         }
@@ -76,8 +76,7 @@ function SimulatorModal({
         const finalName = name || simulatorInfo;
         const finalStartHour = startHour || toTimeInputValue(startTime);
         const finalEndHour = endHour || toTimeInputValue(endTime);
-        const finalAssignedTo =
-            assignedTo.length > 0 ? assignedTo.join(", ") : assignee || "";
+        const finalAssignedTo = assignedTo.join(", ");
 
         console.log("Editing Simulator with data:", {
             name: finalName,
@@ -86,12 +85,7 @@ function SimulatorModal({
             assignedTo: finalAssignedTo,
         });
 
-        if (
-            !finalName ||
-            !finalStartHour ||
-            !finalEndHour ||
-            !finalAssignedTo
-        ) {
+        if (!finalName || !finalStartHour || !finalEndHour) {
             setEmptyError(true);
             return;
         }
@@ -244,13 +238,7 @@ function SimulatorModal({
                         <h3 className="text-sm text-[var(--gray)]">
                             Assegnatario/i
                         </h3>
-                        <div
-                            className={`grid grid-cols-3 gap-2 rounded-md p-2 ${
-                                emptyError
-                                    ? "border border-[var(--red)]"
-                                    : "border border-[var(--light-primary)]"
-                            }`}
-                        >
+                        <div className="grid grid-cols-3 gap-2 rounded-md p-2 border border-[var(--light-primary)]">
                             {users.map((user) => {
                                 return (
                                     <div
@@ -309,11 +297,6 @@ function SimulatorModal({
                                 );
                             })}
                         </div>
-                        {emptyError && (
-                            <p className="text-[var(--red)] text-sm mt-1">
-                                Seleziona almeno un assegnatario
-                            </p>
-                        )}
                         {existingSimulatorError && (
                             <p className="text-[var(--red)] text-sm mt-1">
                                 Questo simulatore è già stato impostato per
@@ -321,6 +304,12 @@ function SimulatorModal({
                             </p>
                         )}
                     </div>
+
+                    {emptyError && (
+                        <p className="text-[var(--red)] text-sm -mt-4">
+                            Compila simulatore, orario inizio e orario fine.
+                        </p>
+                    )}
 
                     <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
                         <button className="btn gray-btn" onClick={onClose}>
