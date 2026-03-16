@@ -9,6 +9,7 @@ import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks.js";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
+import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts.js";
 import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks.js";
 
@@ -60,6 +61,38 @@ function ModifyModal({
     const { updateTask, addTask } = useTasks();
     const { updateLogbook, addLogbook } = useLogbooks();
     const { users, currentUserId } = useUsers();
+    const { employeeShifts } = useEmployeeShifts();
+
+    // Filter users based on selected date and shift.
+    const filteredUsers = useMemo(() => {
+        const dayShifts = ["O", "OP", "D"];
+        const nightShifts = ["ON", "N", "OP"];
+
+        return users.filter((user) => {
+            const userShift = employeeShifts.find(
+                (shift) =>
+                    shift.EMPLOYEE_ID === user.ID &&
+                    shift.SELECTED_DATE &&
+                    shift.SELECTED_DATE.split("T")[0] === selectedDate,
+            );
+
+            if (!userShift) {
+                return false;
+            }
+
+            const shiftType = userShift.SHIFT_TYPE;
+
+            if (selectedRadio === "Diurno") {
+                return dayShifts.includes(shiftType);
+            }
+
+            if (selectedRadio === "Notturno") {
+                return nightShifts.includes(shiftType);
+            }
+
+            return true;
+        });
+    }, [users, employeeShifts, selectedDate, selectedRadio]);
 
     // Fetch notes when duplicating
     useEffect(() => {
@@ -794,7 +827,7 @@ function ModifyModal({
                             Assegnatario/i
                         </h3>
                         <div className="grid grid-cols-3 gap-2 border border-[var(--light-primary)] rounded-md p-2">
-                            {users.map((user) => (
+                            {filteredUsers.map((user) => (
                                 <div
                                     key={user.Username}
                                     onClick={() =>

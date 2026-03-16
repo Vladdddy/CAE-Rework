@@ -380,8 +380,6 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
     const troubleshootingDetails = [
         "Visual",
         "Computer",
-        "Avionic",
-        "Env",
         "Building",
         "Power Loss",
         "Motion",
@@ -391,6 +389,9 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
         "Sound",
         "Comms",
         "IOS",
+        "Cockpit Panels",
+        "Cockpit Structure",
+        "NSA Area",
         "Others",
     ];
 

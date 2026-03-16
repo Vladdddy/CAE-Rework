@@ -9,7 +9,11 @@ import Popup from "../modals/Popup.jsx";
 
 function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     const { users, loading } = useUsers();
-    const { shiftOrders, saveShiftOrders } = useShiftOrder();
+    const {
+        shiftOrders,
+        saveShiftOrders,
+        loading: shiftOrdersLoading,
+    } = useShiftOrder();
     const [orderedUsers, setOrderedUsers] = useState([]);
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -52,6 +56,11 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
 
     // Apply shift order from database
     useEffect(() => {
+        // Wait for shift orders to finish loading
+        if (shiftOrdersLoading) {
+            return;
+        }
+
         if (users.length === 0) {
             setOrderedUsers([]);
             return;
@@ -77,7 +86,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         });
 
         setOrderedUsers(sorted);
-    }, [users, shiftOrders]);
+    }, [users, shiftOrders, shiftOrdersLoading]);
 
     // Save changes to localStorage and notify parent
     useEffect(() => {

@@ -99,6 +99,22 @@ export const NoteProvider = ({ children }) => {
         }
     };
 
+    const deleteNote = async (noteId) => {
+        console.log("Deleting note ID:", noteId);
+        try {
+            const response = await fetch(`${API_URL}/notes/${noteId}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) throw new Error("Failed to delete note");
+
+            return { success: true };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
     return (
         <NoteContext.Provider
             value={{
@@ -109,6 +125,7 @@ export const NoteProvider = ({ children }) => {
                 fetchAllNotes,
                 createNote,
                 editNote,
+                deleteNote,
             }}
         >
             {children}

@@ -15,6 +15,7 @@ import DuplicateIcon from "../../assets/icons/duplicate.tsx";
 import FlagIcon from "../../assets/icons/flag.tsx";
 import UnflagIcon from "../../assets/icons/unflag.tsx";
 import EditIcon from "../../assets/icons/edit.tsx";
+import DeleteIcon from "../../assets/icons/delete.tsx";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -26,12 +27,13 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [editingNoteId, setEditingNoteId] = useState(null);
     const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
     const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
-    const { notes, fetchNotes, createNote, editNote } = useNotes();
+    const { notes, fetchNotes, createNote, editNote, deleteNote } = useNotes();
     const {
         noteLogbooks,
         fetchNoteLogbooks,
         createNoteLogbook,
         editNoteLogbook,
+        deleteNoteLogbook,
     } = useNoteLogbooks();
     const { users, currentUserId } = useUsers();
     const { currentUserRole } = useUsers();
@@ -474,6 +476,33 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         setEditingNoteId(null);
     };
 
+    const handleDeleteNote = async (note) => {
+        const isLogbook = taskInfo.ISLOGBOOK;
+
+        const result = isLogbook
+            ? await deleteNoteLogbook(note.ID)
+            : await deleteNote(note.ID);
+
+        if (result.success) {
+            if (editingNoteId === note.ID) {
+                setNoteDescription("");
+                setEditingNoteId(null);
+            }
+
+            if (isLogbook) {
+                await fetchNoteLogbooks(taskInfo.ID);
+            } else {
+                await fetchNotes(taskInfo.ID);
+            }
+
+            if (onSuccess) {
+                onSuccess(true, "Nota eliminata con successo");
+            }
+        } else if (onSuccess) {
+            onSuccess(false, "Errore nell'eliminazione della nota");
+        }
+    };
+
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm cursor-default flex items-center justify-center z-50"
@@ -858,14 +887,24 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                     currentUserId &&
                                                     note.TYPE !==
                                                         "automatico" && (
-                                                        <EditIcon
-                                                            className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
-                                                            onClick={() =>
-                                                                handleEditNote(
-                                                                    note,
-                                                                )
-                                                            }
-                                                        />
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <EditIcon
+                                                                className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
+                                                                onClick={() =>
+                                                                    handleEditNote(
+                                                                        note,
+                                                                    )
+                                                                }
+                                                            />
+                                                            <DeleteIcon
+                                                                className="w-6 text-[var(--red)] hover:text-[var(--gray)] cursor-pointer transition-all duration-200"
+                                                                onClick={() =>
+                                                                    handleDeleteNote(
+                                                                        note,
+                                                                    )
+                                                                }
+                                                            />
+                                                        </div>
                                                     )}
 
                                                 <h3 className="text-sm text-[var(--gray)] truncate w-20">
@@ -910,14 +949,24 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                     currentUserId &&
                                                     note.TYPE !==
                                                         "automatico" && (
-                                                        <EditIcon
-                                                            className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
-                                                            onClick={() =>
-                                                                handleEditNote(
-                                                                    note,
-                                                                )
-                                                            }
-                                                        />
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <EditIcon
+                                                                className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
+                                                                onClick={() =>
+                                                                    handleEditNote(
+                                                                        note,
+                                                                    )
+                                                                }
+                                                            />
+                                                            <DeleteIcon
+                                                                className="w-6 text-[var(--red)] hover:text-[var(--gray)] cursor-pointer transition-all duration-200"
+                                                                onClick={() =>
+                                                                    handleDeleteNote(
+                                                                        note,
+                                                                    )
+                                                                }
+                                                            />
+                                                        </div>
                                                     )}
 
                                                 <h3 className="text-sm text-[var(--gray)] truncate w-20">

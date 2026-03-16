@@ -103,6 +103,22 @@ export const NoteLogbookProvider = ({ children }) => {
         }
     };
 
+    const deleteNoteLogbook = async (noteId) => {
+        console.log("Deleting logbook note ID:", noteId);
+        try {
+            const response = await fetch(`${API_URL}/notesLogbook/${noteId}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) throw new Error("Failed to delete logbook note");
+
+            return { success: true };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
     return (
         <NoteLogbookContext.Provider
             value={{
@@ -113,6 +129,7 @@ export const NoteLogbookProvider = ({ children }) => {
                 fetchAllNoteLogbooks,
                 createNoteLogbook,
                 editNoteLogbook,
+                deleteNoteLogbook,
             }}
         >
             {children}
