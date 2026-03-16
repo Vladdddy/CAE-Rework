@@ -60,7 +60,9 @@ function Task({
                                 {date || "N/A"}
                             </p>
                             <p className="text-xs text-[var(--gray)]">•</p>
-                            <p className="text-xs text-[var(--gray)]">
+                            <p
+                                className={`text-xs ${status === "Completato" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"}`}
+                            >
                                 {status || "N/A"}
                             </p>
                         </div>
@@ -93,7 +95,9 @@ function Task({
                                 {date || "N/A"}
                             </p>
                             <p className="text-xs text-[var(--gray)]">•</p>
-                            <p className="text-xs text-[var(--gray)]">
+                            <p
+                                className={`text-xs ${status === "Completato" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"}`}
+                            >
                                 {status || "N/A"}
                             </p>
                         </div>
