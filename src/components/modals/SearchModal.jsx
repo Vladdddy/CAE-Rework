@@ -345,9 +345,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                                         className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                     >
                                         <option value="">...</option>
-                                        <option value="Non iniziato">
-                                            Non iniziato
-                                        </option>
+
                                         <option value="In corso">
                                             In corso
                                         </option>

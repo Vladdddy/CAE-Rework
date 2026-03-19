@@ -408,7 +408,7 @@ export const exportTasksToPDF = (
                             doc.setFont(undefined, "normal");
                             const simDetailsPrefix = `  -  End time: ${formatTime(sim.START_HOUR)}   Start time: ${formatTime(sim.END_HOUR)}   `;
                             const simDetailsAssigned = `Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
-                            doc.setTextColor(0, 102, 204);
+                            doc.setTextColor(0, 0, 0);
                             doc.text(
                                 simDetailsPrefix,
                                 margin + 10 + doc.getTextWidth(simName) + 5,

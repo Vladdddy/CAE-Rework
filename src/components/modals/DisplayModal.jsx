@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
@@ -8,6 +8,8 @@ import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
 import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
+import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
+import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
 import ModifyModal from "./ModifyModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
 import ConvertIcon from "../../assets/icons/convert.tsx";
@@ -25,9 +27,31 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [activeTab, setActiveTab] = useState("dettagli");
     const [noteDescription, setNoteDescription] = useState("");
     const [editingNoteId, setEditingNoteId] = useState(null);
+    const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
+    const [thumbSourceIndexByImageId, setThumbSourceIndexByImageId] = useState(
+        {},
+    );
     const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
     const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
     const { notes, fetchNotes, createNote, editNote, deleteNote } = useNotes();
+    const {
+        fetchTaskImages,
+        getTaskImages,
+        deleteTaskImage,
+        getAttachmentLabel,
+        getAttachmentPreviewUrl,
+        getAttachmentPreviewSources,
+        isImageFile,
+    } = useImageTasks();
+    const {
+        fetchLogbookImages,
+        getLogbookImages,
+        deleteLogbookImage,
+        getAttachmentLabel: getLogbookAttachmentLabel,
+        getAttachmentPreviewUrl: getLogbookAttachmentPreviewUrl,
+        getAttachmentPreviewSources: getLogbookAttachmentPreviewSources,
+        isImageFile: isLogbookImageFile,
+    } = useImageLogbooks();
     const {
         noteLogbooks,
         fetchNoteLogbooks,
@@ -37,6 +61,39 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     } = useNoteLogbooks();
     const { users, currentUserId } = useUsers();
     const { currentUserRole } = useUsers();
+    const attachmentImages = taskInfo.ISLOGBOOK
+        ? getLogbookImages(taskInfo.ID)
+        : getTaskImages(taskInfo.ID);
+
+    const getAttachmentLabelByType = (image) =>
+        taskInfo.ISLOGBOOK
+            ? getLogbookAttachmentLabel(image)
+            : getAttachmentLabel(image);
+
+    const getAttachmentPreviewUrlByType = (image) =>
+        taskInfo.ISLOGBOOK
+            ? getLogbookAttachmentPreviewUrl(image)
+            : getAttachmentPreviewUrl(image);
+
+    const getAttachmentPreviewSourcesByType = (image) =>
+        taskInfo.ISLOGBOOK
+            ? getLogbookAttachmentPreviewSources(image)
+            : getAttachmentPreviewSources(image);
+
+    const isImageFileByType = (image) =>
+        taskInfo.ISLOGBOOK ? isLogbookImageFile(image) : isImageFile(image);
+
+    const canManageAttachments =
+        currentUserRole === "Admin" || currentUserRole === "Shift Leader";
+
+    useEffect(() => {
+        if (taskInfo.ISLOGBOOK) {
+            fetchLogbookImages(taskInfo.ID);
+            return;
+        }
+
+        fetchTaskImages(taskInfo.ID);
+    }, [fetchLogbookImages, fetchTaskImages, taskInfo.ID, taskInfo.ISLOGBOOK]);
 
     const getUsernameById = (userId) => {
         const user = users.find((u) => u.ID === userId);
@@ -503,6 +560,120 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         }
     };
 
+    const handleDeleteAttachment = async (imageId) => {
+        const result = taskInfo.ISLOGBOOK
+            ? await deleteLogbookImage(imageId, taskInfo.ID)
+            : await deleteTaskImage(imageId, taskInfo.ID);
+
+        if (result.success) {
+            if (onSuccess) {
+                onSuccess(true, "Allegato eliminato con successo");
+            }
+            return;
+        }
+
+        if (onSuccess) {
+            onSuccess(false, "Errore nell'eliminazione dell'allegato");
+        }
+    };
+
+    const isPdfFile = (image) => {
+        const label =
+            getAttachmentLabelByType(image) ||
+            image?.FILE_NAME ||
+            image?.fileName ||
+            image?.PATH ||
+            image?.path;
+        return /\.pdf$/i.test(label || "");
+    };
+
+    const isDocumentFile = (image) => {
+        const label =
+            getAttachmentLabelByType(image) ||
+            image?.FILE_NAME ||
+            image?.fileName ||
+            image?.PATH ||
+            image?.path;
+        return /\.(doc|docx|xls|xlsx|ppt|pptx)$/i.test(label || "");
+    };
+
+    const isOpenableAttachmentSource = (src) => {
+        if (!src || typeof src !== "string") {
+            return false;
+        }
+
+        // Skip raw local file-system paths like /mnt/c/... or C:\\...
+        if (/^\/?mnt\//i.test(src) || /^[a-z]:[\\/]/i.test(src)) {
+            return false;
+        }
+
+        // Allow generated blob URLs and standard web URLs/paths.
+        return (
+            src.startsWith("blob:") ||
+            src.startsWith("http://") ||
+            src.startsWith("https://") ||
+            src.startsWith("/")
+        );
+    };
+
+    const openDocumentInNewTab = (image) => {
+        const sources = getAttachmentPreviewSourcesByType(image);
+
+        // Try to find the API endpoint URL (not the file system path)
+        const apiUrl = sources.find(
+            (src) =>
+                src.includes("/imageLogbook/") || src.includes("/imageTask/"),
+        );
+
+        if (apiUrl) {
+            window.open(apiUrl, "_blank");
+        } else {
+            const safeFallback = sources.find(isOpenableAttachmentSource);
+            if (safeFallback) {
+                window.open(safeFallback, "_blank");
+            }
+        }
+    };
+
+    const openPdfInNewTab = (image) => {
+        const sources = getAttachmentPreviewSourcesByType(image);
+
+        // Try to find the API endpoint URL (not the file system path)
+        const apiUrl = sources.find(
+            (src) =>
+                src.includes("/imageLogbook/") || src.includes("/imageTask/"),
+        );
+
+        if (apiUrl) {
+            window.open(apiUrl, "_blank");
+        } else {
+            const safeFallback = sources.find(isOpenableAttachmentSource);
+            if (safeFallback) {
+                window.open(safeFallback, "_blank");
+            }
+        }
+    };
+
+    const openImagePreview = (image, imageId) => {
+        if (!isImageFileByType(image)) {
+            return;
+        }
+
+        const sources = getAttachmentPreviewSourcesByType(image);
+        const initialIndex = thumbSourceIndexByImageId[imageId] ?? 0;
+        const src = sources[initialIndex] || sources[0];
+
+        if (!src) {
+            return;
+        }
+
+        setSelectedPreviewImage({
+            sources,
+            index: src === sources[initialIndex] ? initialIndex : 0,
+            label: getAttachmentLabelByType(image),
+        });
+    };
+
     return (
         <div
             className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm cursor-default flex items-center justify-center z-50"
@@ -669,9 +840,6 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             id=""
                                             className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                         >
-                                            <option value="Non iniziato">
-                                                Non iniziato
-                                            </option>
                                             <option value="In corso">
                                                 In corso
                                             </option>
@@ -767,18 +935,174 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Allegati
                                     </h3>
 
-                                    <h4 className="text-sm text-center text-[var(--gray)] italic">
-                                        Gli allegati sono in fase di sviluppo!
-                                    </h4>
+                                    {attachmentImages.length === 0 ? (
+                                        <h4 className="text-sm text-center text-[var(--gray)] italic">
+                                            Nessun allegato disponibile.
+                                        </h4>
+                                    ) : (
+                                        <div className="flex flex-col gap-2">
+                                            {attachmentImages.map((image) => {
+                                                const imageId =
+                                                    image.ID ?? image.id;
+                                                const previewSources =
+                                                    getAttachmentPreviewSourcesByType(
+                                                        image,
+                                                    );
+                                                const thumbState =
+                                                    thumbSourceIndexByImageId[
+                                                        imageId
+                                                    ];
+                                                const hasNoPreview =
+                                                    thumbState === -1;
+                                                const currentThumbIndex =
+                                                    thumbState ?? 0;
+                                                const previewUrl = hasNoPreview
+                                                    ? ""
+                                                    : previewSources[
+                                                          currentThumbIndex
+                                                      ] ||
+                                                      getAttachmentPreviewUrlByType(
+                                                          image,
+                                                      );
+                                                const isImage =
+                                                    isImageFileByType(image);
 
-                                    {/*<div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1 flex-wrap text-[var(--black)]">
-                                            <div className="flex gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2 hover:text-[var(--gray)] cursor-pointer transition-text duration-200">
-                                                <div className="w-6 h-6 bg-[var(--light-primary)] rounded-md"></div>
-                                                <p>2025-01-23.jpg</p>
-                                            </div>
+                                                return (
+                                                    <div
+                                                        key={imageId}
+                                                        className="flex items-center justify-between gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2"
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (
+                                                                    isPdfFile(
+                                                                        image,
+                                                                    )
+                                                                ) {
+                                                                    openPdfInNewTab(
+                                                                        image,
+                                                                    );
+                                                                } else if (
+                                                                    isDocumentFile(
+                                                                        image,
+                                                                    )
+                                                                ) {
+                                                                    openDocumentInNewTab(
+                                                                        image,
+                                                                    );
+                                                                } else {
+                                                                    openImagePreview(
+                                                                        image,
+                                                                        imageId,
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className={`min-w-0 flex items-center gap-3 text-left ${
+                                                                (isImage ||
+                                                                    isPdfFile(
+                                                                        image,
+                                                                    ) ||
+                                                                    isDocumentFile(
+                                                                        image,
+                                                                    )) &&
+                                                                previewUrl
+                                                                    ? "cursor-pointer"
+                                                                    : "cursor-default"
+                                                            }`}
+                                                        >
+                                                            {isImage &&
+                                                            previewUrl ? (
+                                                                <img
+                                                                    src={
+                                                                        previewUrl
+                                                                    }
+                                                                    onError={() => {
+                                                                        if (
+                                                                            currentThumbIndex <
+                                                                            previewSources.length -
+                                                                                1
+                                                                        ) {
+                                                                            setThumbSourceIndexByImageId(
+                                                                                (
+                                                                                    prev,
+                                                                                ) => ({
+                                                                                    ...prev,
+                                                                                    [imageId]:
+                                                                                        currentThumbIndex +
+                                                                                        1,
+                                                                                }),
+                                                                            );
+                                                                            return;
+                                                                        }
+
+                                                                        setThumbSourceIndexByImageId(
+                                                                            (
+                                                                                prev,
+                                                                            ) => ({
+                                                                                ...prev,
+                                                                                [imageId]:
+                                                                                    -1,
+                                                                            }),
+                                                                        );
+                                                                    }}
+                                                                    alt={getAttachmentLabelByType(
+                                                                        image,
+                                                                    )}
+                                                                    className="w-14 h-14 rounded-md object-cover border border-[var(--light-primary)] bg-[var(--light-primary)]"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-14 h-14 rounded-md border border-[var(--light-primary)] bg-[var(--light-primary)] flex items-center justify-center text-xs text-[var(--gray)]">
+                                                                    File
+                                                                </div>
+                                                            )}
+
+                                                            <div className="min-w-0 hover:text-[var(--primary)] transition-all duration-200">
+                                                                <p className="text-sm text-[var(--black)] truncate">
+                                                                    {getAttachmentLabelByType(
+                                                                        image,
+                                                                    )}
+                                                                </p>
+                                                                {(isImage ||
+                                                                    isPdfFile(
+                                                                        image,
+                                                                    ) ||
+                                                                    isDocumentFile(
+                                                                        image,
+                                                                    )) &&
+                                                                    previewUrl && (
+                                                                        <p className="text-xs text-[var(--primary)] truncate">
+                                                                            {isPdfFile(
+                                                                                image,
+                                                                            )
+                                                                                ? "Clicca per aprire PDF"
+                                                                                : isDocumentFile(
+                                                                                        image,
+                                                                                    )
+                                                                                  ? "Clicca per aprire documento"
+                                                                                  : "Clicca per aprire anteprima"}
+                                                                        </p>
+                                                                    )}
+                                                            </div>
+                                                        </button>
+
+                                                        {canManageAttachments && (
+                                                            <button
+                                                                className="btn delete !px-3 !py-2"
+                                                                onClick={() =>
+                                                                    handleDeleteAttachment(
+                                                                        imageId,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Elimina
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
-                                    </div>*/}
+                                    )}
                                 </div>
                             </div>
 
@@ -1061,6 +1385,56 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     isConverting={isConverting}
                     isDuplicating={isDuplicating}
                 />
+            )}
+
+            {selectedPreviewImage && (
+                <div
+                    className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
+                    onClick={() => setSelectedPreviewImage(null)}
+                >
+                    <div
+                        className="max-w-4xl w-full max-h-[90vh] bg-[var(--bento-bg)] rounded-xl border border-[var(--light-primary)] p-3"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-2 gap-2">
+                            <p className="text-md text-[var(--black)] truncate">
+                                {selectedPreviewImage.label}
+                            </p>
+                            <button
+                                className="text-[var(--gray)] hover:text-[var(--black)]"
+                                onClick={() => setSelectedPreviewImage(null)}
+                            >
+                                <CloseIcon className="w-6" />
+                            </button>
+                        </div>
+
+                        <img
+                            src={
+                                selectedPreviewImage.sources[
+                                    selectedPreviewImage.index
+                                ]
+                            }
+                            onError={() => {
+                                setSelectedPreviewImage((prev) => {
+                                    if (!prev) {
+                                        return prev;
+                                    }
+
+                                    if (prev.index >= prev.sources.length - 1) {
+                                        return prev;
+                                    }
+
+                                    return {
+                                        ...prev,
+                                        index: prev.index + 1,
+                                    };
+                                });
+                            }}
+                            alt={selectedPreviewImage.label}
+                            className="w-full max-h-[80vh] object-contain rounded-md bg-[var(--white)]"
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );

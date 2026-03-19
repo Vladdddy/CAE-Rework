@@ -20,6 +20,7 @@
     --bento-bg: #fafafa;
     --red: #ff4646;
     --green: #32de84;
+    --ambra: #ffc400;
     --dark-green: #005f34;
     --orange: #ff9f43;
     --orange-light: #ffebcb;
@@ -45,6 +46,7 @@ body.dark-mode {
     --pure-white: hsl(0, 0%, 10%);
     --bento-bg: hsl(0, 0%, 9%);
     --red: hsl(0, 100%, 71%);
+    --ambra: hsl(46, 100%, 50%);
     --green: hsl(145, 63%, 49%);
     --dark-green: hsl(145, 63%, 30%);
     --orange: hsl(31, 100%, 65%);

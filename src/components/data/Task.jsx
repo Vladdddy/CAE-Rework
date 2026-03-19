@@ -61,7 +61,7 @@ function Task({
                             </p>
                             <p className="text-xs text-[var(--gray)]">•</p>
                             <p
-                                className={`text-xs ${status === "Completato" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"}`}
+                                className={`text-xs ${status === "Completato" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"} ${status === "Non completato" ? "text-[var(--red)] font-bold" : "text-[var(--gray)]"} ${status === "In corso" ? "text-[var(--ambra)] font-bold" : "text-[var(--gray)]"}`}
                             >
                                 {status || "N/A"}
                             </p>
@@ -96,7 +96,7 @@ function Task({
                             </p>
                             <p className="text-xs text-[var(--gray)]">•</p>
                             <p
-                                className={`text-xs ${status === "Completato" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"}`}
+                                className={`text-xs ${status === "Completato" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"} ${status === "Non completato" ? "text-[var(--red)] font-bold" : "text-[var(--gray)]"} ${status === "In corso" ? "text-[var(--ambra)] font-bold" : "text-[var(--gray)]"}`}
                             >
                                 {status || "N/A"}
                             </p>

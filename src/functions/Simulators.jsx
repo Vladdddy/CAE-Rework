@@ -281,6 +281,21 @@ export function GetTableSimulators({
         setSelectedSimulator(null);
     };
 
+    const toTimeInputValue = (dbTime) => {
+        if (!dbTime) return "";
+        let timePart = dbTime;
+
+        // Normalize date-time strings and return HH:MM
+        if (timePart.includes("T")) timePart = timePart.split("T")[1];
+        if (timePart.includes(" ")) timePart = timePart.split(" ")[1];
+        timePart = timePart.split(".")[0];
+        if (timePart.split(":").length > 2)
+            timePart = timePart.split(":").slice(0, 2).join(":");
+        if (timePart.length > 5) timePart = timePart.slice(0, 5);
+
+        return timePart;
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
 
@@ -345,116 +360,158 @@ export function GetTableSimulators({
                         : ""
                 } `}
             >
-                {simulators.map((simulator, index) => (
-                    <div key={index} className={"flex flex-col gap-2"}>
-                        <div className="sticky top-0 z-10 flex items-center gap-1 pb-2">
-                            {/* Simulatore */}
-                            {(() => {
-                                if (type !== "table") return null;
+                {simulators.map((simulator, index) => {
+                    const matchingSimulator = findMatchingSimulator(simulator);
+                    const isToday = (() => {
+                        if (!date) return false;
+                        const today = new Date();
+                        return (
+                            date.getFullYear() === today.getFullYear() &&
+                            date.getMonth() === today.getMonth() &&
+                            date.getDate() === today.getDate()
+                        );
+                    })();
+                    const shouldShowSimulatorInfo =
+                        Boolean(matchingSimulator) &&
+                        time === "Notturno" &&
+                        isToday;
 
-                                // Only show icon if 'date' is today
-                                const isToday = (() => {
-                                    if (!date) return false;
-                                    const today = new Date();
-                                    return (
-                                        date.getFullYear() ===
-                                            today.getFullYear() &&
-                                        date.getMonth() === today.getMonth() &&
-                                        date.getDate() === today.getDate()
-                                    );
-                                })();
-                                if (!isToday) return null;
+                    return (
+                        <div key={index} className={"flex flex-col gap-2"}>
+                            <div className="sticky top-0 z-10 flex items-start gap-1 pb-2">
+                                {/* Simulatore */}
+                                {(() => {
+                                    if (type !== "table") return null;
+                                    if (!isToday) return null;
+                                    return shouldShowSimulatorInfo ? (
+                                        <div
+                                            onClick={() =>
+                                                handleSimulatorClick(
+                                                    matchingSimulator,
+                                                )
+                                            }
+                                            className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
+                                        >
+                                            <ClockIcon className="w-4 text-[#ffffff]" />
+                                        </div>
+                                    ) : null;
+                                })()}
+                                <div className="text-center bg-[var(--light-primary)] rounded-md px-2 flex-1">
+                                    <h1 className="text-[var(--primary)]">
+                                        {simulator}
+                                    </h1>
 
-                                const matchingSimulator =
-                                    findMatchingSimulator(simulator);
-                                return matchingSimulator
-                                    ? time === "Notturno" && (
-                                          <div
-                                              onClick={() =>
-                                                  handleSimulatorClick(
-                                                      matchingSimulator,
-                                                  )
+                                    {shouldShowSimulatorInfo && (
+                                        <div className="text-[var(--black)] text-xs mt-1 flex-1 flex flex-row gap-2 justify-center items-center pb-1">
+                                            <div className="flex flex-col items-start gap-1">
+                                                <p className="text-[var(--gray)]">
+                                                    Fine
+                                                </p>
+                                                <p>
+                                                    {toTimeInputValue(
+                                                        matchingSimulator.START_HOUR,
+                                                    )}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex flex-col items-start gap-1">
+                                                <p className="text-[var(--gray)]">
+                                                    Inizio
+                                                </p>
+                                                <p>
+                                                    {toTimeInputValue(
+                                                        matchingSimulator.END_HOUR,
+                                                    )}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex flex-col items-start gap-1">
+                                                <p className="text-[var(--gray)]">
+                                                    Assegnatari
+                                                </p>
+                                                <p className="truncate max-w-[100px]">
+                                                    {matchingSimulator.ASSIGNED_TO ||
+                                                        "N/A"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {!taskList || taskList.length === 0
+                                ? ""
+                                : (() => {
+                                      const filteredTasks = taskList.filter(
+                                          (task) => {
+                                              const matchesTime =
+                                                  task?.TIME === time;
+                                              const matchesSimulator =
+                                                  task?.SIMULATOR === simulator;
+
+                                              // If no date provided, only filter by time and simulator
+                                              if (!date) {
+                                                  return (
+                                                      matchesTime &&
+                                                      matchesSimulator
+                                                  );
                                               }
-                                              className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
-                                          >
-                                              <ClockIcon className="w-4 text-[#ffffff]" />
-                                          </div>
-                                      )
-                                    : null;
-                            })()}
-                            <p className="text-center text-[var(--primary)] bg-[var(--light-primary)] rounded-md px-2 flex-1">
-                                {simulator}
-                            </p>
-                        </div>
-                        {!taskList || taskList.length === 0
-                            ? ""
-                            : (() => {
-                                  const filteredTasks = taskList.filter(
-                                      (task) => {
-                                          const matchesTime =
-                                              task?.TIME === time;
-                                          const matchesSimulator =
-                                              task?.SIMULATOR === simulator;
 
-                                          // If no date provided, only filter by time and simulator
-                                          if (!date) {
+                                              const month = String(
+                                                  date.getMonth() + 1,
+                                              ).padStart(2, "0");
+                                              const day = String(
+                                                  date.getDate(),
+                                              ).padStart(2, "0");
+                                              const formattedDate = `${date.getFullYear()}-${month}-${day}T00:00:00.000Z`;
+
+                                              const matchesDate =
+                                                  task?.DATE === formattedDate;
+
                                               return (
                                                   matchesTime &&
-                                                  matchesSimulator
+                                                  matchesSimulator &&
+                                                  matchesDate
                                               );
-                                          }
+                                          },
+                                      );
 
-                                          const month = String(
-                                              date.getMonth() + 1,
-                                          ).padStart(2, "0");
-                                          const day = String(
-                                              date.getDate(),
-                                          ).padStart(2, "0");
-                                          const formattedDate = `${date.getFullYear()}-${month}-${day}T00:00:00.000Z`;
+                                      // Check if simulator has hours set for this date
+                                      const hasSimulatorHours =
+                                          matchingSimulator !== null &&
+                                          matchingSimulator !== undefined;
 
-                                          const matchesDate =
-                                              task?.DATE === formattedDate;
-
-                                          return (
-                                              matchesTime &&
-                                              matchesSimulator &&
-                                              matchesDate
-                                          );
-                                      },
-                                  );
-
-                                  // Check if simulator has hours set for this date
-                                  const matchingSimulator =
-                                      findMatchingSimulator(simulator);
-                                  const hasSimulatorHours =
-                                      matchingSimulator !== null &&
-                                      matchingSimulator !== undefined;
-
-                                  // Show if there are tasks OR if simulator has hours set
-                                  return filteredTasks.length > 0 ||
-                                      hasSimulatorHours ? (
-                                      <>
-                                          {filteredTasks.map((task) => (
-                                              <Task
-                                                  key={task.id}
-                                                  title={task?.TITLE}
-                                                  date={formatDate(task?.DATE)}
-                                                  assignedTo={task?.ASSIGNED_TO}
-                                                  status={task?.STATUS}
-                                                  type="table"
-                                                  wholeTask={task}
-                                                  onDeleteSuccess={
-                                                      onDeleteSuccess
-                                                  }
-                                                  isLogbook={task.ISLOGBOOK}
-                                                  isFlagged={task?.IS_FLAGGED}
-                                              />
-                                          ))}
-                                      </>
-                                  ) : null;
-                              })()}
-                    </div>
-                ))}
+                                      // Show if there are tasks OR if simulator has hours set
+                                      return filteredTasks.length > 0 ||
+                                          hasSimulatorHours ? (
+                                          <>
+                                              {filteredTasks.map((task) => (
+                                                  <Task
+                                                      key={task.id}
+                                                      title={task?.TITLE}
+                                                      date={formatDate(
+                                                          task?.DATE,
+                                                      )}
+                                                      assignedTo={
+                                                          task?.ASSIGNED_TO
+                                                      }
+                                                      status={task?.STATUS}
+                                                      type="table"
+                                                      wholeTask={task}
+                                                      onDeleteSuccess={
+                                                          onDeleteSuccess
+                                                      }
+                                                      isLogbook={task.ISLOGBOOK}
+                                                      isFlagged={
+                                                          task?.IS_FLAGGED
+                                                      }
+                                                  />
+                                              ))}
+                                          </>
+                                      ) : null;
+                                  })()}
+                        </div>
+                    );
+                })}
 
                 {isSimulatorModalOpen && selectedSimulator && (
                     <SimulatorModal

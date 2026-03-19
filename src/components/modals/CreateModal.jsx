@@ -11,6 +11,8 @@ import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks.js";
 import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts.js";
 import { CheckExistingDays } from "../../functions/CheckExistingDays.jsx";
+import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
+import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
 
 function CreateModal({ onClose, onSuccess, type, initialDate }) {
     // Function to get the adjusted date based on current time
@@ -46,6 +48,8 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
     const { addLogbook, fetchLogbooks } = useLogbooks();
     const { users, currentUsername } = useUsers();
     const { employeeShifts } = useEmployeeShifts();
+    const { uploadTaskImages } = useImageTasks();
+    const { uploadLogbookImages } = useImageLogbooks();
     const [selectedCategory, setSelectedCategory] = useState("Routine Task");
     const [selectedStatus, setSelectedStatus] = useState("Da definire");
     const [selectedRadio, setSelectedRadio] = useState(getDefaultShift());
@@ -77,6 +81,11 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
     const [selectedTo, setSelectedTo] = useState(
         new Date().toISOString().split("T")[0],
     );
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [attachmentError, setAttachmentError] = useState("");
+
+    const isAttachmentUploadEnabled =
+        type === "logbook" || (type === "task" && activeTab === "Ordinaria");
 
     // Filter users based on selected date and shift (only for ordinary tasks, not logbook entries or recurring tasks)
     const filteredUsers = useMemo(() => {
@@ -175,6 +184,44 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
         }
     };
 
+    const handleFilesChange = (event) => {
+        const files = Array.from(event.target.files || []);
+        setSelectedFiles(files);
+        setAttachmentError("");
+    };
+
+    const uploadAttachmentsForTask = async (taskId) => {
+        if (!selectedFiles.length) {
+            return { success: true };
+        }
+
+        const result = await uploadTaskImages(taskId, selectedFiles);
+
+        if (!result.success) {
+            setAttachmentError(
+                "La task e' stata creata, ma il caricamento degli allegati non e' riuscito.",
+            );
+        }
+
+        return result;
+    };
+
+    const uploadAttachmentsForLogbook = async (logbookId) => {
+        if (!selectedFiles.length) {
+            return { success: true };
+        }
+
+        const result = await uploadLogbookImages(logbookId, selectedFiles);
+
+        if (!result.success) {
+            setAttachmentError(
+                "L'entry e' stata creata, ma il caricamento degli allegati non e' riuscito.",
+            );
+        }
+
+        return result;
+    };
+
     const handleSubmit = async () => {
         if (!title.trim()) {
             setTitleError(true);
@@ -211,6 +258,19 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             console.log("New Entry:", newEntry);
 
             const result = await addLogbook(newEntry);
+            let attachmentsUploadedSuccessfully = true;
+
+            if (result.success) {
+                const createdLogbookId =
+                    result.data?.id ?? result.data?.ID ?? newEntry.id;
+
+                if (createdLogbookId && selectedFiles.length > 0) {
+                    const uploadResult =
+                        await uploadAttachmentsForLogbook(createdLogbookId);
+                    attachmentsUploadedSuccessfully = uploadResult.success;
+                }
+            }
+
             onClose();
             if (onSuccess) {
                 await fetchLogbooks();
@@ -218,7 +278,10 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
                 onSuccess(
                     result.success,
                     result.success
-                        ? "Hai creato l'entry con successo"
+                        ? selectedFiles.length > 0 &&
+                          !attachmentsUploadedSuccessfully
+                            ? "Entry creata, ma uno o piu' allegati non sono stati caricati"
+                            : "Hai creato l'entry con successo"
                         : "Errore durante la creazione dell'entry",
                 );
             }
@@ -246,12 +309,27 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             console.log("New Task:", newTask);
 
             const result = await addTask(newTask);
+            let attachmentsUploadedSuccessfully = true;
+
+            if (result.success) {
+                const createdTaskId = result.data?.id ?? result.data?.ID;
+
+                if (createdTaskId && selectedFiles.length > 0) {
+                    const uploadResult =
+                        await uploadAttachmentsForTask(createdTaskId);
+                    attachmentsUploadedSuccessfully = uploadResult.success;
+                }
+            }
+
             onClose();
             if (onSuccess) {
                 onSuccess(
                     result.success,
                     result.success
-                        ? "Hai creato la task con successo"
+                        ? selectedFiles.length > 0 &&
+                          !attachmentsUploadedSuccessfully
+                            ? "Task creata, ma uno o piu' allegati non sono stati caricati"
+                            : "Hai creato la task con successo"
                         : "Errore durante la creazione della task",
                 );
             }
@@ -499,19 +577,47 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
                             ></textarea>
                         </div>
 
-                        {/*<div className="flex flex-col gap-1">
-                        <h3 className="text-sm text-[var(--gray)]">Allegati</h3>
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-sm text-[var(--gray)]">
+                                Allegati
+                            </h3>
 
-                        
-                        <input
-                            type="file"
-                            name=""
-                            id=""
-                            multiple
-                            className="border border-[var(--light-primary)] rounded-md p-2 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] hover:border-[var(--separator)] transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-md file:bg-[var(--primary)] file:text-[#ffffff] file:cursor-pointer hover:file:bg-[var(--primary-hover)]"
-                        />
-                        
-                    </div>*/}
+                            <input
+                                type="file"
+                                name="attachments"
+                                id="attachments"
+                                multiple
+                                onChange={handleFilesChange}
+                                disabled={!isAttachmentUploadEnabled}
+                                className="border border-[var(--light-primary)] rounded-md p-2 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] hover:border-[var(--separator)] transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-md file:bg-[var(--primary)] file:text-[#ffffff] file:cursor-pointer hover:file:bg-[var(--primary-hover)]"
+                            />
+
+                            {!isAttachmentUploadEnabled && (
+                                <p className="text-sm text-[var(--gray)] italic">
+                                    Gli allegati sono disponibili solo per task
+                                    ordinarie.
+                                </p>
+                            )}
+
+                            {selectedFiles.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {selectedFiles.map((file) => (
+                                        <div
+                                            key={`${file.name}-${file.lastModified}`}
+                                            className="px-3 py-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md text-sm text-[var(--black)]"
+                                        >
+                                            {file.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {attachmentError && (
+                                <p className="text-[var(--red)] text-sm mt-1">
+                                    {attachmentError}
+                                </p>
+                            )}
+                        </div>
 
                         <div className="flex flex-col gap-1 w-1/2">
                             <h3 className="text-sm text-[var(--gray)]">
@@ -536,9 +642,6 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
                                     </option>
                                     <option value="Non completato">
                                         Non completato
-                                    </option>
-                                    <option value="Non iniziato">
-                                        Non iniziato
                                     </option>
                                 </select>
                                 <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />

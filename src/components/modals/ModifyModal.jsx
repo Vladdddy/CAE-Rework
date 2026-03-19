@@ -12,6 +12,8 @@ import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts.js";
 import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks.js";
+import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
+import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
 
 function ModifyModal({
     onClose,
@@ -49,6 +51,8 @@ function ModifyModal({
     );
     const [titleError, setTitleError] = useState(false);
     const [importNotes, setImportNotes] = useState("No");
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [attachmentError, setAttachmentError] = useState("");
     const { createNote, fetchNotes, notes } = useNotes();
     const { createNoteLogbook, fetchNoteLogbooks, noteLogbooks } =
         useNoteLogbooks();
@@ -60,8 +64,12 @@ function ModifyModal({
     );
     const { updateTask, addTask } = useTasks();
     const { updateLogbook, addLogbook } = useLogbooks();
+    const { uploadTaskImages } = useImageTasks();
+    const { uploadLogbookImages } = useImageLogbooks();
     const { users, currentUserId } = useUsers();
     const { employeeShifts } = useEmployeeShifts();
+
+    const isAttachmentUploadEnabled = true;
 
     // Filter users based on selected date and shift.
     const filteredUsers = useMemo(() => {
@@ -127,7 +135,8 @@ function ModifyModal({
             selectedSubCategory !== (task.SUBCATEGORY || "PM") ||
             selectedDetail !== (task.EXTRADETAIL || "VISUAL") ||
             selectedDate !== originalDate ||
-            selectedSimulator !== (task.SIMULATOR || simulators[0])
+            selectedSimulator !== (task.SIMULATOR || simulators[0]) ||
+            selectedFiles.length > 0
         );
     }, [
         selectedCategory,
@@ -140,6 +149,7 @@ function ModifyModal({
         selectedDetail,
         selectedDate,
         selectedSimulator,
+        selectedFiles.length,
         task,
         simulators,
     ]);
@@ -154,6 +164,32 @@ function ModifyModal({
                 ? prev.filter((item) => item !== name)
                 : [...prev, name],
         );
+    };
+
+    const handleFilesChange = (event) => {
+        const files = Array.from(event.target.files || []);
+        setSelectedFiles(files);
+        setAttachmentError("");
+    };
+
+    const uploadAttachments = async (entityId, isLogbookTarget) => {
+        if (!selectedFiles.length) {
+            return { success: true };
+        }
+
+        const result = isLogbookTarget
+            ? await uploadLogbookImages(entityId, selectedFiles)
+            : await uploadTaskImages(entityId, selectedFiles);
+
+        if (!result.success) {
+            setAttachmentError(
+                isLogbookTarget
+                    ? "L'entry e' stata salvata, ma il caricamento degli allegati non e' riuscito."
+                    : "La task e' stata salvata, ma il caricamento degli allegati non e' riuscito.",
+            );
+        }
+
+        return result;
     };
 
     const generateChangeMessage = () => {
@@ -263,6 +299,7 @@ function ModifyModal({
 
     const handleModify = async () => {
         console.log(`Modifying task with ID: ${task.ID}`);
+        setAttachmentError("");
 
         const isLogbook = task.ISLOGBOOK;
 
@@ -294,10 +331,23 @@ function ModifyModal({
                 : await addTask(modifiedTask);
 
             if (createResult.success) {
+                const createdEntityId =
+                    createResult.data?.id ??
+                    createResult.data?.ID ??
+                    createResult.data?.insertId;
+                let attachmentsUploadedSuccessfully = true;
+
+                if (createdEntityId && selectedFiles.length > 0) {
+                    const uploadResult = await uploadAttachments(
+                        createdEntityId,
+                        isLogbook,
+                    );
+                    attachmentsUploadedSuccessfully = uploadResult.success;
+                }
+
                 // Copy notes if user selected "Si"
                 if (importNotes === "Si") {
-                    const newTaskId =
-                        createResult.data?.id || createResult.data?.insertId;
+                    const newTaskId = createdEntityId;
 
                     if (newTaskId) {
                         // Get the appropriate notes array based on task type
@@ -336,7 +386,10 @@ function ModifyModal({
                     onSuccess(
                         createResult.success,
                         createResult.success
-                            ? `${isLogbook ? "Entry" : "Task"} "${title}" duplicata con successo`
+                            ? selectedFiles.length > 0 &&
+                              !attachmentsUploadedSuccessfully
+                                ? `${isLogbook ? "Entry" : "Task"} "${title}" duplicata, ma uno o piu' allegati non sono stati caricati`
+                                : `${isLogbook ? "Entry" : "Task"} "${title}" duplicata con successo`
                             : `Errore nella duplicazione ${isLogbook ? "dell'entry" : "della task"}`,
                     );
                 }
@@ -359,6 +412,20 @@ function ModifyModal({
             const createResult = await addTask(modifiedTask);
 
             if (createResult.success) {
+                const createdTaskId =
+                    createResult.data?.id ??
+                    createResult.data?.ID ??
+                    createResult.data?.insertId;
+                let attachmentsUploadedSuccessfully = true;
+
+                if (createdTaskId && selectedFiles.length > 0) {
+                    const uploadResult = await uploadAttachments(
+                        createdTaskId,
+                        false,
+                    );
+                    attachmentsUploadedSuccessfully = uploadResult.success;
+                }
+
                 // Delete the original logbook
                 //const deleteResult = await deleteLogbook(task.ID);
 
@@ -368,7 +435,10 @@ function ModifyModal({
                     onSuccess(
                         createResult.success,
                         createResult.success
-                            ? `Entry "${title}" convertita in Task con successo`
+                            ? selectedFiles.length > 0 &&
+                              !attachmentsUploadedSuccessfully
+                                ? `Entry "${title}" convertita in Task, ma uno o piu' allegati non sono stati caricati`
+                                : `Entry "${title}" convertita in Task con successo`
                             : "Errore durante la conversione in Task",
                     );
                 }
@@ -386,6 +456,8 @@ function ModifyModal({
         const result = isLogbook
             ? await updateLogbook(task.ID, modifiedTask)
             : await updateTask(task.ID, modifiedTask);
+
+        let attachmentsUploadedSuccessfully = true;
 
         if (result.success) {
             const changeMessage = generateChangeMessage();
@@ -406,6 +478,14 @@ function ModifyModal({
             if (changedTaskNote.success) {
                 setNoteDescription("");
             }
+
+            if (selectedFiles.length > 0) {
+                const uploadResult = await uploadAttachments(
+                    task.ID,
+                    isLogbook,
+                );
+                attachmentsUploadedSuccessfully = uploadResult.success;
+            }
         }
 
         console.log("Passing modified task:", modifiedTask);
@@ -416,7 +496,10 @@ function ModifyModal({
             onSuccess(
                 result.success,
                 result.success
-                    ? "Hai modificato la task con successo"
+                    ? selectedFiles.length > 0 &&
+                      !attachmentsUploadedSuccessfully
+                        ? `Hai modificato la ${isLogbook ? "entry" : "task"}, ma uno o piu' allegati non sono stati caricati`
+                        : `Hai modificato la ${isLogbook ? "entry" : "task"} con successo`
                     : "Errore durante la modifica della task",
             );
         }
@@ -546,6 +629,46 @@ function ModifyModal({
                         ></textarea>
                     </div>
 
+                    <div className="flex flex-col gap-1">
+                        <h3 className="text-sm text-[var(--gray)]">Allegati</h3>
+
+                        <input
+                            type="file"
+                            name="attachments"
+                            id="attachments"
+                            multiple
+                            onChange={handleFilesChange}
+                            disabled={!isAttachmentUploadEnabled}
+                            className="border border-[var(--light-primary)] rounded-md p-2 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] hover:border-[var(--separator)] transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-md file:bg-[var(--primary)] file:text-[#ffffff] file:cursor-pointer hover:file:bg-[var(--primary-hover)]"
+                        />
+
+                        {!isAttachmentUploadEnabled && (
+                            <p className="text-sm text-[var(--gray)] italic">
+                                Gli allegati sono disponibili solo per task
+                                ordinarie.
+                            </p>
+                        )}
+
+                        {selectedFiles.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {selectedFiles.map((file) => (
+                                    <div
+                                        key={`${file.name}-${file.lastModified}`}
+                                        className="px-3 py-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md text-sm text-[var(--black)]"
+                                    >
+                                        {file.name}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {attachmentError && (
+                            <p className="text-[var(--red)] text-sm mt-1">
+                                {attachmentError}
+                            </p>
+                        )}
+                    </div>
+
                     <div className="flex flex-col gap-1 w-1/2">
                         <h3 className="text-sm text-[var(--gray)]">Stato</h3>
                         <div className="relative ">
@@ -563,9 +686,6 @@ function ModifyModal({
                                 <option value="Completato">Completato</option>
                                 <option value="Non completato">
                                     Non completato
-                                </option>
-                                <option value="Non iniziato">
-                                    Non iniziato
                                 </option>
                             </select>
                             <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />

@@ -61,12 +61,21 @@ function Dashboard() {
     const getUsersWithShifts = (role, shiftTypes) => {
         return users
             .filter((user) => user.Role === role)
-            .filter((user) => {
+            .map((user) => {
                 const userShift = todayShifts.find(
                     (shift) => shift.EMPLOYEE_ID === user.ID,
                 );
-                return userShift && shiftTypes.includes(userShift.SHIFT_TYPE);
-            });
+
+                if (!userShift || !shiftTypes.includes(userShift.SHIFT_TYPE)) {
+                    return null;
+                }
+
+                return {
+                    ...user,
+                    shiftType: userShift.SHIFT_TYPE,
+                };
+            })
+            .filter(Boolean);
     };
 
     const dayShiftTypes = ["O", "D", "OP"];
@@ -229,6 +238,7 @@ function Dashboard() {
                                                 key={user.ID}
                                                 role={user.Role}
                                                 name={user.Username}
+                                                shiftType={user.shiftType}
                                                 shortName={user.Username?.substring(
                                                     0,
                                                     2,
@@ -265,6 +275,7 @@ function Dashboard() {
                                                 key={user.ID}
                                                 role={user.Role}
                                                 name={user.Username}
+                                                shiftType={user.shiftType}
                                                 shortName={user.Username?.substring(
                                                     0,
                                                     2,
@@ -302,6 +313,7 @@ function Dashboard() {
                                                 key={user.ID}
                                                 role={user.Role}
                                                 name={user.Username}
+                                                shiftType={user.shiftType}
                                                 shortName={user.Username?.substring(
                                                     0,
                                                     2,
