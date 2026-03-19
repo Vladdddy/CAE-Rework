@@ -6,6 +6,7 @@ import DashboardIcon from "../../assets/icons/dashboard.tsx";
 import TasksIcon from "../../assets/icons/tasks.tsx";
 import LogbookIcon from "../../assets/icons/logbook.tsx";
 import ShiftsIcon from "../../assets/icons/shifts.tsx";
+import SimulatorIcon from "../../assets/icons/simulator.tsx";
 import AddUserIcon from "../../assets/icons/addUser.tsx";
 import LogoutIcon from "../../assets/icons/logout.tsx";
 import ReportIcon from "../../assets/icons/report.tsx";
@@ -159,6 +160,29 @@ function Sidebar(props) {
                             }`}
                         >
                             Shifts
+                        </p>
+                    </Link>
+                    <Link
+                        to="/training-load"
+                        className={`flex flex-row items-center gap-2 transition-all duration-300 ${
+                            props.active === "training-load"
+                                ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
+                                      !props.isSidebarOpen
+                                          ? "px-2"
+                                          : "pr-8 pl-2 w-48"
+                                  } py-2`
+                                : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                        } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
+                    >
+                        <SimulatorIcon className={`w-6`} />
+                        <p
+                            className={`transition-opacity duration-300 ${
+                                props.isSidebarOpen
+                                    ? "opacity-100"
+                                    : "opacity-0 hidden"
+                            }`}
+                        >
+                            Training Load
                         </p>
                     </Link>
                     {props.isSidebarOpen ? (
