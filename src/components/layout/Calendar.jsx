@@ -111,7 +111,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center gap-4 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)] w-1/2 m-8 mx-auto">
+        <div className="flex flex-col items-center justify-center gap-4 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)] flex-1 md:w-[1100px] m-8 mx-8 md:mx-auto">
             <div className="flex items-center justify-center gap-8 border-b border-[var(--light-primary)] pb-4 w-full">
                 <DatePickerComponent
                     startDate={startDate}
@@ -124,9 +124,9 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                 <div
                     className={`flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]`}
                 >
-                    <TasksIcon className="w-4" />
+                    <TasksIcon className="w-5" />
                 </div>
-                <p className="text-xs text-[var(--primary)]">Tasks</p>
+                <p className="text-sm text-[var(--primary)]">Tasks</p>
 
                 {type === "logbooks" && (
                     <>
@@ -135,15 +135,15 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                         <div
                             className={`flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]`}
                         >
-                            <LogbookIcon className="w-4" />
+                            <LogbookIcon className="w-5" />
                         </div>
-                        <p className="text-xs text-[var(--orange)]">Logbook</p>
+                        <p className="text-sm text-[var(--orange)]">Logbook</p>
                     </>
                 )}
             </div>
 
             <div className="w-full">
-                <div className="grid grid-cols-7 gap-2 mb-2">
+                <div className="grid grid-cols-7 gap-4 mb-2">
                     {weekDays.map((day, index) => (
                         <div
                             key={index}
@@ -155,7 +155,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                 </div>
 
                 {/* Calendar days grid */}
-                <div className="grid grid-cols-7 gap-2 max-h-[calc(100vh-18rem)] overflow-y-auto pr-1">
+                <div className="grid grid-cols-7 gap-4 pr-2">
                     {days.map((day, index) => {
                         const isToday = isCurrentMonth && day === todayDate;
                         const tasksForDay = day
@@ -192,29 +192,27 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                             >
                                 {day ? (
                                     <div className="w-full h-full flex flex-col items-center justify-between gap-1">
-                                        <div className="flex flex-col items-center gap-1 w-full">
-                                            {type === "tasks" && (
-                                                <div className="flex items-center justify-between w-full gap-1">
-                                                    <div className="flex items-center gap-1 rounded-md p-1 text-[var(--green)]">
-                                                        <UserIcon className="w-4" />
-                                                        <p className="text-xs font-semibold">
-                                                            {dayEmployees}
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)]">
-                                                        <UserIcon className="w-4" />
-                                                        <p className="text-xs font-semibold">
-                                                            {nightEmployees}
-                                                        </p>
-                                                    </div>
+                                        {type === "tasks" && (
+                                            <div className="flex items-center justify-between w-full gap-1">
+                                                <div className="flex items-center gap-1 rounded-md p-1 text-[var(--green)]">
+                                                    <UserIcon className="w-5" />
+                                                    <p className="text-sm">
+                                                        {dayEmployees}
+                                                    </p>
                                                 </div>
-                                            )}
 
-                                            <h1 className="text-l text-center mt-2">
-                                                {day}
-                                            </h1>
-                                        </div>
+                                                <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)]">
+                                                    <UserIcon className="w-5" />
+                                                    <p className="text-sm">
+                                                        {nightEmployees}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <h1 className="text-xl font-bold text-center mt-2">
+                                            {day}
+                                        </h1>
 
                                         <div className="flex flex-col items-center justify-center w-full gap-1">
                                             {type === "tasks" ? (
@@ -224,8 +222,8 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                                         <div className="flex items-center justify-between w-full gap-1">
                                                             <div className="p-1 text-[var(--green)] bg-[var(--light-primary)] rounded-md flex flex-col gap-2">
                                                                 <div className="flex items-center gap-1 rounded-md">
-                                                                    <TasksIcon className="w-4" />
-                                                                    <p className="text-xs font-semibold">
+                                                                    <TasksIcon className="w-5" />
+                                                                    <p className="text-sm">
                                                                         {
                                                                             dayTasksCount
                                                                         }
@@ -235,8 +233,8 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
 
                                                             <div className="p-1 text-[var(--primary)] bg-[var(--light-primary)] rounded-md flex flex-col gap-2">
                                                                 <div className="flex items-center gap-1 rounded-md">
-                                                                    <TasksIcon className="w-4" />
-                                                                    <p className="text-xs font-semibold">
+                                                                    <TasksIcon className="w-5" />
+                                                                    <p className="text-sm">
                                                                         {
                                                                             nightTasksCount
                                                                         }
@@ -252,8 +250,8 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                                         {tasksForDay.length >
                                                             0 && (
                                                             <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]">
-                                                                <TasksIcon className="w-4" />
-                                                                <p className="text-xs">
+                                                                <TasksIcon className="w-5" />
+                                                                <p className="text-sm">
                                                                     {loading
                                                                         ? "..."
                                                                         : tasksForDay.length}
@@ -265,8 +263,8 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                                             logbooksForDay.length >
                                                                 0 && (
                                                                 <div className="flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]">
-                                                                    <LogbookIcon className="w-4" />
-                                                                    <p className="text-xs">
+                                                                    <LogbookIcon className="w-5" />
+                                                                    <p className="text-sm">
                                                                         {loading
                                                                             ? "..."
                                                                             : logbooksForDay.length}

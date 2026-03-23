@@ -578,8 +578,15 @@ function ModifyModal({
             >
                 <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
                     <div className="flex flex-row items-center gap-2 text-[var(--black)]">
-                        <TaskIcon className="w-6" />
-                        <h1 className="text-xl">Modifica task #{task.ID}</h1>
+                        <TaskIcon
+                            className={`w-6 ${task.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
+                        />
+                        <h1
+                            className={`text-xl ${task.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
+                        >
+                            Modifica {task.ISLOGBOOK ? "Entry" : "Task"} #
+                            {task.ID}
+                        </h1>
                     </div>
                     <button
                         onClick={onClose}

@@ -135,6 +135,16 @@ body {
     }
 }
 
+.tertiary {
+    background-color: var(--orange);
+    color: #fff;
+    border: none;
+
+    &:hover {
+        background-color: #d17218;
+    }
+}
+
 .icon {
     transition: all 0.3s ease;
 

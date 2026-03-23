@@ -685,8 +685,12 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             >
                 <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
                     <div className="flex flex-row items-center gap-2 text-[var(--black)]">
-                        <TaskIcon className="w-6" />
-                        <h1 className="text-xl">
+                        <TaskIcon
+                            className={`w-6 ${taskInfo.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
+                        />
+                        <h1
+                            className={`text-xl ${taskInfo.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
+                        >
                             Dettagli{taskInfo.ISLOGBOOK ? " Entry" : " Task"} #
                             {taskInfo.ID}
                         </h1>

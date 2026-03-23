@@ -420,7 +420,7 @@ function Logbook() {
                                     <div className="flex items-center w-full justify-between gap-4">
                                         <div className="flex items-center gap-4">
                                             <button
-                                                className="btn flex gap-2 items-center"
+                                                className="btn tertiary flex gap-2 items-center"
                                                 onClick={handleTaskClick}
                                             >
                                                 <LogbookIcon className="w-6" />
