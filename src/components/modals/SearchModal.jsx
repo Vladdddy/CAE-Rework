@@ -29,7 +29,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
     const [selectedStatus, setSelectedStatus] = useState("");
     const inputRef = useRef(null);
     const simulators = GetSimulatorsList();
-    const { users } = useUsers();
+    const { users, currentUserRole } = useUsers();
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -358,6 +358,13 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                                         <option value="Da definire">
                                             Da definire
                                         </option>
+                                        {(currentUserRole === "Admin" ||
+                                            currentUserRole ===
+                                                "Shift Leader") && (
+                                            <option value="Completato da SL">
+                                                Completato da SL
+                                            </option>
+                                        )}
                                     </select>
                                     <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                                 </div>

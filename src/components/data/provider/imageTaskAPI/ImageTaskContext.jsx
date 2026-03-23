@@ -11,6 +11,22 @@ const getFileNameFromPath = (path) => {
     return path.split(/[\\/]/).pop() || path;
 };
 
+const getOriginalNameFromImage = (image) => {
+    if (!image) {
+        return "";
+    }
+
+    return (
+        image?.ORIGINAL_FILE_NAME ||
+        image?.originalFileName ||
+        image?.ORIGINAL_NAME ||
+        image?.originalName ||
+        image?.DISPLAY_NAME ||
+        image?.displayName ||
+        ""
+    );
+};
+
 const normalizePath = (path) => {
     if (!path) {
         return "";
@@ -123,17 +139,31 @@ const getAttachmentUrl = (image) => {
 
 const isImageAttachment = (image) => {
     const label =
-        getAttachmentPath(image) || image?.FILE_NAME || image?.fileName;
+        getOriginalNameFromImage(image) ||
+        image?.FILE_NAME ||
+        image?.fileName ||
+        getAttachmentPath(image);
 
     return /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(label || "");
 };
 
-const buildUploadedImage = (data, taskId, fallbackFileName) => ({
-    ID: data?.id ?? data?.ID,
-    TASK_ID: Number(taskId),
-    PATH: data?.path ?? data?.PATH ?? fallbackFileName,
-    FILE_NAME: data?.fileName ?? data?.FILE_NAME ?? fallbackFileName,
-});
+const buildUploadedImage = (data, taskId, fallbackPath, originalFileName) => {
+    const originalName =
+        data?.originalFileName ??
+        data?.ORIGINAL_FILE_NAME ??
+        data?.originalName ??
+        data?.ORIGINAL_NAME ??
+        originalFileName;
+
+    return {
+        ID: data?.id ?? data?.ID,
+        TASK_ID: Number(taskId),
+        PATH: data?.path ?? data?.PATH ?? fallbackPath,
+        FILE_NAME: data?.fileName ?? data?.FILE_NAME ?? fallbackPath,
+        ORIGINAL_FILE_NAME: originalName,
+        DISPLAY_NAME: originalName,
+    };
+};
 
 export const ImageTaskProvider = ({ children }) => {
     const [imagesByTask, setImagesByTask] = useState({});
@@ -189,13 +219,20 @@ export const ImageTaskProvider = ({ children }) => {
                         folder: taskFolder,
                         fileName: file.name,
                         filename: file.name,
+                        originalName: file.name,
+                        originalFileName: file.name,
                     }),
                 });
 
                 if (response.ok) {
                     const data = await response.json();
                     uploadedImages.push({
-                        ...buildUploadedImage(data, taskId, relativePath),
+                        ...buildUploadedImage(
+                            data,
+                            taskId,
+                            relativePath,
+                            file.name,
+                        ),
                         LOCAL_PREVIEW_URL: localPreviewUrl,
                     });
 
@@ -213,6 +250,8 @@ export const ImageTaskProvider = ({ children }) => {
                 formData.append("filename", file.name);
                 formData.append("path", relativePath);
                 formData.append("folder", taskFolder);
+                formData.append("originalName", file.name);
+                formData.append("originalFileName", file.name);
 
                 const fallbackResponse = await fetch(
                     `${API_URL}/imageTask/${taskId}`,
@@ -228,7 +267,12 @@ export const ImageTaskProvider = ({ children }) => {
 
                 const fallbackData = await fallbackResponse.json();
                 uploadedImages.push({
-                    ...buildUploadedImage(fallbackData, taskId, relativePath),
+                    ...buildUploadedImage(
+                        fallbackData,
+                        taskId,
+                        relativePath,
+                        file.name,
+                    ),
                     LOCAL_PREVIEW_URL: localPreviewUrl,
                 });
 
@@ -286,6 +330,12 @@ export const ImageTaskProvider = ({ children }) => {
 
     const getAttachmentLabel = useCallback((image) => {
         return (
+            image.ORIGINAL_FILE_NAME ||
+            image.originalFileName ||
+            image.ORIGINAL_NAME ||
+            image.originalName ||
+            image.DISPLAY_NAME ||
+            image.displayName ||
             image.FILE_NAME ||
             image.fileName ||
             getFileNameFromPath(image.PATH || image.path)

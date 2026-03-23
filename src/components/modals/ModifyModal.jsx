@@ -70,6 +70,7 @@ function ModifyModal({
     const { employeeShifts } = useEmployeeShifts();
 
     const isAttachmentUploadEnabled = true;
+    const { currentUserRole } = useUsers();
 
     // Filter users based on selected date and shift.
     const filteredUsers = useMemo(() => {
@@ -687,6 +688,12 @@ function ModifyModal({
                                 <option value="Non completato">
                                     Non completato
                                 </option>
+                                {(currentUserRole === "Admin" ||
+                                    currentUserRole === "Shift Leader") && (
+                                    <option value="Completato da SL">
+                                        Completato da SL
+                                    </option>
+                                )}
                             </select>
                             <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                         </div>

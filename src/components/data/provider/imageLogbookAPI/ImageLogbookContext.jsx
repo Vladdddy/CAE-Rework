@@ -11,6 +11,22 @@ const getFileNameFromPath = (path) => {
     return path.split(/[\\/]/).pop() || path;
 };
 
+const getOriginalNameFromImage = (image) => {
+    if (!image) {
+        return "";
+    }
+
+    return (
+        image?.ORIGINAL_FILE_NAME ||
+        image?.originalFileName ||
+        image?.ORIGINAL_NAME ||
+        image?.originalName ||
+        image?.DISPLAY_NAME ||
+        image?.displayName ||
+        ""
+    );
+};
+
 const normalizePath = (path) => {
     if (!path) {
         return "";
@@ -129,17 +145,36 @@ const getAttachmentUrl = (image) => {
 
 const isImageAttachment = (image) => {
     const label =
-        getAttachmentPath(image) || image?.FILE_NAME || image?.fileName;
+        getOriginalNameFromImage(image) ||
+        image?.FILE_NAME ||
+        image?.fileName ||
+        getAttachmentPath(image);
 
     return /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(label || "");
 };
 
-const buildUploadedImage = (data, logbookId, fallbackFileName) => ({
-    ID: data?.id ?? data?.ID,
-    LOGBOOK_ID: Number(logbookId),
-    PATH: data?.path ?? data?.PATH ?? fallbackFileName,
-    FILE_NAME: data?.fileName ?? data?.FILE_NAME ?? fallbackFileName,
-});
+const buildUploadedImage = (
+    data,
+    logbookId,
+    fallbackPath,
+    originalFileName,
+) => {
+    const originalName =
+        data?.originalFileName ??
+        data?.ORIGINAL_FILE_NAME ??
+        data?.originalName ??
+        data?.ORIGINAL_NAME ??
+        originalFileName;
+
+    return {
+        ID: data?.id ?? data?.ID,
+        LOGBOOK_ID: Number(logbookId),
+        PATH: data?.path ?? data?.PATH ?? fallbackPath,
+        FILE_NAME: data?.fileName ?? data?.FILE_NAME ?? fallbackPath,
+        ORIGINAL_FILE_NAME: originalName,
+        DISPLAY_NAME: originalName,
+    };
+};
 
 export const ImageLogbookProvider = ({ children }) => {
     const [imagesByLogbook, setImagesByLogbook] = useState({});
@@ -199,6 +234,8 @@ export const ImageLogbookProvider = ({ children }) => {
                             folder: logbookFolder,
                             fileName: file.name,
                             filename: file.name,
+                            originalName: file.name,
+                            originalFileName: file.name,
                         }),
                     },
                 );
@@ -206,7 +243,12 @@ export const ImageLogbookProvider = ({ children }) => {
                 if (response.ok) {
                     const data = await response.json();
                     uploadedImages.push({
-                        ...buildUploadedImage(data, logbookId, relativePath),
+                        ...buildUploadedImage(
+                            data,
+                            logbookId,
+                            relativePath,
+                            file.name,
+                        ),
                         LOCAL_PREVIEW_URL: localPreviewUrl,
                     });
 
@@ -224,6 +266,8 @@ export const ImageLogbookProvider = ({ children }) => {
                 formData.append("filename", file.name);
                 formData.append("path", relativePath);
                 formData.append("folder", logbookFolder);
+                formData.append("originalName", file.name);
+                formData.append("originalFileName", file.name);
 
                 const fallbackResponse = await fetch(
                     `${API_URL}/imageLogbook/${logbookId}`,
@@ -243,6 +287,7 @@ export const ImageLogbookProvider = ({ children }) => {
                         fallbackData,
                         logbookId,
                         relativePath,
+                        file.name,
                     ),
                     LOCAL_PREVIEW_URL: localPreviewUrl,
                 });
@@ -301,6 +346,12 @@ export const ImageLogbookProvider = ({ children }) => {
 
     const getAttachmentLabel = useCallback((image) => {
         return (
+            image.ORIGINAL_FILE_NAME ||
+            image.originalFileName ||
+            image.ORIGINAL_NAME ||
+            image.originalName ||
+            image.DISPLAY_NAME ||
+            image.displayName ||
             image.FILE_NAME ||
             image.fileName ||
             getFileNameFromPath(image.PATH || image.path)

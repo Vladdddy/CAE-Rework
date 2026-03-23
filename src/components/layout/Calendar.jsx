@@ -1,12 +1,17 @@
 import DatePickerComponent from "../../functions/DatePicker.jsx";
 import TasksIcon from "../../assets/icons/tasks.tsx";
 import LogbookIcon from "../../assets/icons/logbook.tsx";
+import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks";
+import { useUsers } from "../data/provider/userAPI/useUsers";
+import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts";
 
 function Calendar({ startDate, setStartDate, onDayClick, type }) {
     const { tasks, loading } = useTasks();
     const { logbooks } = useLogbooks();
+    const { users } = useUsers();
+    const { employeeShifts } = useEmployeeShifts();
     const today = new Date();
     const isCurrentMonth =
         startDate.getMonth() === today.getMonth() &&
@@ -38,6 +43,72 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
 
     const days = getDaysInMonth(startDate);
     const weekDays = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
+    const getItemDate = (item) => {
+        const rawDate = item?.DATE || item?.date;
+        if (!rawDate) return null;
+
+        const parsedDate = new Date(rawDate);
+        return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+    };
+
+    const isSameVisibleDay = (item, dayNumber) => {
+        const itemDate = getItemDate(item);
+        if (!itemDate) return false;
+
+        return (
+            itemDate.getDate() === dayNumber &&
+            itemDate.getMonth() === startDate.getMonth() &&
+            itemDate.getFullYear() === startDate.getFullYear()
+        );
+    };
+
+    const isDayTask = (task) => {
+        const taskTime = (task?.TIME || task?.time || "").toLowerCase();
+        return taskTime === "diurno";
+    };
+
+    const isNightTask = (task) => {
+        const taskTime = (task?.TIME || task?.time || "").toLowerCase();
+        return taskTime === "notturno";
+    };
+
+    const getEmployeeShiftCounts = (dayNumber) => {
+        if (!dayNumber) {
+            return { dayEmployees: 0, nightEmployees: 0 };
+        }
+
+        const employeeIds = new Set(
+            users
+                .filter((user) => user?.Role === "Employee")
+                .map((user) => user?.ID),
+        );
+
+        const shiftsForDay = employeeShifts.filter((shift) => {
+            if (!employeeIds.has(shift?.EMPLOYEE_ID)) return false;
+
+            const shiftDateRaw = shift?.SELECTED_DATE || shift?.selected_date;
+            if (!shiftDateRaw) return false;
+
+            const shiftDate = new Date(shiftDateRaw);
+            if (Number.isNaN(shiftDate.getTime())) return false;
+
+            return (
+                shiftDate.getDate() === dayNumber &&
+                shiftDate.getMonth() === startDate.getMonth() &&
+                shiftDate.getFullYear() === startDate.getFullYear()
+            );
+        });
+
+        return {
+            dayEmployees: shiftsForDay.filter(
+                (shift) => (shift?.SHIFT_TYPE || shift?.shift_type) === "D",
+            ).length,
+            nightEmployees: shiftsForDay.filter(
+                (shift) => (shift?.SHIFT_TYPE || shift?.shift_type) === "N",
+            ).length,
+        };
+    };
 
     return (
         <div className="flex flex-col items-center justify-center gap-4 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)] w-1/2 m-8 mx-auto">
@@ -87,6 +158,23 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                 <div className="grid grid-cols-7 gap-2 max-h-[calc(100vh-18rem)] overflow-y-auto pr-1">
                     {days.map((day, index) => {
                         const isToday = isCurrentMonth && day === todayDate;
+                        const tasksForDay = day
+                            ? tasks.filter((task) =>
+                                  isSameVisibleDay(task, day),
+                              )
+                            : [];
+                        const logbooksForDay = day
+                            ? logbooks.filter((logbook) =>
+                                  isSameVisibleDay(logbook, day),
+                              )
+                            : [];
+                        const dayTasksCount =
+                            tasksForDay.filter(isDayTask).length;
+                        const nightTasksCount =
+                            tasksForDay.filter(isNightTask).length;
+                        const { dayEmployees, nightEmployees } =
+                            getEmployeeShiftCounts(day);
+
                         return (
                             <div
                                 key={index}
@@ -96,7 +184,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                     ${
                                         day
                                             ? isToday
-                                                ? "bg-[var(--light-primary)] text-[var(--primary)] border border-[var(--light-primary)] cursor-pointer"
+                                                ? "bg-[var(--light-primary)] text-[var(--primary)] border border-[var(--primary)] cursor-pointer"
                                                 : "bg-[var(--white)] text-[var(--black)] border border-[var(--light-primary)] cursor-pointer hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition-all duration-200"
                                             : ""
                                     }
@@ -104,99 +192,88 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                             >
                                 {day ? (
                                     <div className="w-full h-full flex flex-col items-center justify-between gap-1">
-                                        <h1 className="text-l text-center mt-2">
-                                            {day}
-                                        </h1>
-
-                                        <div className="flex items-center justify-between w-full gap-1">
-                                            {tasks.filter((task) => {
-                                                const taskDate = new Date(
-                                                    task.DATE,
-                                                );
-                                                return (
-                                                    taskDate.getDate() ===
-                                                        day &&
-                                                    taskDate.getMonth() ===
-                                                        startDate.getMonth() &&
-                                                    taskDate.getFullYear() ===
-                                                        startDate.getFullYear()
-                                                );
-                                            }).length > 0 ? (
-                                                <div
-                                                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]`}
-                                                >
-                                                    <TasksIcon className="w-4" />
-                                                    <p className="text-xs">
-                                                        {loading ? (
-                                                            <div className="text-center text-sm text-[var(--gray)] py-4">
-                                                                Caricamento...
-                                                            </div>
-                                                        ) : (
-                                                            tasks.filter(
-                                                                (task) => {
-                                                                    const taskDate =
-                                                                        new Date(
-                                                                            task.DATE,
-                                                                        );
-                                                                    return (
-                                                                        taskDate.getDate() ===
-                                                                            day &&
-                                                                        taskDate.getMonth() ===
-                                                                            startDate.getMonth() &&
-                                                                        taskDate.getFullYear() ===
-                                                                            startDate.getFullYear()
-                                                                    );
-                                                                },
-                                                            ).length
-                                                        )}
+                                        <div className="flex flex-col items-center gap-1 w-full">
+                                            <div className="flex items-center justify-between w-full gap-1">
+                                                <div className="flex items-center gap-1 rounded-md p-1 text-[var(--green)]">
+                                                    <UserIcon className="w-4" />
+                                                    <p className="text-xs font-semibold">
+                                                        {dayEmployees}
                                                     </p>
                                                 </div>
-                                            ) : null}
 
-                                            {type === "logbooks" &&
-                                            logbooks.filter((logbook) => {
-                                                const logbookDate = new Date(
-                                                    logbook.DATE,
-                                                );
-                                                return (
-                                                    logbookDate.getDate() ===
-                                                        day &&
-                                                    logbookDate.getMonth() ===
-                                                        startDate.getMonth() &&
-                                                    logbookDate.getFullYear() ===
-                                                        startDate.getFullYear()
-                                                );
-                                            }).length > 0 ? (
-                                                <div
-                                                    className={`flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]`}
-                                                >
-                                                    <LogbookIcon className="w-4" />
-                                                    <p className="text-xs">
-                                                        {loading ? (
-                                                            <div className="text-center text-sm text-[var(--gray)] py-4">
-                                                                Caricamento...
-                                                            </div>
-                                                        ) : (
-                                                            logbooks.filter(
-                                                                (logbook) => {
-                                                                    const logbookDate =
-                                                                        new Date(
-                                                                            logbook.DATE,
-                                                                        );
-                                                                    return (
-                                                                        logbookDate.getDate() ===
-                                                                            day &&
-                                                                        logbookDate.getMonth() ===
-                                                                            startDate.getMonth() &&
-                                                                        logbookDate.getFullYear() ===
-                                                                            startDate.getFullYear()
-                                                                    );
-                                                                },
-                                                            ).length
-                                                        )}
+                                                <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)]">
+                                                    <UserIcon className="w-4" />
+                                                    <p className="text-xs font-semibold">
+                                                        {nightEmployees}
                                                     </p>
                                                 </div>
-                                            ) : null}
+                                            </div>
+
+                                            <h1 className="text-l text-center mt-2">
+                                                {day}
+                                            </h1>
+                                        </div>
+
+                                        <div className="flex flex-col items-center justify-center w-full gap-1">
+                                            {type === "tasks" ? (
+                                                !loading &&
+                                                tasksForDay.length > 0 && (
+                                                    <>
+                                                        <div className="flex items-center justify-between w-full gap-1">
+                                                            <div className="p-1 text-[var(--green)] bg-[var(--light-primary)] rounded-md flex flex-col gap-2">
+                                                                <div className="flex items-center gap-1 rounded-md">
+                                                                    <TasksIcon className="w-4" />
+                                                                    <p className="text-xs font-semibold">
+                                                                        {
+                                                                            dayTasksCount
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="p-1 text-[var(--primary)] bg-[var(--light-primary)] rounded-md flex flex-col gap-2">
+                                                                <div className="flex items-center gap-1 rounded-md">
+                                                                    <TasksIcon className="w-4" />
+                                                                    <p className="text-xs font-semibold">
+                                                                        {
+                                                                            nightTasksCount
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center w-full gap-1">
+                                                    <div className="flex items-center justify-between w-full gap-1">
+                                                        {tasksForDay.length >
+                                                            0 && (
+                                                            <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]">
+                                                                <TasksIcon className="w-4" />
+                                                                <p className="text-xs">
+                                                                    {loading
+                                                                        ? "..."
+                                                                        : tasksForDay.length}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {type === "logbooks" &&
+                                                            logbooksForDay.length >
+                                                                0 && (
+                                                                <div className="flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]">
+                                                                    <LogbookIcon className="w-4" />
+                                                                    <p className="text-xs">
+                                                                        {loading
+                                                                            ? "..."
+                                                                            : logbooksForDay.length}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
