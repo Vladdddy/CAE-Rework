@@ -357,16 +357,108 @@ function Notifications({ onClose }) {
     };
 
     const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        const options = {
+        if (!dateString) return "";
+
+        const value = String(dateString).trim();
+        const timestampMatch = value.match(
+            /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:?\d{2})?$/,
+        );
+
+        // Always use literal timestamp components so displayed time matches DB hour exactly.
+        if (timestampMatch) {
+            const [, year, month, day, hour, minute] = timestampMatch;
+            const weekday = new Date(
+                Number(year),
+                Number(month) - 1,
+                Number(day),
+            ).toLocaleDateString("it-IT", { weekday: "long" });
+
+            return `${weekday} ${day}/${month}/${year}, ${hour}:${minute}`;
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return value;
+        }
+
+        return date.toLocaleString("it-IT", {
             weekday: "long",
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
+            hour12: false,
+        });
+    };
+
+    const renderMessageContent = (messageContent) => {
+        if (typeof messageContent !== "string") {
+            return <p>{messageContent}</p>;
+        }
+
+        const shiftChangeMatch = messageContent.match(
+            /^(.*?)(Turno precedente:\s*([A-Z]{1,3}|--)\s*->\s*Turno nuovo:\s*([A-Z]{1,3}|--))(.*)$/i,
+        );
+
+        if (!shiftChangeMatch) {
+            return (
+                <p className="whitespace-pre-wrap break-words">
+                    {messageContent}
+                </p>
+            );
+        }
+
+        const [, beforeText, , previousShiftRaw, newShiftRaw, afterText] =
+            shiftChangeMatch;
+        const previousShift = previousShiftRaw.toUpperCase();
+        const newShift = newShiftRaw.toUpperCase();
+        const before = beforeText.replace(/\s*\|\s*$/, "").trim();
+        const after = afterText.trim();
+
+        const shiftBadge = (shift) => {
+            let shiftColors = GetColorForShift(shift);
+
+            if (shift === "R" || shift === "ND") {
+                shiftColors = shiftColors.replace(/text-[^\s]+/g, "text-black");
+            }
+
+            return (
+                <span
+                    className={`inline-flex items-center rounded-md px-2 py-1 text-sm font-semibold ${shiftColors}`}
+                >
+                    {shift}
+                </span>
+            );
         };
-        return date.toLocaleDateString("it-IT", options);
+
+        return (
+            <div className="flex flex-col gap-2">
+                {before && (
+                    <p className="whitespace-pre-wrap break-words text-sm">
+                        {before}
+                    </p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2 rounded-md bg-[var(--light-primary)] p-2">
+                    <span className="text-sm text-[var(--gray)]">
+                        Turno precedente:
+                    </span>
+                    {shiftBadge(previousShift)}
+                    <LongArrowIcon className="w-6 text-[var(--gray)]" />
+                    <span className="text-sm text-[var(--gray)]">
+                        Turno nuovo:
+                    </span>
+                    {shiftBadge(newShift)}
+                </div>
+
+                {after && (
+                    <p className="whitespace-pre-wrap break-words text-sm">
+                        {after}
+                    </p>
+                )}
+            </div>
+        );
     };
 
     const handleBack = () => {
@@ -670,7 +762,9 @@ function Notifications({ onClose }) {
                                               : `${formatUsername(selectedSender)}:`}
                                     </h1>
                                     <div className="text-md text-[var(--black)] w-full border border-[var(--light-primary)] rounded-md p-2">
-                                        <p>{msg.MESSAGE_CONTENT}</p>
+                                        {renderMessageContent(
+                                            msg.MESSAGE_CONTENT,
+                                        )}
                                         <p
                                             className={`text-xs text-[var(--gray)] mt-1 ${shouldAlignRight ? "text-right" : "text-left"}`}
                                         >

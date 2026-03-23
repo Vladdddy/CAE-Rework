@@ -193,21 +193,23 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                 {day ? (
                                     <div className="w-full h-full flex flex-col items-center justify-between gap-1">
                                         <div className="flex flex-col items-center gap-1 w-full">
-                                            <div className="flex items-center justify-between w-full gap-1">
-                                                <div className="flex items-center gap-1 rounded-md p-1 text-[var(--green)]">
-                                                    <UserIcon className="w-4" />
-                                                    <p className="text-xs font-semibold">
-                                                        {dayEmployees}
-                                                    </p>
-                                                </div>
+                                            {type === "tasks" && (
+                                                <div className="flex items-center justify-between w-full gap-1">
+                                                    <div className="flex items-center gap-1 rounded-md p-1 text-[var(--green)]">
+                                                        <UserIcon className="w-4" />
+                                                        <p className="text-xs font-semibold">
+                                                            {dayEmployees}
+                                                        </p>
+                                                    </div>
 
-                                                <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)]">
-                                                    <UserIcon className="w-4" />
-                                                    <p className="text-xs font-semibold">
-                                                        {nightEmployees}
-                                                    </p>
+                                                    <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)]">
+                                                        <UserIcon className="w-4" />
+                                                        <p className="text-xs font-semibold">
+                                                            {nightEmployees}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
 
                                             <h1 className="text-l text-center mt-2">
                                                 {day}

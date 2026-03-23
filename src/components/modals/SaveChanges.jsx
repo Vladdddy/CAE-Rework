@@ -3,6 +3,8 @@ import DoneIcon from "../../assets/icons/done";
 import WarningIcon from "../../assets/icons/warning";
 import Close from "../../assets/icons/close";
 import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI_variant/useEmployeeShifts";
+import { useEmployeeMessages } from "../data/provider/employeeMessageAPI/useEmployeeMessages";
+import { useUsers } from "../data/provider/userAPI/useUsers";
 
 function SaveChanges({ onClose, postChanges, putChanges }) {
     const {
@@ -11,8 +13,32 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
         deleteEmployeeShift,
         employeeShifts,
     } = useEmployeeShifts();
+    const { sendMessage } = useEmployeeMessages();
+    const { currentUserId, currentUsername } = useUsers();
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState(null);
+
+    const formatUserDisplayName = (username) => {
+        if (!username || typeof username !== "string") {
+            return "Shift Leader";
+        }
+
+        const [first = "", last = ""] = username.split(".");
+        const firstName =
+            first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+        const lastName =
+            last.charAt(0).toUpperCase() + last.slice(1).toLowerCase();
+
+        return [firstName, lastName].filter(Boolean).join(" ");
+    };
+
+    const formatShiftDate = (dateValue) => {
+        if (!dateValue) return "";
+        const dateOnly = String(dateValue).split("T")[0];
+        const [year, month, day] = dateOnly.split("-");
+        if (!year || !month || !day) return dateOnly;
+        return `${day}/${month}/${year}`;
+    };
 
     const handleConfirm = async () => {
         setIsProcessing(true);
@@ -83,13 +109,63 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
                     updateMultipleShifts(monthlyRecordId, updates),
                 );
 
+                const shiftLeaderName = formatUserDisplayName(currentUsername);
+                const manualUpdateNotifications = Object.values(putChanges)
+                    .filter(
+                        (change) =>
+                            change.CHANGE_SOURCE === "manual" &&
+                            change.SHIFT_TYPE !== null,
+                    )
+                    .map((change) => {
+                        const existingShift = employeeShifts.find(
+                            (s) => s.ID === (change.ID || change.id),
+                        );
+
+                        if (!existingShift) {
+                            return null;
+                        }
+
+                        const previousShift = existingShift.SHIFT_TYPE || "--";
+                        const newShift = change.SHIFT_TYPE || "--";
+
+                        if (previousShift === newShift) {
+                            return null;
+                        }
+
+                        const dateLabel = formatShiftDate(change.SELECTED_DATE);
+                        const messageContent = dateLabel
+                            ? `Data: ${dateLabel} | Turno precedente: ${previousShift} -> Turno nuovo: ${newShift}`
+                            : `Turno precedente: ${previousShift} -> Turno nuovo: ${newShift}`;
+
+                        return {
+                            receiverId: change.EMPLOYEE_ID,
+                            messageContent,
+                        };
+                    })
+                    .filter(Boolean);
+
                 // Process deletions
                 const deletePromises = deletions.map((change) =>
                     deleteEmployeeShift(change.ID || change.id),
                 );
 
+                const notificationPromises =
+                    currentUserId && manualUpdateNotifications.length > 0
+                        ? manualUpdateNotifications.map((notification) =>
+                              sendMessage(
+                                  currentUserId,
+                                  notification.receiverId,
+                                  notification.messageContent,
+                              ),
+                          )
+                        : [];
+
                 // Wait for all operations to complete
-                const allPromises = [...updatePromises, ...deletePromises];
+                const allPromises = [
+                    ...updatePromises,
+                    ...deletePromises,
+                    ...notificationPromises,
+                ];
                 if (allPromises.length > 0) {
                     const results = await Promise.all(allPromises);
 

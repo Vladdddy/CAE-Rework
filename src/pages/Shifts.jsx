@@ -5,7 +5,6 @@ import Sidebar from "../components/layout/Sidebar.jsx";
 import Topbar from "../components/layout/Topbar.jsx";
 import ShiftMonthPicker from "../functions/ShiftMonthPicker.jsx";
 import ShiftLegend from "../components/layout/ShiftLegend.jsx";
-import ShiftsTable from "../components/data/ShiftsTable.jsx";
 import HoursCountTableTest from "../components/data/HoursCountTableTest.jsx";
 import SaveChangesModal from "../components/modals/SaveChanges.jsx";
 import PatternIcon from "../assets/icons/pattern.tsx";
@@ -118,17 +117,6 @@ function Shifts() {
                     <div className="m-8 flex flex-row items-start justify-between gap-8">
                         {impagination === 1 && (
                             <>
-                                {/* <ShiftsTable
-                                    selectedMonth={startDate.toLocaleString(
-                                        "it-IT",
-                                        {
-                                            month: "long",
-                                            year: "numeric",
-                                        },
-                                    )}
-                                    onChangesDetected={handleChangesDetected}
-                                    currentUserRole={currentUserRole}
-                                /> */}
                                 <ShiftsTableVariant
                                     selectedMonth={startDate.toLocaleString(
                                         "it-IT",
@@ -142,7 +130,7 @@ function Shifts() {
                                 />
                             </>
                         )}
-                        {/*impagination === 2 && (
+                        {impagination === 2 && (
                             <HoursCountTableTest
                                 selectedMonth={startDate.toLocaleString(
                                     "it-IT",
@@ -152,7 +140,7 @@ function Shifts() {
                                     },
                                 )}
                             />
-                        )*/}
+                        )}
                     </div>
                 </div>
             </div>

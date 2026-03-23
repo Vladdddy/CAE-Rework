@@ -114,17 +114,38 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         };
 
         window.applyPatternChanges = (newPostChanges, newPutChanges) => {
+            const postChangesWithSource = Object.fromEntries(
+                Object.entries(newPostChanges).map(([key, value]) => [
+                    key,
+                    {
+                        ...value,
+                        CHANGE_SOURCE: "pattern",
+                    },
+                ]),
+            );
+            const putChangesWithSource = Object.fromEntries(
+                Object.entries(newPutChanges).map(([key, value]) => [
+                    key,
+                    {
+                        ...value,
+                        CHANGE_SOURCE: "pattern",
+                    },
+                ]),
+            );
+
             // Merge pattern changes with existing changes
-            setPostChanges((prev) => ({ ...prev, ...newPostChanges }));
-            setPutChanges((prev) => ({ ...prev, ...newPutChanges }));
+            setPostChanges((prev) => ({ ...prev, ...postChangesWithSource }));
+            setPutChanges((prev) => ({ ...prev, ...putChangesWithSource }));
 
             // Update shiftValues for visual feedback
             setShiftValues((prev) => {
                 const updated = { ...prev };
-                Object.entries(newPostChanges).forEach(([key, value]) => {
-                    updated[key] = value.SHIFT_TYPE;
-                });
-                Object.entries(newPutChanges).forEach(([key, value]) => {
+                Object.entries(postChangesWithSource).forEach(
+                    ([key, value]) => {
+                        updated[key] = value.SHIFT_TYPE;
+                    },
+                );
+                Object.entries(putChangesWithSource).forEach(([key, value]) => {
                     updated[key] = value.SHIFT_TYPE;
                 });
                 return updated;
@@ -443,6 +464,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                     EMPLOYEE_ID: user.ID,
                     SELECTED_DATE: formattedDate,
                     SHIFT_TYPE: null,
+                    CHANGE_SOURCE: "manual",
                 },
             }));
             // Remove from POST if it was there
@@ -480,6 +502,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                     EMPLOYEE_ID: user.ID,
                     SELECTED_DATE: formattedDate,
                     SHIFT_TYPE: value,
+                    CHANGE_SOURCE: "manual",
                 },
             }));
             // Remove from PUT if it was there
@@ -501,6 +524,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                     EMPLOYEE_ID: user.ID,
                     SELECTED_DATE: formattedDate,
                     SHIFT_TYPE: value,
+                    CHANGE_SOURCE: "manual",
                 },
             }));
             // Remove from POST if it was there
