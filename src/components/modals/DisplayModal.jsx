@@ -19,12 +19,14 @@ import FlagIcon from "../../assets/icons/flag.tsx";
 import UnflagIcon from "../../assets/icons/unflag.tsx";
 import EditIcon from "../../assets/icons/edit.tsx";
 import DeleteIcon from "../../assets/icons/delete.tsx";
+import RescheduleIcon from "../../assets/icons/reschedule.tsx";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isModifyOpen, setIsModifyOpen] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
     const [isDuplicating, setIsDuplicating] = useState(false);
+    const [isRescheduling, setIsRescheduling] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
     const [noteDescription, setNoteDescription] = useState("");
     const [editingNoteId, setEditingNoteId] = useState(null);
@@ -294,6 +296,13 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     };
 
     const handleDuplicateTask = () => {
+        setIsRescheduling(false);
+        setIsDuplicating(true);
+        setIsModifyOpen(true);
+    };
+
+    const handleRescheduleTask = () => {
+        setIsRescheduling(true);
         setIsDuplicating(true);
         setIsModifyOpen(true);
     };
@@ -492,6 +501,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         setIsModifyOpen(false);
         setIsConverting(false);
         setIsDuplicating(false);
+        setIsRescheduling(false);
     };
 
     const handleModifyPopup = async () => {
@@ -908,15 +918,27 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                             (currentUserRole === "Admin" ||
                                 currentUserRole === "Shift Leader") &&
                             !taskInfo.ISLOGBOOK && (
-                                <div
-                                    className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
-                                    onClick={handleDuplicateTask}
-                                >
-                                    <DuplicateIcon className="w-4" />
+                                <div className="flex flex-col items-end gap-2">
+                                    <div
+                                        className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
+                                        onClick={handleDuplicateTask}
+                                    >
+                                        <DuplicateIcon className="w-4" />
 
-                                    <p className="text-sm transition-all duration-200">
-                                        Duplica Task
-                                    </p>
+                                        <p className="text-sm transition-all duration-200">
+                                            Duplica Task
+                                        </p>
+                                    </div>
+                                    <div
+                                        className="flex items-center gap-1 text-[var(--black)] cursor-pointer hover:text-[var(--black)]"
+                                        onClick={handleRescheduleTask}
+                                    >
+                                        <RescheduleIcon className="w-4" />
+
+                                        <p className="text-sm transition-all duration-200">
+                                            Rischedula
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                     </div>
@@ -1014,6 +1036,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 </option>
                                                 <option value="Da definire">
                                                     Da definire
+                                                </option>
+                                                <option value="Rischedulato">
+                                                    Rischedulato
                                                 </option>
                                                 {(currentUserRole === "Admin" ||
                                                     currentUserRole ===
@@ -1562,6 +1587,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     task={taskInfo}
                     isConverting={isConverting}
                     isDuplicating={isDuplicating}
+                    isRescheduling={isRescheduling}
                 />
             )}
 

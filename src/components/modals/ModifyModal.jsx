@@ -22,6 +22,7 @@ function ModifyModal({
     task,
     isConverting = false,
     isDuplicating = false,
+    isRescheduling = false,
 }) {
     const [selectedCategory, setSelectedCategory] = useState(
         task.CATEGORY || "Routine Task",
@@ -117,6 +118,12 @@ function ModifyModal({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDuplicating, task.ID, task.ISLOGBOOK]);
+
+    useEffect(() => {
+        if (isRescheduling) {
+            setSelectedStatus("Rischedulato");
+        }
+    }, [isRescheduling]);
 
     // Check if any changes have been made
     const hasChanges = useMemo(() => {
@@ -331,13 +338,76 @@ function ModifyModal({
             date: shouldMoveCompletedTaskToToday ? todayDate : selectedDate,
             time: selectedRadio,
             assigned_to: selectedAssignees.join(", ") || null,
-            status: selectedStatus,
+            status: isRescheduling ? "Rischedulato" : selectedStatus,
         };
 
-        // Handle task duplication
+        // Handle task duplication or rescheduling
         if (isDuplicating) {
             const isLogbook = task.ISLOGBOOK;
-            // Create a new task or logbook with the modified data
+
+            // If rescheduling, update original task instead of creating a new one
+            if (isRescheduling && !isLogbook) {
+                const updateResult = await updateTask(task.ID, modifiedTask);
+
+                if (updateResult.success) {
+                    // Create unavailable task on original date
+                    const originalTaskDate = task.DATE
+                        ? task.DATE.split("T")[0]
+                        : "";
+                    const unavailableTaskPayload = {
+                        title: task.TITLE,
+                        description: task.DESCRIPTION,
+                        category: task.CATEGORY,
+                        subcategory: task.SUBCATEGORY,
+                        extradetail: task.EXTRADETAIL,
+                        simulator: task.SIMULATOR,
+                        date: originalTaskDate,
+                        time: task.TIME,
+                        assigned_to: task.ASSIGNED_TO,
+                        status: "Rischedulato",
+                        type: "Unavailable",
+                        isFlagged: 0,
+                        original_task_id: task.ID,
+                    };
+
+                    const unavailableResult = await addUnavailableTask(
+                        unavailableTaskPayload,
+                    );
+
+                    if (!unavailableResult.success) {
+                        onClose();
+                        if (onSuccess) {
+                            onSuccess(
+                                false,
+                                `Task "${title}" rischedulata ma creazione unavailable non riuscita`,
+                            );
+                        }
+                        return;
+                    }
+
+                    await fetchUnavailableTasks();
+
+                    onClose();
+                    if (onSuccess) {
+                        onSuccess(
+                            true,
+                            `${isLogbook ? "Entry" : "Task"} "${title}" rischedulata con successo`,
+                        );
+                    }
+                    return;
+                } else {
+                    onClose();
+                    if (onSuccess) {
+                        onSuccess(
+                            false,
+                            `Errore nella rischedulazione ${isLogbook ? "dell'entry" : "della task"}`,
+                        );
+                    }
+                    return;
+                }
+            }
+
+            // Normal duplication flow (non-rescheduling)
             const createResult = isLogbook
                 ? await addLogbook(modifiedTask)
                 : await addTask(modifiedTask);
@@ -734,7 +804,11 @@ function ModifyModal({
                                     setSelectedStatus(e.target.value)
                                 }
                                 className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                disabled={isRescheduling}
                             >
+                                <option value="Rischedulato">
+                                    Rischedulato
+                                </option>
                                 <option value="Da definire">Da definire</option>
                                 <option value="In corso">In corso</option>
                                 <option value="Completato">Completato</option>
