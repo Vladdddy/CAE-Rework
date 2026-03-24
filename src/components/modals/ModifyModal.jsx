@@ -121,9 +121,9 @@ function ModifyModal({
 
     useEffect(() => {
         if (isRescheduling) {
-            setSelectedStatus("Rischedulato");
+            setSelectedStatus(task.STATUS || "Da definire");
         }
-    }, [isRescheduling]);
+    }, [isRescheduling, task.STATUS]);
 
     // Check if any changes have been made
     const hasChanges = useMemo(() => {
@@ -338,7 +338,7 @@ function ModifyModal({
             date: shouldMoveCompletedTaskToToday ? todayDate : selectedDate,
             time: selectedRadio,
             assigned_to: selectedAssignees.join(", ") || null,
-            status: isRescheduling ? "Rischedulato" : selectedStatus,
+            status: selectedStatus,
         };
 
         // Handle task duplication or rescheduling
@@ -385,13 +385,22 @@ function ModifyModal({
                         return;
                     }
 
+                    const automaticNoteResult = await createNote(
+                        task.ID,
+                        currentUserId,
+                        "Ha rischedulato la task",
+                        "automatico",
+                    );
+
                     await fetchUnavailableTasks();
 
                     onClose();
                     if (onSuccess) {
                         onSuccess(
                             true,
-                            `${isLogbook ? "Entry" : "Task"} "${title}" rischedulata con successo`,
+                            automaticNoteResult.success
+                                ? `${isLogbook ? "Entry" : "Task"} "${title}" rischedulata con successo`
+                                : `${isLogbook ? "Entry" : "Task"} "${title}" rischedulata, ma la nota automatica non e' stata salvata`,
                         );
                     }
                     return;
@@ -753,7 +762,7 @@ function ModifyModal({
                         ></textarea>
                     </div>
 
-                    <div className="flex flex-col gap-1">
+                    {/* <div className="flex flex-col gap-1">
                         <h3 className="text-sm text-[var(--gray)]">Allegati</h3>
 
                         <input
@@ -791,7 +800,7 @@ function ModifyModal({
                                 {attachmentError}
                             </p>
                         )}
-                    </div>
+                    </div> */}
 
                     <div className="flex flex-col gap-1 w-1/2">
                         <h3 className="text-sm text-[var(--gray)]">Stato</h3>
@@ -806,7 +815,7 @@ function ModifyModal({
                                 className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                 disabled={isRescheduling}
                             >
-                                <option value="Rischedulato">
+                                <option value="Rischedulato" disabled>
                                     Rischedulato
                                 </option>
                                 <option value="Da definire">Da definire</option>

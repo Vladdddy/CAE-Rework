@@ -29,11 +29,14 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isRescheduling, setIsRescheduling] = useState(false);
     const [activeTab, setActiveTab] = useState("dettagli");
     const [noteDescription, setNoteDescription] = useState("");
+    const [doNotMoveTaskOnNote, setDoNotMoveTaskOnNote] = useState(false);
     const [editingNoteId, setEditingNoteId] = useState(null);
     const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
     const [thumbSourceIndexByImageId, setThumbSourceIndexByImageId] = useState(
         {},
     );
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [attachmentError, setAttachmentError] = useState("");
     const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
     const { addTask: addUnavailableTask, fetchTasks: fetchUnavailableTasks } =
         useUnavailableTasks();
@@ -47,6 +50,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         getAttachmentPreviewUrl,
         getAttachmentPreviewSources,
         isImageFile,
+        uploadTaskImages,
     } = useImageTasks();
     const {
         fetchLogbookImages,
@@ -56,6 +60,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         getAttachmentPreviewUrl: getLogbookAttachmentPreviewUrl,
         getAttachmentPreviewSources: getLogbookAttachmentPreviewSources,
         isImageFile: isLogbookImageFile,
+        uploadLogbookImages,
     } = useImageLogbooks();
     const {
         noteLogbooks,
@@ -617,6 +622,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             if (result.success) {
                 setNoteDescription("");
                 setEditingNoteId(null);
+                setDoNotMoveTaskOnNote(false);
                 if (isLogbook) {
                     await fetchNoteLogbooks(taskInfo.ID);
                 } else {
@@ -651,7 +657,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         if (result.success) {
             setNoteDescription("");
 
-            if (!isLogbook && !isUnavailableTask) {
+            if (!isLogbook && !isUnavailableTask && !doNotMoveTaskOnNote) {
                 const moveResult = await moveTaskToTodayAndCreateUnavailable(
                     taskInfo.STATUS,
                     'nota "creato"',
@@ -673,6 +679,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                 }
             }
 
+            setDoNotMoveTaskOnNote(false);
+
             if (onSuccess) {
                 onSuccess(true, "Nota salvata con successo");
             }
@@ -691,6 +699,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const handleCancelEdit = () => {
         setNoteDescription("");
         setEditingNoteId(null);
+        setDoNotMoveTaskOnNote(false);
     };
 
     const handleDeleteNote = async (note) => {
@@ -832,6 +841,48 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             index: src === sources[initialIndex] ? initialIndex : 0,
             label: getAttachmentLabelByType(image),
         });
+    };
+
+    const isAttachmentUploadEnabled =
+        (!isUnavailableTask && !taskInfo.ISLOGBOOK) || taskInfo.ISLOGBOOK;
+
+    const handleFilesChange = (event) => {
+        const files = Array.from(event.target.files || []);
+        setSelectedFiles(files);
+        setAttachmentError("");
+    };
+
+    const uploadAttachments = async () => {
+        if (!selectedFiles.length) {
+            return { success: true };
+        }
+
+        const isLogbookTarget = taskInfo.ISLOGBOOK;
+        const result = isLogbookTarget
+            ? await uploadLogbookImages(taskInfo.ID, selectedFiles)
+            : await uploadTaskImages(taskInfo.ID, selectedFiles);
+
+        if (!result.success) {
+            setAttachmentError(
+                isLogbookTarget
+                    ? "L'entry è stata salvata, ma il caricamento degli allegati non è riuscito."
+                    : "La task è stata salvata, ma il caricamento degli allegati non è riuscito.",
+            );
+            return result;
+        }
+
+        // Refresh attachments after successful upload
+        if (isLogbookTarget) {
+            await fetchLogbookImages(taskInfo.ID);
+        } else {
+            await fetchTaskImages(taskInfo.ID);
+        }
+
+        setSelectedFiles([]);
+        if (onSuccess) {
+            onSuccess(true, "Allegati caricati con successo");
+        }
+        return result;
     };
 
     return (
@@ -1037,7 +1088,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 <option value="Da definire">
                                                     Da definire
                                                 </option>
-                                                <option value="Rischedulato">
+                                                <option
+                                                    value="Rischedulato"
+                                                    disabled
+                                                >
                                                     Rischedulato
                                                 </option>
                                                 {(currentUserRole === "Admin" ||
@@ -1131,6 +1185,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Allegati
                                     </h3>
 
+                                    {/* Existing Attachments Display */}
                                     {attachmentImages.length === 0 ? (
                                         <h4 className="text-sm text-center text-[var(--gray)] italic">
                                             Nessun allegato disponibile.
@@ -1297,6 +1352,63 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                     </div>
                                                 );
                                             })}
+                                        </div>
+                                    )}
+
+                                    {/* File Upload Input - appears under existing attachments */}
+                                    {canManageAttachments && (
+                                        <div className="flex flex-col gap-2 mt-4">
+                                            <input
+                                                type="file"
+                                                name="attachments"
+                                                id="attachments"
+                                                multiple
+                                                onChange={handleFilesChange}
+                                                disabled={
+                                                    !isAttachmentUploadEnabled
+                                                }
+                                                className="border border-[var(--light-primary)] rounded-md p-2 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] hover:border-[var(--separator)] transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-md file:bg-[var(--primary)] file:text-[#ffffff] file:cursor-pointer hover:file:bg-[var(--primary-hover)]"
+                                            />
+
+                                            {!isAttachmentUploadEnabled && (
+                                                <p className="text-sm text-[var(--gray)] italic">
+                                                    Gli allegati sono
+                                                    disponibili solo per task
+                                                    ordinarie.
+                                                </p>
+                                            )}
+
+                                            {selectedFiles.length > 0 && (
+                                                <>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {selectedFiles.map(
+                                                            (file) => (
+                                                                <div
+                                                                    key={`${file.name}-${file.lastModified}`}
+                                                                    className="px-3 py-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md text-sm text-[var(--black)]"
+                                                                >
+                                                                    {file.name}
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+
+                                                    <button
+                                                        className="btn primary"
+                                                        onClick={
+                                                            uploadAttachments
+                                                        }
+                                                    >
+                                                        Carica Allegati
+                                                    </button>
+                                                </>
+                                            )}
+
+                                            {attachmentError && (
+                                                <p className="text-[var(--red)] text-sm">
+                                                    {attachmentError}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -1544,6 +1656,29 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         setNoteDescription(e.target.value)
                                     }
                                 ></textarea>
+                                {!editingNoteId &&
+                                    !taskInfo.ISLOGBOOK &&
+                                    !isUnavailableTask && (
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <input
+                                                id="do-not-move-task-on-note"
+                                                type="checkbox"
+                                                checked={doNotMoveTaskOnNote}
+                                                onChange={(e) =>
+                                                    setDoNotMoveTaskOnNote(
+                                                        e.target.checked,
+                                                    )
+                                                }
+                                                className="h-4 w-4 rounded border border-[var(--light-primary)] bg-[var(--white)] accent-[var(--primary)] cursor-pointer focus:ring-none focus:ring-[var(--primary)] focus:ring-offset-0"
+                                            />
+                                            <label
+                                                htmlFor="do-not-move-task-on-note"
+                                                className="text-sm text-[var(--black)] cursor-pointer select-none"
+                                            >
+                                                Non spostare la task
+                                            </label>
+                                        </div>
+                                    )}
                             </div>
 
                             <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
