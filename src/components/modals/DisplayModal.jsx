@@ -10,6 +10,7 @@ import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
 import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
+import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks.js";
 import ModifyModal from "./ModifyModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
 import ConvertIcon from "../../assets/icons/convert.tsx";
@@ -32,6 +33,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         {},
     );
     const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
+    const { addTask: addUnavailableTask, fetchTasks: fetchUnavailableTasks } =
+        useUnavailableTasks();
     const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
     const { notes, fetchNotes, createNote, editNote, deleteNote } = useNotes();
     const {
@@ -61,6 +64,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     } = useNoteLogbooks();
     const { users, currentUserId } = useUsers();
     const { currentUserRole } = useUsers();
+    const isUnavailableTask =
+        !taskInfo.ISLOGBOOK &&
+        (taskInfo?.TYPE === "Unavailable" || taskInfo?.IS_UNAVAILABLE);
     const attachmentImages = taskInfo.ISLOGBOOK
         ? getLogbookImages(taskInfo.ID)
         : getTaskImages(taskInfo.ID);
@@ -84,7 +90,103 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         taskInfo.ISLOGBOOK ? isLogbookImageFile(image) : isImageFile(image);
 
     const canManageAttachments =
-        currentUserRole === "Admin" || currentUserRole === "Shift Leader";
+        !isUnavailableTask &&
+        (currentUserRole === "Admin" || currentUserRole === "Shift Leader");
+
+    const toDateInputValue = (dateLike) => {
+        if (!dateLike) {
+            return "";
+        }
+
+        if (typeof dateLike === "string") {
+            return dateLike.split("T")[0];
+        }
+
+        return new Date(dateLike).toISOString().split("T")[0];
+    };
+
+    const buildTaskPayload = (baseTask, overrides = {}) => ({
+        title: baseTask.TITLE,
+        description: baseTask.DESCRIPTION,
+        category: baseTask.CATEGORY,
+        subcategory: baseTask.SUBCATEGORY,
+        extradetail: baseTask.EXTRADETAIL,
+        simulator: baseTask.SIMULATOR,
+        date: toDateInputValue(baseTask.DATE),
+        time: baseTask.TIME,
+        assigned_to: baseTask.ASSIGNED_TO,
+        status: baseTask.STATUS,
+        type: baseTask.TYPE,
+        isFlagged: baseTask.IS_FLAGGED ? 1 : 0,
+        original_task_id: baseTask.ORIGINAL_TASK_ID || null,
+        ...overrides,
+    });
+
+    const moveTaskToTodayAndCreateUnavailable = async (
+        newStatus,
+        triggerLabel,
+    ) => {
+        if (taskInfo.ISLOGBOOK || isUnavailableTask) {
+            return { success: false, skipped: true };
+        }
+
+        const originalDate = toDateInputValue(taskInfo.DATE);
+        const todayDate = new Date().toISOString().split("T")[0];
+        const shouldMoveTask =
+            Boolean(originalDate) && originalDate !== todayDate;
+
+        const updatedTaskData = buildTaskPayload(taskInfo, {
+            status: newStatus,
+            date: shouldMoveTask ? todayDate : originalDate,
+        });
+
+        const updateResult = await updateTask(taskInfo.ID, updatedTaskData);
+
+        if (!updateResult.success) {
+            return {
+                success: false,
+                skipped: false,
+                error: "Errore nell'aggiornamento della task",
+            };
+        }
+
+        let unavailableCreated = false;
+        if (shouldMoveTask) {
+            const unavailablePayload = buildTaskPayload(taskInfo, {
+                date: originalDate,
+                type: "Unavailable",
+                status: "Rischedulato",
+                isFlagged: 0,
+                original_task_id: taskInfo.ID,
+            });
+
+            const unavailableResult =
+                await addUnavailableTask(unavailablePayload);
+
+            if (!unavailableResult.success) {
+                return {
+                    success: false,
+                    skipped: false,
+                    error: "Task aggiornata ma creazione unavailable non riuscita",
+                };
+            }
+
+            unavailableCreated = true;
+        }
+
+        await fetchTasks();
+        await fetchUnavailableTasks();
+
+        return {
+            success: true,
+            skipped: false,
+            moved: shouldMoveTask,
+            unavailableCreated,
+            message: shouldMoveTask
+                ? `Task aggiornata: spostata a oggi e sostituita con unavailable (${triggerLabel})`
+                : "Task aggiornata con successo",
+        };
+    };
 
     useEffect(() => {
         if (taskInfo.ISLOGBOOK) {
@@ -410,18 +512,43 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
         const newStatus = e.target.value;
 
-        const updatedTaskData = {
-            title: taskInfo.TITLE,
-            description: taskInfo.DESCRIPTION,
-            category: taskInfo.CATEGORY,
-            subcategory: taskInfo.SUBCATEGORY,
-            extradetail: taskInfo.EXTRADETAIL,
-            simulator: taskInfo.SIMULATOR,
-            date: taskInfo.DATE,
-            time: taskInfo.TIME,
-            assigned_to: taskInfo.ASSIGNED_TO,
+        if (!isLogbook && !isUnavailableTask && newStatus === "Completato") {
+            const completionResult = await moveTaskToTodayAndCreateUnavailable(
+                newStatus,
+                "stato Completato",
+            );
+
+            if (!completionResult.success) {
+                if (onSuccess && !completionResult.skipped) {
+                    onSuccess(false, completionResult.error);
+                }
+                return;
+            }
+
+            const changeStatusNote = await createNote(
+                taskInfo.ID,
+                currentUserId,
+                "Stato modificato da " +
+                    `"${taskInfo.STATUS}" a "${newStatus}"`,
+                "automatico",
+            );
+
+            if (changeStatusNote.success) {
+                setNoteDescription("");
+            }
+
+            if (onSuccess) {
+                onSuccess(true, completionResult.message);
+            }
+
+            onClose();
+            return;
+        }
+
+        const updatedTaskData = buildTaskPayload(taskInfo, {
             status: newStatus,
-        };
+            date: toDateInputValue(taskInfo.DATE),
+        });
 
         const result = isLogbook
             ? await updateLogbook(taskInfo.ID, updatedTaskData)
@@ -513,6 +640,29 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
         if (result.success) {
             setNoteDescription("");
+
+            if (!isLogbook && !isUnavailableTask) {
+                const moveResult = await moveTaskToTodayAndCreateUnavailable(
+                    taskInfo.STATUS,
+                    'nota "creato"',
+                );
+
+                if (!moveResult.success && !moveResult.skipped) {
+                    if (onSuccess) {
+                        onSuccess(false, moveResult.error);
+                    }
+                    return;
+                }
+
+                if (moveResult.success && moveResult.moved) {
+                    if (onSuccess) {
+                        onSuccess(true, moveResult.message);
+                    }
+                    onClose();
+                    return;
+                }
+            }
+
             if (onSuccess) {
                 onSuccess(true, "Nota salvata con successo");
             }
@@ -692,7 +842,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                             className={`text-xl ${taskInfo.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
                         >
                             Dettagli{taskInfo.ISLOGBOOK ? " Entry" : " Task"} #
-                            {taskInfo.ID}
+                            {taskInfo.ORIGINAL_TASK_ID || taskInfo.ID}
                         </h1>
                     </div>
                     <button
@@ -717,27 +867,30 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 <p className="text-sm">Dettagli Task</p>
                             </div>
 
-                            <div
-                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
-                                    activeTab === "note"
-                                        ? "bg-[var(--light-primary)] text-[var(--primary)]"
-                                        : "text-[var(--black)] hover:bg-[var(--light-primary)]"
-                                }`}
-                                onClick={() => {
-                                    setActiveTab("note");
-                                    if (taskInfo.ISLOGBOOK) {
-                                        fetchNoteLogbooks(taskInfo.ID);
-                                    } else {
-                                        fetchNotes(taskInfo.ID);
-                                    }
-                                }}
-                            >
-                                <p className="text-sm">Note aggiunte</p>
-                            </div>
+                            {!isUnavailableTask && (
+                                <div
+                                    className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
+                                        activeTab === "note"
+                                            ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                            : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                    }`}
+                                    onClick={() => {
+                                        setActiveTab("note");
+                                        if (taskInfo.ISLOGBOOK) {
+                                            fetchNoteLogbooks(taskInfo.ID);
+                                        } else {
+                                            fetchNotes(taskInfo.ID);
+                                        }
+                                    }}
+                                >
+                                    <p className="text-sm">Note aggiunte</p>
+                                </div>
+                            )}
                         </div>
 
-                        {(currentUserRole === "Admin" ||
-                            currentUserRole === "Shift Leader") &&
+                        {!isUnavailableTask &&
+                            (currentUserRole === "Admin" ||
+                                currentUserRole === "Shift Leader") &&
                             taskInfo.ISLOGBOOK && (
                                 <div
                                     className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
@@ -751,8 +904,9 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 </div>
                             )}
 
-                        {(currentUserRole === "Admin" ||
-                            currentUserRole === "Shift Leader") &&
+                        {!isUnavailableTask &&
+                            (currentUserRole === "Admin" ||
+                                currentUserRole === "Shift Leader") &&
                             !taskInfo.ISLOGBOOK && (
                                 <div
                                     className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
@@ -833,39 +987,45 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Stato
                                     </h3>
 
-                                    <div className="relative">
-                                        <select
-                                            defaultValue={
-                                                taskInfo?.STATUS ||
-                                                "Da definire"
-                                            }
-                                            onChange={handleStatusChange}
-                                            name=""
-                                            id=""
-                                            className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                        >
-                                            <option value="In corso">
-                                                In corso
-                                            </option>
-                                            <option value="Completato">
-                                                Completato
-                                            </option>
-                                            <option value="Non completato">
-                                                Non completato
-                                            </option>
-                                            <option value="Da definire">
-                                                Da definire
-                                            </option>
-                                            {(currentUserRole === "Admin" ||
-                                                currentUserRole ===
-                                                    "Shift Leader") && (
-                                                <option value="Completato da SL">
-                                                    Completato da SL
+                                    {isUnavailableTask ? (
+                                        <div className="p-2 text-[var(--gray)] border border-[var(--light-primary)] rounded-md bg-[var(--white)]">
+                                            {taskInfo?.STATUS || "Da definire"}
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <select
+                                                defaultValue={
+                                                    taskInfo?.STATUS ||
+                                                    "Da definire"
+                                                }
+                                                onChange={handleStatusChange}
+                                                name=""
+                                                id=""
+                                                className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+                                            >
+                                                <option value="In corso">
+                                                    In corso
                                                 </option>
-                                            )}
-                                        </select>
-                                        <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                                    </div>
+                                                <option value="Completato">
+                                                    Completato
+                                                </option>
+                                                <option value="Non completato">
+                                                    Non completato
+                                                </option>
+                                                <option value="Da definire">
+                                                    Da definire
+                                                </option>
+                                                {(currentUserRole === "Admin" ||
+                                                    currentUserRole ===
+                                                        "Shift Leader") && (
+                                                    <option value="Completato da SL">
+                                                        Completato da SL
+                                                    </option>
+                                                )}
+                                            </select>
+                                            <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-col justify-start items-start gap-2 border-b border-[var(--light-primary)] pb-4">
@@ -1130,58 +1290,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     </>
                                 )*/}
 
-                                {(currentUserRole === "Admin" ||
-                                    currentUserRole === "Shift Leader" ||
-                                    (taskInfo.ASSIGNED_TO &&
-                                        taskInfo.ISLOGBOOK &&
-                                        users.find(
-                                            (u) => u.ID === currentUserId,
-                                        )?.Username &&
-                                        taskInfo.ASSIGNED_TO.includes(
-                                            users.find(
-                                                (u) => u.ID === currentUserId,
-                                            ).Username,
-                                        ))) && (
-                                    <button
-                                        className="btn delete"
-                                        onClick={() => handleDelete()}
-                                    >
-                                        Elimina
-                                    </button>
-                                )}
-
-                                {!taskInfo?.IS_FLAGGED
-                                    ? (currentUserRole === "Admin" ||
-                                          currentUserRole ===
-                                              "Shift Leader") && (
-                                          <button
-                                              className="btn secondary flex items-center gap-1"
-                                              onClick={handleFlagTask}
-                                          >
-                                              <FlagIcon className="w-6" />
-                                              <p>Flag task</p>
-                                          </button>
-                                      )
-                                    : (currentUserRole === "Admin" ||
-                                          currentUserRole ===
-                                              "Shift Leader") && (
-                                          <button
-                                              className="btn secondary flex items-center gap-1"
-                                              onClick={handleRemoveFlag}
-                                          >
-                                              <UnflagIcon className="w-6" />
-                                              <p>Remove flag</p>
-                                          </button>
-                                      )}
-
-                                <div className="flex gap-1 ml-auto">
-                                    <button
-                                        className="btn gray-btn"
-                                        onClick={onClose}
-                                    >
-                                        Chiudi
-                                    </button>
-                                    {(currentUserRole === "Admin" ||
+                                {!isUnavailableTask &&
+                                    (currentUserRole === "Admin" ||
                                         currentUserRole === "Shift Leader" ||
                                         (taskInfo.ASSIGNED_TO &&
                                             taskInfo.ISLOGBOOK &&
@@ -1195,18 +1305,75 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 ).Username,
                                             ))) && (
                                         <button
-                                            className="btn flex items-center gap-1"
-                                            onClick={handleModify}
+                                            className="btn delete"
+                                            onClick={() => handleDelete()}
                                         >
-                                            <p>Modifica</p>
+                                            Elimina
                                         </button>
                                     )}
+
+                                {!isUnavailableTask &&
+                                    (!taskInfo?.IS_FLAGGED
+                                        ? (currentUserRole === "Admin" ||
+                                              currentUserRole ===
+                                                  "Shift Leader") && (
+                                              <button
+                                                  className="btn secondary flex items-center gap-1"
+                                                  onClick={handleFlagTask}
+                                              >
+                                                  <FlagIcon className="w-6" />
+                                                  <p>Flag task</p>
+                                              </button>
+                                          )
+                                        : (currentUserRole === "Admin" ||
+                                              currentUserRole ===
+                                                  "Shift Leader") && (
+                                              <button
+                                                  className="btn secondary flex items-center gap-1"
+                                                  onClick={handleRemoveFlag}
+                                              >
+                                                  <UnflagIcon className="w-6" />
+                                                  <p>Remove flag</p>
+                                              </button>
+                                          ))}
+
+                                <div className="flex gap-1 ml-auto">
+                                    <button
+                                        className="btn gray-btn"
+                                        onClick={onClose}
+                                    >
+                                        Chiudi
+                                    </button>
+                                    {!isUnavailableTask &&
+                                        (currentUserRole === "Admin" ||
+                                            currentUserRole ===
+                                                "Shift Leader" ||
+                                            (taskInfo.ASSIGNED_TO &&
+                                                taskInfo.ISLOGBOOK &&
+                                                users.find(
+                                                    (u) =>
+                                                        u.ID === currentUserId,
+                                                )?.Username &&
+                                                taskInfo.ASSIGNED_TO.includes(
+                                                    users.find(
+                                                        (u) =>
+                                                            u.ID ===
+                                                            currentUserId,
+                                                    ).Username,
+                                                ))) && (
+                                            <button
+                                                className="btn flex items-center gap-1"
+                                                onClick={handleModify}
+                                            >
+                                                <p>Modifica</p>
+                                            </button>
+                                        )}
                                 </div>
                             </div>
                         </>
                     )}
 
-                    {activeTab === "note" && (
+                    {!isUnavailableTask && activeTab === "note" && (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-8 max-h-[calc(40vh-4rem)] overflow-y-auto pr-1">
                                 {notes &&

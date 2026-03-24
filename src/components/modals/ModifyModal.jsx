@@ -14,6 +14,7 @@ import { useNotes } from "../data/provider/noteAPI/useNotes.js";
 import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks.js";
 import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
 import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
+import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks.js";
 
 function ModifyModal({
     onClose,
@@ -63,6 +64,8 @@ function ModifyModal({
         task.SIMULATOR || simulators[0],
     );
     const { updateTask, addTask } = useTasks();
+    const { addTask: addUnavailableTask, fetchTasks: fetchUnavailableTasks } =
+        useUnavailableTasks();
     const { updateLogbook, addLogbook } = useLogbooks();
     const { uploadTaskImages } = useImageTasks();
     const { uploadLogbookImages } = useImageLogbooks();
@@ -310,6 +313,14 @@ function ModifyModal({
         }
 
         setTitleError(false);
+        const todayDate = new Date().toISOString().split("T")[0];
+        const originalTaskDate = task.DATE ? task.DATE.split("T")[0] : "";
+        const shouldMoveCompletedTaskToToday =
+            !task.ISLOGBOOK &&
+            selectedStatus === "Completato" &&
+            originalTaskDate &&
+            originalTaskDate !== todayDate;
+
         const modifiedTask = {
             title: title,
             description: description,
@@ -317,7 +328,7 @@ function ModifyModal({
             subcategory: selectedSubCategory,
             extradetail: selectedDetail,
             simulator: selectedSimulator,
-            date: selectedDate,
+            date: shouldMoveCompletedTaskToToday ? todayDate : selectedDate,
             time: selectedRadio,
             assigned_to: selectedAssignees.join(", ") || null,
             status: selectedStatus,
@@ -461,6 +472,41 @@ function ModifyModal({
         let attachmentsUploadedSuccessfully = true;
 
         if (result.success) {
+            if (shouldMoveCompletedTaskToToday) {
+                const unavailableTaskPayload = {
+                    title: task.TITLE,
+                    description: task.DESCRIPTION,
+                    category: task.CATEGORY,
+                    subcategory: task.SUBCATEGORY,
+                    extradetail: task.EXTRADETAIL,
+                    simulator: task.SIMULATOR,
+                    date: originalTaskDate,
+                    time: task.TIME,
+                    assigned_to: task.ASSIGNED_TO,
+                    status: "Rischedulato",
+                    type: "Unavailable",
+                    isFlagged: 0,
+                    original_task_id: task.ID,
+                };
+
+                const unavailableResult = await addUnavailableTask(
+                    unavailableTaskPayload,
+                );
+
+                if (!unavailableResult.success) {
+                    onClose();
+                    if (onSuccess) {
+                        onSuccess(
+                            false,
+                            "Task completata ma creazione unavailable non riuscita",
+                        );
+                    }
+                    return;
+                }
+
+                await fetchUnavailableTasks();
+            }
+
             const changeMessage = generateChangeMessage();
             const changedTaskNote = isLogbook
                 ? await createNoteLogbook(

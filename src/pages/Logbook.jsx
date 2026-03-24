@@ -9,6 +9,7 @@ import BackIcon from "../assets/icons/back.tsx";
 import CreateModal from "../components/modals/CreateModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
+import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators";
@@ -16,6 +17,11 @@ import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 
 function Logbook() {
     const { tasks, loading, fetchTasks } = useTasks();
+    const {
+        tasks: unavailableTasks,
+        loading: unavailableLoading,
+        fetchTasks: fetchUnavailableTasks,
+    } = useUnavailableTasks();
     const { logbooks, fetchLogbooks } = useLogbooks();
     const { simulators: todaySimulators } = useSimulators();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -90,6 +96,7 @@ function Logbook() {
     const handleSuccess = async (isSuccess, message) => {
         if (isSuccess) {
             await fetchTasks();
+            await fetchUnavailableTasks();
             await fetchLogbooks();
         }
         setPopupType(isSuccess ? "success" : "error");
@@ -110,6 +117,18 @@ function Logbook() {
         exportType = "report",
     ) => {
         try {
+            const normalizedUnavailableTasks = (unavailableTasks || []).map(
+                (task) => ({
+                    ...task,
+                    IS_UNAVAILABLE: true,
+                }),
+            );
+
+            const allTasksForExport = [
+                ...(tasks || []),
+                ...normalizedUnavailableTasks,
+            ];
+
             // Pass null as date if filters are active, otherwise pass startDate
             const hasActiveFilters = false;
 
@@ -118,7 +137,7 @@ function Logbook() {
 
             if (hasActiveFilters) {
                 // If filters are active, use the filtered results
-                itemsToExport = [...tasks, ...logbooks];
+                itemsToExport = [...allTasksForExport, ...logbooks];
                 simulatorsToExport = [];
             } else {
                 // If no filters are active, filter by the selected date only
@@ -126,7 +145,7 @@ function Logbook() {
                 selectedDate.setHours(0, 0, 0, 0);
 
                 // Filter tasks by selected date
-                const tasksForDate = tasks.filter((task) => {
+                const tasksForDate = allTasksForExport.filter((task) => {
                     const taskDate = new Date(task.DATE);
                     taskDate.setHours(0, 0, 0, 0);
                     return taskDate.getTime() === selectedDate.getTime();
@@ -196,13 +215,21 @@ function Logbook() {
             await Promise.all(
                 itemsToExport.map(async (item) => {
                     try {
+                        const isUnavailableTask =
+                            item?.TYPE === "Unavailable" ||
+                            item?.IS_UNAVAILABLE === true;
+                        const notesEntityId =
+                            !item.ISLOGBOOK && isUnavailableTask
+                                ? item?.ORIGINAL_TASK_ID || item.ID
+                                : item.ID;
+
                         const endpoint = item.ISLOGBOOK
                             ? `${API_URL}/notesLogbook/${item.ID}`
-                            : `${API_URL}/notes/${item.ID}`;
+                            : `${API_URL}/notes/${notesEntityId}`;
                         const response = await fetch(endpoint);
                         if (response.ok) {
                             const notes = await response.json();
-                            notesMap[item.ID] = notes;
+                            notesMap[notesEntityId] = notes;
                         }
                     } catch (error) {
                         console.error(
@@ -266,6 +293,17 @@ function Logbook() {
             return currentDate;
         });
     }, [startDate, viewDays]);
+
+    const mergedTasks = useMemo(() => {
+        const normalizedUnavailableTasks = (unavailableTasks || []).map(
+            (task) => ({
+                ...task,
+                IS_UNAVAILABLE: true,
+            }),
+        );
+
+        return [...(tasks || []), ...normalizedUnavailableTasks];
+    }, [tasks, unavailableTasks]);
 
     const getSelectedDateString = (currentDate) => {
         return (
@@ -473,8 +511,11 @@ function Logbook() {
                                             >
                                                 <Table
                                                     type="tasks&logbook"
-                                                    loading={loading}
-                                                    taskList={tasks}
+                                                    loading={
+                                                        loading ||
+                                                        unavailableLoading
+                                                    }
+                                                    taskList={mergedTasks}
                                                     logbookList={logbooks}
                                                     date={currentDate}
                                                     onDeleteSuccess={

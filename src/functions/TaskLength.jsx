@@ -1,4 +1,19 @@
 export function GetTaskCountTime({ filteredTasks, time, date, variant }) {
+    const isSameDay = (dateA, dateB) => {
+        const a = new Date(dateA);
+        const b = new Date(dateB);
+
+        if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) {
+            return false;
+        }
+
+        return (
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate()
+        );
+    };
+
     const taskCount = () => {
         // If no date provided, only filter by time
         if (!date) {
@@ -7,13 +22,8 @@ export function GetTaskCountTime({ filteredTasks, time, date, variant }) {
             }).length;
         }
 
-        // Format date with zero-padding for single-digit months/days
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const formattedDate = `${date.getFullYear()}-${month}-${day}T00:00:00.000Z`;
-
         return filteredTasks.filter((task) => {
-            return task.TIME === time && task.DATE === formattedDate;
+            return task.TIME === time && isSameDay(task.DATE, date);
         }).length;
     };
 
@@ -39,6 +49,21 @@ export function GetTaskCountTime({ filteredTasks, time, date, variant }) {
 }
 
 export function GetLogbookCountTime({ filteredLogbooks, time, date }) {
+    const isSameDay = (dateA, dateB) => {
+        const a = new Date(dateA);
+        const b = new Date(dateB);
+
+        if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) {
+            return false;
+        }
+
+        return (
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate()
+        );
+    };
+
     const taskCount = () => {
         // If no date provided, only filter by time
         if (!date) {
@@ -47,13 +72,8 @@ export function GetLogbookCountTime({ filteredLogbooks, time, date }) {
             }).length;
         }
 
-        // Format date with zero-padding for single-digit months/days
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const formattedDate = `${date.getFullYear()}-${month}-${day}T00:00:00.000Z`;
-
         return filteredLogbooks.filter((logbook) => {
-            return logbook.TIME === time && logbook.DATE === formattedDate;
+            return logbook.TIME === time && isSameDay(logbook.DATE, date);
         }).length;
     };
 

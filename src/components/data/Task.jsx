@@ -2,7 +2,7 @@ import TaskIcon from "../../assets/icons/tasks.tsx";
 import EntryIcon from "../../assets/icons/logbook.tsx";
 import DisplayModal from "../modals/DisplayModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
-import { useState } from "react";
+import React, { useState } from "react";
 
 function Task({
     title,
@@ -16,6 +16,8 @@ function Task({
 }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
+    const isUnavailableTask =
+        wholeTask?.IS_UNAVAILABLE || wholeTask?.TYPE === "Unavailable";
 
     const handleTaskClick = (taskInfo) => {
         setSelectedTask(taskInfo);
@@ -34,7 +36,9 @@ function Task({
         >
             {type === "table" ? (
                 <>
-                    <div className="flex flex-row items-center gap-1 mb-2 w-full">
+                    <div
+                        className={`flex flex-row items-center gap-1 mb-2 w-full ${isUnavailableTask ? "opacity-50" : ""}`}
+                    >
                         {!isLogbook === true ? (
                             <TaskIcon className="w-4 flex-shrink-0 text-[var(--primary)]" />
                         ) : (
@@ -47,7 +51,9 @@ function Task({
                         </h1>
                     </div>
 
-                    <div className="flex flex-col justify-between gap-2 w-full">
+                    <div
+                        className={`flex flex-col justify-between gap-2 w-full ${isUnavailableTask ? "opacity-50" : ""}`}
+                    >
                         <div className="flex items-center gap-1 flex-wrap truncate flex-1">
                             <Splitter
                                 taskInfo={wholeTask}
@@ -61,7 +67,7 @@ function Task({
                             </p>
                             <p className="text-xs text-[var(--gray)]">•</p>
                             <p
-                                className={`text-xs ${status === "Completato" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"} ${status === "Non completato" ? "text-[var(--red)] font-bold" : "text-[var(--gray)]"} ${status === "In corso" ? "text-[var(--ambra)] font-bold" : "text-[var(--gray)]"}`}
+                                className={`text-xs ${status === "Completato" || status === "Completato da SL" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"} ${status === "Non completato" ? "text-[var(--red)] font-bold" : "text-[var(--gray)]"} ${status === "In corso" ? "text-[var(--ambra)] font-bold" : "text-[var(--gray)]"}`}
                             >
                                 {status || "N/A"}
                             </p>
@@ -96,7 +102,7 @@ function Task({
                             </p>
                             <p className="text-xs text-[var(--gray)]">•</p>
                             <p
-                                className={`text-xs ${status === "Completato" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"} ${status === "Non completato" ? "text-[var(--red)] font-bold" : "text-[var(--gray)]"} ${status === "In corso" ? "text-[var(--ambra)] font-bold" : "text-[var(--gray)]"}`}
+                                className={`text-xs ${status === "Completato" || status === "Completato da SL" ? "text-[var(--green)] font-bold" : "text-[var(--gray)]"} ${status === "Non completato" ? "text-[var(--red)] font-bold" : "text-[var(--gray)]"} ${status === "In corso" ? "text-[var(--ambra)] font-bold" : "text-[var(--gray)]"}`}
                             >
                                 {status || "N/A"}
                             </p>

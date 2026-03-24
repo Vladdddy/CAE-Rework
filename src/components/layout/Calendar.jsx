@@ -3,12 +3,15 @@ import TasksIcon from "../../assets/icons/tasks.tsx";
 import LogbookIcon from "../../assets/icons/logbook.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
+import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts";
 
 function Calendar({ startDate, setStartDate, onDayClick, type }) {
     const { tasks, loading } = useTasks();
+    const { tasks: unavailableTasks, loading: unavailableLoading } =
+        useUnavailableTasks();
     const { logbooks } = useLogbooks();
     const { users } = useUsers();
     const { employeeShifts } = useEmployeeShifts();
@@ -72,6 +75,65 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
         const taskTime = (task?.TIME || task?.time || "").toLowerCase();
         return taskTime === "notturno";
     };
+
+    const getItemStatus = (item) =>
+        (
+            item?.STATUS ||
+            item?.status ||
+            item?.TaskStatus ||
+            item?.taskStatus ||
+            ""
+        )
+            .toString()
+            .trim();
+
+    const getDayStatusTextColor = (items) => {
+        if (!items || items.length === 0) {
+            return "text-[var(--black)]";
+        }
+
+        const statuses = items.map(getItemStatus).filter(Boolean);
+
+        if (statuses.length === 0) {
+            return "text-[var(--black)]";
+        }
+
+        if (
+            statuses.some(
+                (status) =>
+                    status === "Non completato" ||
+                    status === "Da definire" ||
+                    status === "Non iniziato",
+            )
+        ) {
+            return "text-[var(--red)]";
+        }
+
+        if (statuses.some((status) => status === "In corso")) {
+            return "text-[var(--ambra)]";
+        }
+
+        if (
+            statuses.every(
+                (status) =>
+                    status === "Completato" || status === "Completato da SL",
+            )
+        ) {
+            return "text-[var(--green)]";
+        }
+
+        return "text-[var(--black)]";
+    };
+
+    const mergedTasks = [
+        ...(tasks || []),
+        ...(unavailableTasks || []).map((task) => ({
+            ...task,
+            IS_UNAVAILABLE: true,
+        })),
+    ];
+
+    const isTasksLoading = loading || unavailableLoading;
 
     const getEmployeeShiftCounts = (dayNumber) => {
         if (!dayNumber) {
@@ -159,7 +221,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                     {days.map((day, index) => {
                         const isToday = isCurrentMonth && day === todayDate;
                         const tasksForDay = day
-                            ? tasks.filter((task) =>
+                            ? mergedTasks.filter((task) =>
                                   isSameVisibleDay(task, day),
                               )
                             : [];
@@ -172,6 +234,13 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                             tasksForDay.filter(isDayTask).length;
                         const nightTasksCount =
                             tasksForDay.filter(isNightTask).length;
+                        const dayStatusTextColor =
+                            type === "logbooks"
+                                ? getDayStatusTextColor([
+                                      ...tasksForDay,
+                                      ...logbooksForDay,
+                                  ])
+                                : getDayStatusTextColor(tasksForDay);
                         const { dayEmployees, nightEmployees } =
                             getEmployeeShiftCounts(day);
 
@@ -184,8 +253,8 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                     ${
                                         day
                                             ? isToday
-                                                ? "bg-[var(--light-primary)] text-[var(--primary)] border border-[var(--primary)] cursor-pointer"
-                                                : "bg-[var(--white)] text-[var(--black)] border border-[var(--light-primary)] cursor-pointer hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition-all duration-200"
+                                                ? "bg-[var(--light-primary)] border border-[var(--primary)] cursor-pointer"
+                                                : "bg-[var(--white)] border border-[var(--light-primary)] cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200"
                                             : ""
                                     }
                                 `}
@@ -210,13 +279,15 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                             </div>
                                         )}
 
-                                        <h1 className="text-xl font-bold text-center mt-2">
+                                        <h1
+                                            className={`text-xl font-bold text-center mt-2 ${dayStatusTextColor}`}
+                                        >
                                             {day}
                                         </h1>
 
                                         <div className="flex flex-col items-center justify-center w-full gap-1">
                                             {type === "tasks" ? (
-                                                !loading &&
+                                                !isTasksLoading &&
                                                 tasksForDay.length > 0 && (
                                                     <>
                                                         <div className="flex items-center justify-between w-full gap-1">
@@ -252,7 +323,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                                             <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]">
                                                                 <TasksIcon className="w-5" />
                                                                 <p className="text-sm">
-                                                                    {loading
+                                                                    {isTasksLoading
                                                                         ? "..."
                                                                         : tasksForDay.length}
                                                                 </p>
@@ -265,7 +336,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                                                 <div className="flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]">
                                                                     <LogbookIcon className="w-5" />
                                                                     <p className="text-sm">
-                                                                        {loading
+                                                                        {isTasksLoading
                                                                             ? "..."
                                                                             : logbooksForDay.length}
                                                                     </p>

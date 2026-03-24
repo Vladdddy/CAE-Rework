@@ -37,6 +37,17 @@ const getUsernameById = (userId, users) => {
     return lastNameInitial ? `${firstName} ${lastNameInitial}` : firstName;
 };
 
+const getNotesKeyForItem = (item) => {
+    const isUnavailableTask =
+        item?.TYPE === "Unavailable" || item?.IS_UNAVAILABLE === true;
+
+    if (isUnavailableTask && item?.ORIGINAL_TASK_ID) {
+        return item.ORIGINAL_TASK_ID;
+    }
+
+    return item?.ID;
+};
+
 /**
  * Exports tasks to a PDF file grouped by simulator
  * @param {Array} tasks - Array of task objects (can be pre-filtered)
@@ -291,9 +302,9 @@ export const exportTasksToPDF = (
                         }
 
                         // Notes (excluding system notes)
-                        const taskNotes = (notesMap[task.ID] || []).filter(
-                            (note) => note.TYPE !== "automatico",
-                        );
+                        const taskNotes = (
+                            notesMap[getNotesKeyForItem(task)] || []
+                        ).filter((note) => note.TYPE !== "automatico");
                         if (taskNotes.length > 0) {
                             yPosition += 4;
                             checkPageBreak(5);
@@ -495,9 +506,9 @@ export const exportTasksToPDF = (
                             }
 
                             // Notes (excluding system notes)
-                            const taskNotes = (notesMap[task.ID] || []).filter(
-                                (note) => note.TYPE !== "automatico",
-                            );
+                            const taskNotes = (
+                                notesMap[getNotesKeyForItem(task)] || []
+                            ).filter((note) => note.TYPE !== "automatico");
                             if (taskNotes.length > 0) {
                                 yPosition += 4;
                                 checkPageBreak(5);

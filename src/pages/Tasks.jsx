@@ -12,10 +12,16 @@ import CreateModal from "../components/modals/CreateModal.jsx";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
+import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 
 function Tasks() {
     const { tasks, loading, fetchTasks } = useTasks();
+    const {
+        tasks: unavailableTasks,
+        loading: unavailableLoading,
+        fetchTasks: fetchUnavailableTasks,
+    } = useUnavailableTasks();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -81,6 +87,7 @@ function Tasks() {
     const handleSuccess = async (isSuccess, message) => {
         if (isSuccess) {
             await fetchTasks();
+            await fetchUnavailableTasks();
         }
         setPopupType(isSuccess ? "success" : "error");
         setPopupMessage(
@@ -110,6 +117,17 @@ function Tasks() {
             return currentDate;
         });
     }, [startDate, viewDays]);
+
+    const mergedTasks = useMemo(() => {
+        const normalizedUnavailableTasks = (unavailableTasks || []).map(
+            (task) => ({
+                ...task,
+                IS_UNAVAILABLE: true,
+            }),
+        );
+
+        return [...(tasks || []), ...normalizedUnavailableTasks];
+    }, [tasks, unavailableTasks]);
 
     const getSelectedDateString = (currentDate) => {
         return (
@@ -254,8 +272,11 @@ function Tasks() {
                                             >
                                                 <Table
                                                     type="tasks"
-                                                    loading={loading}
-                                                    taskList={tasks}
+                                                    loading={
+                                                        loading ||
+                                                        unavailableLoading
+                                                    }
+                                                    taskList={mergedTasks}
                                                     date={currentDate}
                                                     onDeleteSuccess={
                                                         handleSuccess
