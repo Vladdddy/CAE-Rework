@@ -132,6 +132,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const moveTaskToTodayAndCreateUnavailable = async (
         newStatus,
         triggerLabel,
+        applyCompletedCutoff = false,
     ) => {
         if (taskInfo.ISLOGBOOK || isUnavailableTask) {
             return { success: false, skipped: true };
@@ -139,8 +140,14 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
         const originalDate = toDateInputValue(taskInfo.DATE);
         const todayDate = new Date().toISOString().split("T")[0];
-        const shouldMoveTask =
+        const now = new Date();
+        const passedCutoffTime =
+            now.getHours() > 7 ||
+            (now.getHours() === 7 && now.getMinutes() >= 30);
+        const shouldMoveByDate =
             Boolean(originalDate) && originalDate !== todayDate;
+        const shouldMoveTask =
+            shouldMoveByDate && (!applyCompletedCutoff || passedCutoffTime);
 
         const updatedTaskData = buildTaskPayload(taskInfo, {
             status: newStatus,
@@ -531,6 +538,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             const completionResult = await moveTaskToTodayAndCreateUnavailable(
                 newStatus,
                 "stato Completato",
+                true,
             );
 
             if (!completionResult.success) {
@@ -661,6 +669,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                 const moveResult = await moveTaskToTodayAndCreateUnavailable(
                     taskInfo.STATUS,
                     'nota "creato"',
+                    true,
                 );
 
                 if (!moveResult.success && !moveResult.skipped) {
@@ -1093,6 +1102,12 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                     disabled
                                                 >
                                                     Rischedulato
+                                                </option>
+                                                <option
+                                                    value="Convertito in task"
+                                                    disabled
+                                                >
+                                                    Convertito in task
                                                 </option>
                                                 {(currentUserRole === "Admin" ||
                                                     currentUserRole ===

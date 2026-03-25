@@ -132,13 +132,24 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
                             return null;
                         }
 
+                        const receiverId =
+                            existingShift.EMPLOYEE_ID ?? change.EMPLOYEE_ID;
+
+                        // Avoid notifying users about their own shift changes.
+                        if (
+                            currentUserId != null &&
+                            String(receiverId) === String(currentUserId)
+                        ) {
+                            return null;
+                        }
+
                         const dateLabel = formatShiftDate(change.SELECTED_DATE);
                         const messageContent = dateLabel
                             ? `Data: ${dateLabel} | Turno precedente: ${previousShift} -> Turno nuovo: ${newShift}`
                             : `Turno precedente: ${previousShift} -> Turno nuovo: ${newShift}`;
 
                         return {
-                            receiverId: change.EMPLOYEE_ID,
+                            receiverId,
                             messageContent,
                         };
                     })

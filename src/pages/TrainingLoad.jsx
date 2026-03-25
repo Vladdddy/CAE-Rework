@@ -13,12 +13,34 @@ const COLUMNS = [
     "Eval Load",
 ];
 
+const normalizeFieldName = (value) =>
+    String(value ?? "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+
 const getField = (row, fieldNames, fallback = "---") => {
     for (const fieldName of fieldNames) {
         if (row?.[fieldName] !== undefined && row?.[fieldName] !== null) {
             return row[fieldName];
         }
     }
+
+    if (row && typeof row === "object") {
+        const normalizedCandidates = new Set(
+            fieldNames.map((fieldName) => normalizeFieldName(fieldName)),
+        );
+
+        for (const [key, value] of Object.entries(row)) {
+            if (
+                normalizedCandidates.has(normalizeFieldName(key)) &&
+                value !== undefined &&
+                value !== null
+            ) {
+                return value;
+            }
+        }
+    }
+
     return fallback;
 };
 
@@ -38,7 +60,12 @@ function TrainingLoad() {
             id: row.ID_SIM ?? row.Simulator ?? `${row.SIMULATORE}-${index}`,
             simulator: getField(row, ["SIMULATORE", "Simulatore", "Simulator"]),
             trainingLoad: getField(row, ["Training Load", "Training_Load"]),
-            debriefLoad: getField(row, ["Debrief Load", "Debrief_Load"]),
+            debriefLoad: getField(row, [
+                "Debrief Load",
+                "Debrief_Load",
+                "Debrief Config",
+                "DebriefConfig",
+            ]),
             previousTrainingLoad: getField(row, [
                 "Previous Training Load",
                 "Previous_Training_Load",

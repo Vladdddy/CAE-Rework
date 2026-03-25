@@ -352,6 +352,12 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                                         <option value="Completato">
                                             Completato
                                         </option>
+                                        <option value="Rischedulato">
+                                            Rischedulato
+                                        </option>
+                                        <option value="Convertito in task">
+                                            Convertito in task
+                                        </option>
                                         <option value="Non completato">
                                             Non completato
                                         </option>

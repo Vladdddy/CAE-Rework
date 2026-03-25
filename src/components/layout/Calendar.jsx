@@ -87,6 +87,9 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
             .toString()
             .trim();
 
+    const isUnavailableItem = (item) =>
+        item?.TYPE === "Unavailable" || item?.IS_UNAVAILABLE === true;
+
     const getDayStatusTextColor = (items) => {
         if (!items || items.length === 0) {
             return "text-[var(--black)]";
@@ -234,13 +237,16 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                             tasksForDay.filter(isDayTask).length;
                         const nightTasksCount =
                             tasksForDay.filter(isNightTask).length;
+                        const regularTasksForDay = tasksForDay.filter(
+                            (task) => !isUnavailableItem(task),
+                        );
                         const dayStatusTextColor =
                             type === "logbooks"
                                 ? getDayStatusTextColor([
-                                      ...tasksForDay,
+                                      ...regularTasksForDay,
                                       ...logbooksForDay,
                                   ])
-                                : getDayStatusTextColor(tasksForDay);
+                                : getDayStatusTextColor(regularTasksForDay);
                         const { dayEmployees, nightEmployees } =
                             getEmployeeShiftCounts(day);
 

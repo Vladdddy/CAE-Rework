@@ -32,11 +32,13 @@ function ModifyModal({
     );
     const [selectedRadio, setSelectedRadio] = useState(task.TIME || "Diurno");
     const [selectedAssignees, setSelectedAssignees] = useState(
-        task.ASSIGNED_TO
-            ? typeof task.ASSIGNED_TO === "string"
-                ? task.ASSIGNED_TO.split(", ").filter((name) => name.trim())
-                : task.ASSIGNED_TO
-            : [],
+        isDuplicating && !isRescheduling
+            ? []
+            : task.ASSIGNED_TO
+              ? typeof task.ASSIGNED_TO === "string"
+                  ? task.ASSIGNED_TO.split(", ").filter((name) => name.trim())
+                  : task.ASSIGNED_TO
+              : [],
     );
     const [title, setTitle] = useState(task.TITLE || "");
     const [description, setDescription] = useState(task.DESCRIPTION || "");
@@ -124,6 +126,12 @@ function ModifyModal({
             setSelectedStatus(task.STATUS || "Da definire");
         }
     }, [isRescheduling, task.STATUS]);
+
+    useEffect(() => {
+        if (isConverting && task.ISLOGBOOK) {
+            setSelectedStatus("Convertito in task");
+        }
+    }, [isConverting, task.ISLOGBOOK]);
 
     // Check if any changes have been made
     const hasChanges = useMemo(() => {
@@ -322,11 +330,16 @@ function ModifyModal({
         setTitleError(false);
         const todayDate = new Date().toISOString().split("T")[0];
         const originalTaskDate = task.DATE ? task.DATE.split("T")[0] : "";
+        const now = new Date();
+        const passedCompletedCutoff =
+            now.getHours() > 7 ||
+            (now.getHours() === 7 && now.getMinutes() >= 30);
         const shouldMoveCompletedTaskToToday =
             !task.ISLOGBOOK &&
             selectedStatus === "Completato" &&
             originalTaskDate &&
-            originalTaskDate !== todayDate;
+            originalTaskDate !== todayDate &&
+            passedCompletedCutoff;
 
         const modifiedTask = {
             title: title,
@@ -338,7 +351,10 @@ function ModifyModal({
             date: shouldMoveCompletedTaskToToday ? todayDate : selectedDate,
             time: selectedRadio,
             assigned_to: selectedAssignees.join(", ") || null,
-            status: selectedStatus,
+            status:
+                isConverting && isLogbook
+                    ? "Convertito in task"
+                    : selectedStatus,
         };
 
         // Handle task duplication or rescheduling
@@ -818,11 +834,17 @@ function ModifyModal({
                                 <option value="Rischedulato" disabled>
                                     Rischedulato
                                 </option>
+                                <option value="Convertito in task" disabled>
+                                    Convertito in task
+                                </option>
                                 <option value="Da definire">Da definire</option>
                                 <option value="In corso">In corso</option>
                                 <option value="Completato">Completato</option>
                                 <option value="Non completato">
                                     Non completato
+                                </option>
+                                <option value="Convertito in task">
+                                    Convertito in task
                                 </option>
                                 {(currentUserRole === "Admin" ||
                                     currentUserRole === "Shift Leader") && (
