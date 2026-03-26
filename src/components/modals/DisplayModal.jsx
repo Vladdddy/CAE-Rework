@@ -74,6 +74,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const isUnavailableTask =
         !taskInfo.ISLOGBOOK &&
         (taskInfo?.TYPE === "Unavailable" || taskInfo?.IS_UNAVAILABLE);
+    const isPmPlanTask = Boolean(taskInfo?.IS_PM_PLAN_TASK);
     const attachmentImages = taskInfo.ISLOGBOOK
         ? getLogbookImages(taskInfo.ID)
         : getTaskImages(taskInfo.ID);
@@ -912,7 +913,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                             className={`text-xl ${taskInfo.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
                         >
                             Dettagli{taskInfo.ISLOGBOOK ? " Entry" : " Task"} #
-                            {taskInfo.ORIGINAL_TASK_ID || taskInfo.ID}
+                            {taskInfo.ORIGINAL_TASK_ID || taskInfo.ID}{" "}
+                            {isPmPlanTask ? "(PM Plan)" : ""}
                         </h1>
                     </div>
                     <button
@@ -937,7 +939,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 <p className="text-sm">Dettagli Task</p>
                             </div>
 
-                            {!isUnavailableTask && (
+                            {!isUnavailableTask && !isPmPlanTask && (
                                 <div
                                     className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
                                         activeTab === "note"
@@ -977,7 +979,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                         {!isUnavailableTask &&
                             (currentUserRole === "Admin" ||
                                 currentUserRole === "Shift Leader") &&
-                            !taskInfo.ISLOGBOOK && (
+                            !taskInfo.ISLOGBOOK &&
+                            !isPmPlanTask && (
                                 <div className="flex flex-col items-end gap-2">
                                     <div
                                         className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
@@ -1083,6 +1086,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 onChange={handleStatusChange}
                                                 name=""
                                                 id=""
+                                                disabled={isPmPlanTask}
                                                 className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                             >
                                                 <option value="In corso">
@@ -1371,7 +1375,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     )}
 
                                     {/* File Upload Input - appears under existing attachments */}
-                                    {canManageAttachments && (
+                                    {canManageAttachments && !isPmPlanTask && (
                                         <div className="flex flex-col gap-2 mt-4">
                                             <input
                                                 type="file"
@@ -1443,6 +1447,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 )*/}
 
                                 {!isUnavailableTask &&
+                                    !isPmPlanTask &&
                                     (currentUserRole === "Admin" ||
                                         currentUserRole === "Shift Leader" ||
                                         (taskInfo.ASSIGNED_TO &&
@@ -1465,6 +1470,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     )}
 
                                 {!isUnavailableTask &&
+                                    !isPmPlanTask &&
                                     (!taskInfo?.IS_FLAGGED
                                         ? (currentUserRole === "Admin" ||
                                               currentUserRole ===
@@ -1497,6 +1503,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Chiudi
                                     </button>
                                     {!isUnavailableTask &&
+                                        !isPmPlanTask &&
                                         (currentUserRole === "Admin" ||
                                             currentUserRole ===
                                                 "Shift Leader" ||

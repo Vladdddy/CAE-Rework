@@ -32,7 +32,7 @@ function ModifyModal({
     );
     const [selectedRadio, setSelectedRadio] = useState(task.TIME || "Diurno");
     const [selectedAssignees, setSelectedAssignees] = useState(
-        isDuplicating && !isRescheduling
+        isDuplicating
             ? []
             : task.ASSIGNED_TO
               ? typeof task.ASSIGNED_TO === "string"

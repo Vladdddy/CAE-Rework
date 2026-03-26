@@ -11,17 +11,22 @@ import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useEmployeeShifts } from "../components/data/provider/employeeShiftsAPI/useEmployeeShifts";
+import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
 import {
     GetTaskCountTime,
     GetTaskCountStatus,
 } from "../functions/TaskLength.jsx";
 import Employee from "../components/data/Employee.jsx";
+import TaskSimOne from "../components/data/TaskSimOne.jsx";
+import TaskTest from "../components/data/TaskTest.jsx";
+import Task from "../components/data/Task.jsx";
 
 function Dashboard() {
     const { tasks, loading, fetchTasks } = useTasks();
     const { logbooks, loading: logbooksLoading, fetchLogbooks } = useLogbooks();
     const { users, loading: usersLoading } = useUsers();
     const { employeeShifts, loading: shiftsLoading } = useEmployeeShifts();
+    const { taskSimOne } = useTaskSimOne();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -87,6 +92,15 @@ function Dashboard() {
     ]);
     const dayShiftEmployees = getUsersWithShifts("Employee", dayShiftTypes);
     const nightShiftEmployees = getUsersWithShifts("Employee", nightShiftTypes);
+
+    const SIMULATOR_MAP = {
+        1: "109",
+        2: "FTD",
+        3: "139#1",
+        4: "139#3",
+        5: "169",
+        6: "189",
+    };
 
     const filteredTasks = useMemo(() => {
         if (!searchQuery.trim()) return tasks;
@@ -201,6 +215,38 @@ function Dashboard() {
             window.removeEventListener("contrastChange", handleContrastChange);
         };
     }, []);
+
+    const getTaskSimOneListData = taskSimOne
+        .filter((task) => {
+            const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+            // Return true only if simulatorId exists in SIMULATOR_MAP
+            return simulatorId && SIMULATOR_MAP[simulatorId];
+        })
+        .map((task) => {
+            const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+            const simulatorName = SIMULATOR_MAP[simulatorId];
+
+            return {
+                ...task,
+                ID: task["ID_task"] ?? task.ID,
+                TITLE: task["Task"] ?? task.TITLE,
+                DATE: task["Scheduled on"] ?? task.DATE,
+                STATUS:
+                    task["Task Done"] === true
+                        ? "Completato"
+                        : "Non completato",
+                ASSIGNED_TO: task["Task Performed By"] ?? task.ASSIGNED_TO,
+                DESCRIPTION:
+                    task["Reference Doc"] ??
+                    task["Maintenance Manual Reference"] ??
+                    task.DESCRIPTION,
+                TYPE: "PM Plan",
+                IS_PM_PLAN_TASK: true,
+                SIMULATOR: simulatorName,
+                TIME: "Notturno", // Add TIME property for GetSimulators filtering
+                Data: task["Scheduled on"] ?? task.Data,
+            };
+        });
 
     return (
         <section className="flex">
@@ -409,7 +455,10 @@ function Dashboard() {
                                                 type="dashboard&today"
                                                 time="Notturno"
                                                 date={new Date()}
-                                                taskList={filteredTasks}
+                                                taskList={[
+                                                    ...getTaskSimOneListData,
+                                                    ...filteredTasks,
+                                                ]}
                                                 onDeleteSuccess={
                                                     handleDeleteSuccess
                                                 }
@@ -684,6 +733,32 @@ function Dashboard() {
                             </div>
                         </div>
                     </div>
+
+                    {/* <div
+                        className={`m-8 ${showContrast ? "border-[var(--orange-panoramica)]" : "border-[var(--light-primary)]"} flex flex-col gap-8 border rounded-lg p-4 bg-[var(--bento-bg)]`}
+                    >
+                        <div className="flex items-center flex-wrap gap-2 justify-between text-l text-[var(--black)] border-b border-[var(--light-primary)] pb-4">
+                            <p>PM Task di oggi</p>
+                        </div>
+
+                        <div className="flex flex-col gap-2 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                            {taskSimOneLoading ? (
+                                <div className="text-center text-sm text-[var(--gray)] py-4">
+                                    Caricamento...
+                                </div>
+                            ) : taskSimOneError ? (
+                                <div className="text-center text-sm text-[var(--error)] py-4">
+                                    {taskSimOneError}
+                                </div>
+                            ) : taskSimOne.length === 0 ? (
+                                <div className="text-center text-sm text-[var(--gray)] py-4">
+                                    Nessun task PM Plan non completato per oggi
+                                </div>
+                            ) : (
+                                <>{getTaskSimOneList}</>
+                            )}
+                        </div>
+                    </div> */}
                 </div>
             </div>
             {showPopup && <Popup type={popupType} message={popupMessage} />}
