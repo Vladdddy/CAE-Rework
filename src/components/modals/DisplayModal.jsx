@@ -11,6 +11,7 @@ import { useUsers } from "../data/provider/userAPI/useUsers.js";
 import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
 import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
 import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks.js";
+import { useUnavailableLogbooks } from "../data/provider/unavailableLogbookAPI/useUnavailableLogbooks.js";
 import ModifyModal from "./ModifyModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
 import ConvertIcon from "../../assets/icons/convert.tsx";
@@ -40,6 +41,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
     const { addTask: addUnavailableTask, fetchTasks: fetchUnavailableTasks } =
         useUnavailableTasks();
+    const {
+        addLogbook: addUnavailableLogbook,
+        fetchLogbooks: fetchUnavailableLogbooks,
+    } = useUnavailableLogbooks();
     const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
     const { notes, fetchNotes, createNote, editNote, deleteNote } = useNotes();
     const {
@@ -74,6 +79,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const isUnavailableTask =
         !taskInfo.ISLOGBOOK &&
         (taskInfo?.TYPE === "Unavailable" || taskInfo?.IS_UNAVAILABLE);
+    const isUnavailableLogbook =
+        taskInfo.ISLOGBOOK &&
+        (taskInfo?.TYPE === "Unavailable" || taskInfo?.IS_UNAVAILABLE);
+    const isUnavailableEntity = isUnavailableTask || isUnavailableLogbook;
     const isPmPlanTask = Boolean(taskInfo?.IS_PM_PLAN_TASK);
     const attachmentImages = taskInfo.ISLOGBOOK
         ? getLogbookImages(taskInfo.ID)
@@ -98,7 +107,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         taskInfo.ISLOGBOOK ? isLogbookImageFile(image) : isImageFile(image);
 
     const canManageAttachments =
-        !isUnavailableTask &&
+        !isUnavailableEntity &&
         (currentUserRole === "Admin" || currentUserRole === "Shift Leader");
 
     const toDateInputValue = (dateLike) => {
@@ -130,12 +139,30 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         ...overrides,
     });
 
-    const moveTaskToTodayAndCreateUnavailable = async (
+    const buildLogbookPayload = (baseLogbook, overrides = {}) => ({
+        title: baseLogbook.TITLE,
+        description: baseLogbook.DESCRIPTION,
+        category: baseLogbook.CATEGORY,
+        subcategory: baseLogbook.SUBCATEGORY,
+        extradetail: baseLogbook.EXTRADETAIL,
+        simulator: baseLogbook.SIMULATOR,
+        date: toDateInputValue(baseLogbook.DATE),
+        time: baseLogbook.TIME,
+        assigned_to: baseLogbook.ASSIGNED_TO,
+        status: baseLogbook.STATUS,
+        type: baseLogbook.TYPE,
+        isLogbook: true,
+        original_logbook_id:
+            baseLogbook.ORIGINAL_LOGBOOK_ID || baseLogbook.ID || null,
+        ...overrides,
+    });
+
+    const moveEntityToTodayAndCreateUnavailable = async (
         newStatus,
         triggerLabel,
         applyCompletedCutoff = false,
     ) => {
-        if (taskInfo.ISLOGBOOK || isUnavailableTask) {
+        if (isUnavailableEntity) {
             return { success: false, skipped: true };
         }
 
@@ -150,47 +177,72 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         const shouldMoveTask =
             shouldMoveByDate && (!applyCompletedCutoff || passedCutoffTime);
 
-        const updatedTaskData = buildTaskPayload(taskInfo, {
-            status: newStatus,
-            date: shouldMoveTask ? todayDate : originalDate,
-        });
+        const updatedEntityData = taskInfo.ISLOGBOOK
+            ? buildLogbookPayload(taskInfo, {
+                  status: newStatus,
+                  date: shouldMoveTask ? todayDate : originalDate,
+              })
+            : buildTaskPayload(taskInfo, {
+                  status: newStatus,
+                  date: shouldMoveTask ? todayDate : originalDate,
+              });
 
-        const updateResult = await updateTask(taskInfo.ID, updatedTaskData);
+        const updateResult = taskInfo.ISLOGBOOK
+            ? await updateLogbook(taskInfo.ID, updatedEntityData)
+            : await updateTask(taskInfo.ID, updatedEntityData);
 
         if (!updateResult.success) {
             return {
                 success: false,
                 skipped: false,
-                error: "Errore nell'aggiornamento della task",
+                error: taskInfo.ISLOGBOOK
+                    ? "Errore nell'aggiornamento dell'entry"
+                    : "Errore nell'aggiornamento della task",
             };
         }
 
         let unavailableCreated = false;
         if (shouldMoveTask) {
-            const unavailablePayload = buildTaskPayload(taskInfo, {
-                date: originalDate,
-                type: "Unavailable",
-                status: "Rischedulato",
-                isFlagged: 0,
-                original_task_id: taskInfo.ID,
-            });
+            const unavailablePayload = taskInfo.ISLOGBOOK
+                ? buildLogbookPayload(taskInfo, {
+                      date: originalDate,
+                      type: "Unavailable",
+                      status: "Rischedulato",
+                      isLogbook: true,
+                      original_logbook_id: taskInfo.ID,
+                  })
+                : buildTaskPayload(taskInfo, {
+                      date: originalDate,
+                      type: "Unavailable",
+                      status: "Rischedulato",
+                      isFlagged: 0,
+                      original_task_id: taskInfo.ID,
+                  });
 
-            const unavailableResult =
-                await addUnavailableTask(unavailablePayload);
+            const unavailableResult = taskInfo.ISLOGBOOK
+                ? await addUnavailableLogbook(unavailablePayload)
+                : await addUnavailableTask(unavailablePayload);
 
             if (!unavailableResult.success) {
                 return {
                     success: false,
                     skipped: false,
-                    error: "Task aggiornata ma creazione unavailable non riuscita",
+                    error: taskInfo.ISLOGBOOK
+                        ? "Entry aggiornata ma creazione unavailable non riuscita"
+                        : "Task aggiornata ma creazione unavailable non riuscita",
                 };
             }
 
             unavailableCreated = true;
         }
 
-        await fetchTasks();
-        await fetchUnavailableTasks();
+        if (taskInfo.ISLOGBOOK) {
+            await fetchLogbooks();
+            await fetchUnavailableLogbooks();
+        } else {
+            await fetchTasks();
+            await fetchUnavailableTasks();
+        }
 
         return {
             success: true,
@@ -198,8 +250,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             moved: shouldMoveTask,
             unavailableCreated,
             message: shouldMoveTask
-                ? `Task aggiornata: spostata a oggi e sostituita con unavailable (${triggerLabel})`
-                : "Task aggiornata con successo",
+                ? `${taskInfo.ISLOGBOOK ? "Entry" : "Task"} aggiornata: spostata a oggi e sostituita con unavailable (${triggerLabel})`
+                : `${taskInfo.ISLOGBOOK ? "Entry" : "Task"} aggiornata con successo`,
         };
     };
 
@@ -535,12 +587,13 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
         const newStatus = e.target.value;
 
-        if (!isLogbook && !isUnavailableTask && newStatus === "Completato") {
-            const completionResult = await moveTaskToTodayAndCreateUnavailable(
-                newStatus,
-                "stato Completato",
-                true,
-            );
+        if (!isUnavailableEntity && newStatus === "Completato") {
+            const completionResult =
+                await moveEntityToTodayAndCreateUnavailable(
+                    newStatus,
+                    "stato Completato",
+                    !isLogbook,
+                );
 
             if (!completionResult.success) {
                 if (onSuccess && !completionResult.skipped) {
@@ -549,13 +602,21 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                 return;
             }
 
-            const changeStatusNote = await createNote(
-                taskInfo.ID,
-                currentUserId,
-                "Stato modificato da " +
-                    `"${taskInfo.STATUS}" a "${newStatus}"`,
-                "automatico",
-            );
+            const changeStatusNote = isLogbook
+                ? await createNoteLogbook(
+                      taskInfo.ID,
+                      currentUserId,
+                      "Stato modificato da " +
+                          `"${taskInfo.STATUS}" a "${newStatus}"`,
+                      "automatico",
+                  )
+                : await createNote(
+                      taskInfo.ID,
+                      currentUserId,
+                      "Stato modificato da " +
+                          `"${taskInfo.STATUS}" a "${newStatus}"`,
+                      "automatico",
+                  );
 
             if (changeStatusNote.success) {
                 setNoteDescription("");
@@ -666,11 +727,14 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         if (result.success) {
             setNoteDescription("");
 
-            if (!isLogbook && !isUnavailableTask && !doNotMoveTaskOnNote) {
-                const moveResult = await moveTaskToTodayAndCreateUnavailable(
+            const shouldMoveAfterNote =
+                !isUnavailableEntity && !doNotMoveTaskOnNote;
+
+            if (shouldMoveAfterNote) {
+                const moveResult = await moveEntityToTodayAndCreateUnavailable(
                     taskInfo.STATUS,
                     'nota "creato"',
-                    true,
+                    !isLogbook,
                 );
 
                 if (!moveResult.success && !moveResult.skipped) {
@@ -853,8 +917,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         });
     };
 
-    const isAttachmentUploadEnabled =
-        (!isUnavailableTask && !taskInfo.ISLOGBOOK) || taskInfo.ISLOGBOOK;
+    const isAttachmentUploadEnabled = !isUnavailableEntity;
 
     const handleFilesChange = (event) => {
         const files = Array.from(event.target.files || []);
@@ -939,7 +1002,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 <p className="text-sm">Dettagli Task</p>
                             </div>
 
-                            {!isUnavailableTask && !isPmPlanTask && (
+                            {!isUnavailableEntity && !isPmPlanTask && (
                                 <div
                                     className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
                                         activeTab === "note"
@@ -960,7 +1023,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                             )}
                         </div>
 
-                        {!isUnavailableTask &&
+                        {!isUnavailableEntity &&
                             (currentUserRole === "Admin" ||
                                 currentUserRole === "Shift Leader") &&
                             taskInfo.ISLOGBOOK && (
@@ -976,7 +1039,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 </div>
                             )}
 
-                        {!isUnavailableTask &&
+                        {!isUnavailableEntity &&
                             (currentUserRole === "Admin" ||
                                 currentUserRole === "Shift Leader") &&
                             !taskInfo.ISLOGBOOK &&
@@ -1072,7 +1135,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Stato
                                     </h3>
 
-                                    {isUnavailableTask ? (
+                                    {isUnavailableEntity ? (
                                         <div className="p-2 text-[var(--gray)] border border-[var(--light-primary)] rounded-md bg-[var(--white)]">
                                             {taskInfo?.STATUS || "Da definire"}
                                         </div>
@@ -1446,7 +1509,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     </>
                                 )*/}
 
-                                {!isUnavailableTask &&
+                                {!isUnavailableEntity &&
                                     !isPmPlanTask &&
                                     (currentUserRole === "Admin" ||
                                         currentUserRole === "Shift Leader" ||
@@ -1469,7 +1532,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         </button>
                                     )}
 
-                                {!isUnavailableTask &&
+                                {!isUnavailableEntity &&
                                     !isPmPlanTask &&
                                     (!taskInfo?.IS_FLAGGED
                                         ? (currentUserRole === "Admin" ||
@@ -1502,7 +1565,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     >
                                         Chiudi
                                     </button>
-                                    {!isUnavailableTask &&
+                                    {!isUnavailableEntity &&
                                         !isPmPlanTask &&
                                         (currentUserRole === "Admin" ||
                                             currentUserRole ===
@@ -1532,7 +1595,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                         </>
                     )}
 
-                    {!isUnavailableTask && activeTab === "note" && (
+                    {!isUnavailableEntity && activeTab === "note" && (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-8 max-h-[calc(40vh-4rem)] overflow-y-auto pr-1">
                                 {notes &&
@@ -1678,29 +1741,30 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         setNoteDescription(e.target.value)
                                     }
                                 ></textarea>
-                                {!editingNoteId &&
-                                    !taskInfo.ISLOGBOOK &&
-                                    !isUnavailableTask && (
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <input
-                                                id="do-not-move-task-on-note"
-                                                type="checkbox"
-                                                checked={doNotMoveTaskOnNote}
-                                                onChange={(e) =>
-                                                    setDoNotMoveTaskOnNote(
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                                className="h-4 w-4 rounded border border-[var(--light-primary)] bg-[var(--white)] accent-[var(--primary)] cursor-pointer focus:ring-none focus:ring-[var(--primary)] focus:ring-offset-0"
-                                            />
-                                            <label
-                                                htmlFor="do-not-move-task-on-note"
-                                                className="text-sm text-[var(--black)] cursor-pointer select-none"
-                                            >
-                                                Non spostare la task
-                                            </label>
-                                        </div>
-                                    )}
+                                {!editingNoteId && !isUnavailableEntity && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <input
+                                            id="do-not-move-task-on-note"
+                                            type="checkbox"
+                                            checked={doNotMoveTaskOnNote}
+                                            onChange={(e) =>
+                                                setDoNotMoveTaskOnNote(
+                                                    e.target.checked,
+                                                )
+                                            }
+                                            className="h-4 w-4 rounded border border-[var(--light-primary)] bg-[var(--white)] accent-[var(--primary)] cursor-pointer focus:ring-none focus:ring-[var(--primary)] focus:ring-offset-0"
+                                        />
+                                        <label
+                                            htmlFor="do-not-move-task-on-note"
+                                            className="text-sm text-[var(--black)] cursor-pointer select-none"
+                                        >
+                                            Non spostare la{" "}
+                                            {taskInfo.ISLOGBOOK
+                                                ? "entry"
+                                                : "task"}
+                                        </label>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">

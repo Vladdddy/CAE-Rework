@@ -15,6 +15,7 @@ import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks
 import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
 import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
 import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks.js";
+import { useUnavailableLogbooks } from "../data/provider/unavailableLogbookAPI/useUnavailableLogbooks.js";
 
 function ModifyModal({
     onClose,
@@ -69,6 +70,10 @@ function ModifyModal({
     const { updateTask, addTask } = useTasks();
     const { addTask: addUnavailableTask, fetchTasks: fetchUnavailableTasks } =
         useUnavailableTasks();
+    const {
+        addLogbook: addUnavailableLogbook,
+        fetchLogbooks: fetchUnavailableLogbooks,
+    } = useUnavailableLogbooks();
     const { updateLogbook, addLogbook } = useLogbooks();
     const { uploadTaskImages } = useImageTasks();
     const { uploadLogbookImages } = useImageLogbooks();
@@ -341,6 +346,12 @@ function ModifyModal({
             originalTaskDate !== todayDate &&
             passedCompletedCutoff;
 
+        const shouldMoveCompletedLogbookToToday =
+            task.ISLOGBOOK &&
+            selectedStatus === "Completato" &&
+            originalTaskDate &&
+            originalTaskDate !== todayDate;
+
         const modifiedTask = {
             title: title,
             description: description,
@@ -348,7 +359,11 @@ function ModifyModal({
             subcategory: selectedSubCategory,
             extradetail: selectedDetail,
             simulator: selectedSimulator,
-            date: shouldMoveCompletedTaskToToday ? todayDate : selectedDate,
+            date:
+                shouldMoveCompletedTaskToToday ||
+                shouldMoveCompletedLogbookToToday
+                    ? todayDate
+                    : selectedDate,
             time: selectedRadio,
             assigned_to: selectedAssignees.join(", ") || null,
             status:
@@ -600,6 +615,41 @@ function ModifyModal({
                 }
 
                 await fetchUnavailableTasks();
+            }
+
+            if (shouldMoveCompletedLogbookToToday) {
+                const unavailableLogbookPayload = {
+                    title: task.TITLE,
+                    description: task.DESCRIPTION,
+                    category: task.CATEGORY,
+                    subcategory: task.SUBCATEGORY,
+                    extradetail: task.EXTRADETAIL,
+                    simulator: task.SIMULATOR,
+                    date: originalTaskDate,
+                    time: task.TIME,
+                    assigned_to: task.ASSIGNED_TO,
+                    status: "Rischedulato",
+                    type: "Unavailable",
+                    isLogbook: true,
+                    original_logbook_id: task.ID,
+                };
+
+                const unavailableResult = await addUnavailableLogbook(
+                    unavailableLogbookPayload,
+                );
+
+                if (!unavailableResult.success) {
+                    onClose();
+                    if (onSuccess) {
+                        onSuccess(
+                            false,
+                            "Entry completata ma creazione unavailable non riuscita",
+                        );
+                    }
+                    return;
+                }
+
+                await fetchUnavailableLogbooks();
             }
 
             const changeMessage = generateChangeMessage();

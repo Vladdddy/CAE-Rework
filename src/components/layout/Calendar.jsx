@@ -4,6 +4,7 @@ import LogbookIcon from "../../assets/icons/logbook.tsx";
 import UserIcon from "../../assets/icons/user.tsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks";
+import { useUnavailableLogbooks } from "../data/provider/unavailableLogbookAPI/useUnavailableLogbooks";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts";
@@ -12,6 +13,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
     const { tasks, loading } = useTasks();
     const { tasks: unavailableTasks, loading: unavailableLoading } =
         useUnavailableTasks();
+    const { logbooks: unavailableLogbooks } = useUnavailableLogbooks();
     const { logbooks } = useLogbooks();
     const { users } = useUsers();
     const { employeeShifts } = useEmployeeShifts();
@@ -138,6 +140,14 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
 
     const isTasksLoading = loading || unavailableLoading;
 
+    const mergedLogbooks = [
+        ...(logbooks || []),
+        ...(unavailableLogbooks || []).map((logbook) => ({
+            ...logbook,
+            IS_UNAVAILABLE: true,
+        })),
+    ];
+
     const getEmployeeShiftCounts = (dayNumber) => {
         if (!dayNumber) {
             return { dayEmployees: 0, nightEmployees: 0 };
@@ -229,7 +239,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                               )
                             : [];
                         const logbooksForDay = day
-                            ? logbooks.filter((logbook) =>
+                            ? mergedLogbooks.filter((logbook) =>
                                   isSameVisibleDay(logbook, day),
                               )
                             : [];

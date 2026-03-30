@@ -10,6 +10,7 @@ import CreateModal from "../components/modals/CreateModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
+import { useUnavailableLogbooks } from "../components/data/provider/unavailableLogbookAPI/useUnavailableLogbooks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators";
@@ -22,6 +23,11 @@ function Logbook() {
         loading: unavailableLoading,
         fetchTasks: fetchUnavailableTasks,
     } = useUnavailableTasks();
+    const {
+        logbooks: unavailableLogbooks,
+        loading: unavailableLogbooksLoading,
+        fetchLogbooks: fetchUnavailableLogbooks,
+    } = useUnavailableLogbooks();
     const { logbooks, fetchLogbooks } = useLogbooks();
     const { simulators: todaySimulators } = useSimulators();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -98,6 +104,7 @@ function Logbook() {
             await fetchTasks();
             await fetchUnavailableTasks();
             await fetchLogbooks();
+            await fetchUnavailableLogbooks();
         }
         setPopupType(isSuccess ? "success" : "error");
         setPopupMessage(
@@ -132,12 +139,24 @@ function Logbook() {
             // Pass null as date if filters are active, otherwise pass startDate
             const hasActiveFilters = false;
 
+            const normalizedUnavailableLogbooks = (
+                unavailableLogbooks || []
+            ).map((logbook) => ({
+                ...logbook,
+                IS_UNAVAILABLE: true,
+            }));
+
+            const allLogbooksForExport = [
+                ...(logbooks || []),
+                ...normalizedUnavailableLogbooks,
+            ];
+
             let itemsToExport;
             let simulatorsToExport;
 
             if (hasActiveFilters) {
                 // If filters are active, use the filtered results
-                itemsToExport = [...allTasksForExport, ...logbooks];
+                itemsToExport = [...allTasksForExport, ...allLogbooksForExport];
                 simulatorsToExport = [];
             } else {
                 // If no filters are active, filter by the selected date only
@@ -152,11 +171,13 @@ function Logbook() {
                 });
 
                 // Filter logbooks by selected date
-                const logbooksForDate = logbooks.filter((logbook) => {
-                    const logbookDate = new Date(logbook.DATE);
-                    logbookDate.setHours(0, 0, 0, 0);
-                    return logbookDate.getTime() === selectedDate.getTime();
-                });
+                const logbooksForDate = allLogbooksForExport.filter(
+                    (logbook) => {
+                        const logbookDate = new Date(logbook.DATE);
+                        logbookDate.setHours(0, 0, 0, 0);
+                        return logbookDate.getTime() === selectedDate.getTime();
+                    },
+                );
 
                 itemsToExport = [...tasksForDate, ...logbooksForDate];
 
@@ -304,6 +325,17 @@ function Logbook() {
 
         return [...(tasks || []), ...normalizedUnavailableTasks];
     }, [tasks, unavailableTasks]);
+
+    const mergedLogbooks = useMemo(() => {
+        const normalizedUnavailableLogbooks = (unavailableLogbooks || []).map(
+            (logbook) => ({
+                ...logbook,
+                IS_UNAVAILABLE: true,
+            }),
+        );
+
+        return [...(logbooks || []), ...normalizedUnavailableLogbooks];
+    }, [logbooks, unavailableLogbooks]);
 
     const getSelectedDateString = (currentDate) => {
         return (
@@ -513,10 +545,11 @@ function Logbook() {
                                                     type="tasks&logbook"
                                                     loading={
                                                         loading ||
-                                                        unavailableLoading
+                                                        unavailableLoading ||
+                                                        unavailableLogbooksLoading
                                                     }
                                                     taskList={mergedTasks}
-                                                    logbookList={logbooks}
+                                                    logbookList={mergedLogbooks}
                                                     date={currentDate}
                                                     onDeleteSuccess={
                                                         handleSuccess
