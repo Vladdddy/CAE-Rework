@@ -169,9 +169,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         const originalDate = toDateInputValue(taskInfo.DATE);
         const todayDate = new Date().toISOString().split("T")[0];
         const now = new Date();
-        const passedCutoffTime =
-            now.getHours() > 7 ||
-            (now.getHours() === 7 && now.getMinutes() >= 30);
+        const passedCutoffTime = now.getHours() > 8 || now.getHours() === 8;
         const shouldMoveByDate =
             Boolean(originalDate) && originalDate !== todayDate;
         const shouldMoveTask =

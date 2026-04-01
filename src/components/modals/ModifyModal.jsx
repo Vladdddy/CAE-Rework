@@ -337,8 +337,7 @@ function ModifyModal({
         const originalTaskDate = task.DATE ? task.DATE.split("T")[0] : "";
         const now = new Date();
         const passedCompletedCutoff =
-            now.getHours() > 7 ||
-            (now.getHours() === 7 && now.getMinutes() >= 30);
+            now.getHours() > 8 || now.getHours() === 8;
         const shouldMoveCompletedTaskToToday =
             !task.ISLOGBOOK &&
             selectedStatus === "Completato" &&

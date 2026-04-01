@@ -321,7 +321,12 @@ function Sidebar(props) {
                             <CloseIcon className="w-6 h-6" />
                         </button>
                     </div>
-                    <div className="flex flex-col gap-2 mt-2 p-2">
+                    <div className="flex flex-col gap-2 mt-2 p-2 max-h-80 overflow-y-auto">
+                        <Update
+                            title="Task & Entry Fixes 1.04.26"
+                            text="Ora le task e le entry a cui vengono apportate delle modifiche prima delle ore 8:00 restano nel turno del giorno di ieri."
+                            date="1/04/2026 - 10:22"
+                        />
                         <Update
                             title="Bug Fixes 1.04.26"
                             text="Risolto il problema dell'Export PDF che non mostra più le task rischedulate. Inoltre sistemato il problema del display dei simulatori che venivano mostrati nel giorno sbagliato."

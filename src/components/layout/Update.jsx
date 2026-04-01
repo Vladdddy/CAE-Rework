@@ -6,7 +6,7 @@ function Update({ title, text, date }) {
     return (
         <div className="flex flex-col p-2 bg-[var(--light-primary)] rounded-md">
             <div className="flex items-center justify-between gap-2">
-                <p className="font-medium text-lg text-[var(--black)]">
+                <p className="font-medium text-md text-[var(--black)]">
                     {title}
                 </p>
                 <button
