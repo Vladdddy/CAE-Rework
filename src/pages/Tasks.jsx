@@ -1,6 +1,7 @@
 import Sidebar from "../components/layout/Sidebar.jsx";
 import Topbar from "../components/layout/Topbar.jsx";
 import Calendar from "../components/layout/Calendar.jsx";
+import MobileCalendar from "../components/layout/MobileCalendar.jsx";
 import DatePickerComponent from "../functions/DatePicker.jsx";
 import Table from "../components/data/Table.jsx";
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -168,12 +169,24 @@ function Tasks() {
 
                 <div className="flex-1 overflow-y-auto">
                     {showCalendar ? (
-                        <Calendar
-                            startDate={startDate}
-                            setStartDate={setStartDate}
-                            onDayClick={handleDayClick}
-                            type="tasks"
-                        />
+                        <>
+                            <div className="hidden md:block">
+                                <Calendar
+                                    startDate={startDate}
+                                    setStartDate={setStartDate}
+                                    onDayClick={handleDayClick}
+                                    type="tasks"
+                                />
+                            </div>
+
+                            <div className="md:hidden">
+                                <MobileCalendar
+                                    startDate={startDate}
+                                    setStartDate={setStartDate}
+                                    onDayClick={handleDayClick}
+                                />
+                            </div>
+                        </>
                     ) : (
                         <>
                             <div className="m-8 flex items-center justify-between">
