@@ -316,39 +316,36 @@ export function GetTableSimulators({
         "Others",
     ];
 
+    const toDateKey = (value) => {
+        if (!value) return null;
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return null;
+
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, "0");
+        const day = String(parsed.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
     const findMatchingSimulator = (simulatorName) => {
-        const selectedDate = localStorage.getItem("selectedDate");
+        const targetDateKey = toDateKey(date);
+        if (!targetDateKey || !dbSimulators?.length) return null;
 
-        if (!selectedDate) return null;
-
-        const dateObj = new Date(selectedDate + "T00:00:00");
-        const year = dateObj.getFullYear();
-        const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-        const day = String(dateObj.getDate()).padStart(2, "0");
-        const formattedSelectedDate = `${year}-${month}-${day}`;
-
-        /*const today = new Date("T00:00:00");
-        const yearToday = today.getFullYear();
-        const monthToday = String(today.getMonth() + 1).padStart(2, "0");
-        const dayToday = String(today.getDate()).padStart(2, "0");
-        const formattedSelectedDateToday = `${yearToday}-${monthToday}-${dayToday}`;*/
-
-        const match = dbSimulators?.find((dbSim) => {
-            if (!dbSim.CREATION_DATE) return false;
-
-            const dbDateObj = new Date(dbSim.CREATION_DATE);
-            const dbYear = dbDateObj.getFullYear();
-            const dbMonth = String(dbDateObj.getMonth() + 1).padStart(2, "0");
-            const dbDay = String(dbDateObj.getDate()).padStart(2, "0");
-            const dbFormattedDate = `${dbYear}-${dbMonth}-${dbDay}`;
-
-            return (
-                dbSim.NAME === simulatorName &&
-                dbFormattedDate === formattedSelectedDate
+        const sameDaySimulators = dbSimulators
+            .filter((dbSim) => {
+                if (!dbSim?.CREATION_DATE) return false;
+                return (
+                    dbSim.NAME === simulatorName &&
+                    toDateKey(dbSim.CREATION_DATE) === targetDateKey
+                );
+            })
+            .sort(
+                (a, b) =>
+                    new Date(b.CREATION_DATE).getTime() -
+                    new Date(a.CREATION_DATE).getTime(),
             );
-        });
 
-        return match;
+        return sameDaySimulators[0] || null;
     };
 
     return (

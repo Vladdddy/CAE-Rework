@@ -67,8 +67,10 @@ export const exportTasksToPDF = (
     users = [],
     showStatus = true,
 ) => {
-    // Use the tasks as-is (already filtered by the calling component)
-    const tasksForExport = tasks;
+    // Exclude rescheduled items from export.
+    const tasksForExport = tasks.filter(
+        (task) => (task?.STATUS || "").trim() !== "Rischedulato",
+    );
 
     // Create PDF
     const doc = new jsPDF();

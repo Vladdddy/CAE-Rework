@@ -13,7 +13,9 @@ import ReportIcon from "../../assets/icons/report.tsx";
 import LogoutModal from "../modals/LogoutModal.jsx";
 import SettingsIcon from "../../assets/icons/settings.tsx";
 import CloseIcon from "../../assets/icons/close.tsx";
+import UpdateIcon from "../../assets/icons/update.tsx";
 import AccessibilityIcon from "../../assets/icons/accessibility.tsx";
+import Update from "./Update.jsx";
 
 function Sidebar(props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,6 +25,7 @@ function Sidebar(props) {
         const saved = localStorage.getItem("showContrast");
         return saved !== null ? JSON.parse(saved) : true;
     });
+    const [showUpdates, setShowUpdates] = useState(false);
 
     useEffect(() => {
         localStorage.setItem("showContrast", JSON.stringify(showContrast));
@@ -220,50 +223,63 @@ function Sidebar(props) {
                             </Link>
                         </>
                     )}
-                    <Link
-                        to="mailto:bukatorvladyslav@gmail.com?subject=Segnalazione%20bug%20CAE"
-                        className={`flex flex-row items-center gap-2 transition-all duration-300 ${
-                            props.active === "report"
-                                ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
-                                      !props.isSidebarOpen
-                                          ? "px-2"
-                                          : "pr-8 pl-2 w-48"
-                                  } py-2`
-                                : "p-2 hover:bg-[var(--light-primary)] rounded-md"
-                        } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
-                    >
-                        <ReportIcon className="w-6" />
-                        <p
-                            className={`transition-opacity duration-300 ${
-                                props.isSidebarOpen
-                                    ? "opacity-100"
-                                    : "opacity-0 hidden"
-                            }`}
-                        >
-                            Segnala Bug
-                        </p>
-                    </Link>
                 </div>
             </div>
 
-            <div
-                className={`flex flex-row items-center gap-2 w-full transition-all text-l text-[var(--black)] duration-300 mt-auto mb-4 cursor-pointer relative ${
-                    props.active === "settings"
-                        ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md ${
-                              !props.isSidebarOpen ? "px-2" : "pr-8 pl-2 w-48"
-                          } py-2`
-                        : "p-2 hover:bg-[var(--light-primary)] rounded-md"
-                } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
-                onClick={() => setShowExportMenu(!showExportMenu)}
-            >
-                <AccessibilityIcon className={`w-6`} />
-                <p
-                    className={`transition-opacity duration-300 ${
-                        props.isSidebarOpen ? "opacity-100" : "opacity-0 hidden"
-                    }`}
+            <div className="flex flex-col items-center gap-2 w-full mt-auto mb-4">
+                <div
+                    className={`flex flex-row items-center gap-2 w-full transition-all text-l text-[var(--black)] duration-300 cursor-pointer relative ${
+                        props.active === "settings"
+                            ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md ${
+                                  !props.isSidebarOpen
+                                      ? "px-2"
+                                      : "pr-8 pl-2 w-48"
+                              } py-2`
+                            : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                    } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
+                    onClick={() => {
+                        setShowUpdates(!showUpdates);
+                        setShowContrast(false);
+                    }}
                 >
-                    Accessibilità
-                </p>
+                    <UpdateIcon className={`w-6`} />
+                    <p
+                        className={`transition-opacity duration-300 ${
+                            props.isSidebarOpen
+                                ? "opacity-100"
+                                : "opacity-0 hidden"
+                        }`}
+                    >
+                        Aggiornamenti
+                    </p>
+                </div>
+
+                <div
+                    className={`flex flex-row items-center gap-2 w-full transition-all text-l text-[var(--black)] duration-300 mt-auto mb-4 cursor-pointer relative ${
+                        props.active === "settings"
+                            ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md ${
+                                  !props.isSidebarOpen
+                                      ? "px-2"
+                                      : "pr-8 pl-2 w-48"
+                              } py-2`
+                            : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                    } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
+                    onClick={() => {
+                        setShowExportMenu(!showExportMenu);
+                        setShowUpdates(false);
+                    }}
+                >
+                    <AccessibilityIcon className={`w-6`} />
+                    <p
+                        className={`transition-opacity duration-300 ${
+                            props.isSidebarOpen
+                                ? "opacity-100"
+                                : "opacity-0 hidden"
+                        }`}
+                    >
+                        Accessibilità
+                    </p>
+                </div>
             </div>
 
             {showExportMenu && (
@@ -289,6 +305,29 @@ function Sidebar(props) {
                         />
                         <span>Mostra contrasto</span>
                     </label>
+                </div>
+            )}
+
+            {showUpdates && (
+                <div className="absolute left-4 right-4 bottom-48 w-96 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
+                    <div className="flex items-center justify-between px-2 py-2 border-b border-[var(--light-primary)] mb-2">
+                        <span className="text-lg font-medium">
+                            Aggiornamenti
+                        </span>
+                        <button
+                            onClick={() => setShowUpdates(false)}
+                            className="hover:bg-[var(--light-primary)] rounded transition-colors duration-200"
+                        >
+                            <CloseIcon className="w-6 h-6" />
+                        </button>
+                    </div>
+                    <div className="flex flex-col gap-2 mt-2 p-2">
+                        <Update
+                            title="Bug Fixes 1.04.26"
+                            text="Risolto il problema dell'Export PDF che non mostra più le task rischedulate. Inoltre sistemato il problema del display dei simulatori che venivano mostrati nel giorno sbagliato."
+                            date="1/04/2026 - 10:03"
+                        />
+                    </div>
                 </div>
             )}
 
