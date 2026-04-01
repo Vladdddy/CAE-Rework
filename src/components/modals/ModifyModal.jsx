@@ -709,7 +709,7 @@ function ModifyModal({
             "Toolbox check",
             "STG",
             "RoRo",
-            "Load EVAL",
+            "Load Eval",
             "Pre-Cert",
         ],
         Comment: [],

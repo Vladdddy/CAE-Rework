@@ -323,6 +323,11 @@ function Sidebar(props) {
                     </div>
                     <div className="flex flex-col gap-2 mt-2 p-2 max-h-80 overflow-y-auto">
                         <Update
+                            title="Training Load PDF 1.04.26"
+                            text="Aggiunta l'esportazione del Training Load in PDF, con un layout chiaro e professionale che include tutte le informazioni essenziali."
+                            date="1/04/2026 - 15:12"
+                        />
+                        <Update
                             title="Task & Entry Fixes 1.04.26"
                             text="Ora le task e le entry a cui vengono apportate delle modifiche prima delle ore 8:00 restano nel turno del giorno di ieri."
                             date="1/04/2026 - 10:22"

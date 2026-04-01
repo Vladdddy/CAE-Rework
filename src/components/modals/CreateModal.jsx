@@ -422,7 +422,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "Toolbox check",
             "STG",
             "RoRo",
-            "Load EVAL",
+            "Load Eval",
             "Pre-Cert",
         ],
         Comment: [],

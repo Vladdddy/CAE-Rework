@@ -273,7 +273,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
             "Toolbox check",
             "STG",
             "RoRo",
-            "LOAD EVAL",
+            "Load Eval",
             "PRE-CERT",
         ],
         COMMENT: [],
