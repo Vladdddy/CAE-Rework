@@ -16,7 +16,7 @@ const formatDate = (date) => {
  * Formats a time to HH:MM
  */
 const formatTime = (time) => {
-    if (!time) return "N/A";
+    if (!time) return "----";
     const d = new Date(time);
     const hours = String(d.getUTCHours()).padStart(2, "0");
     const minutes = String(d.getUTCMinutes()).padStart(2, "0");
@@ -48,8 +48,117 @@ const getNotesKeyForItem = (item) => {
     return item?.ID;
 };
 
+const normalizeFieldName = (value) =>
+    String(value ?? "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+
+const getField = (row, fieldNames, fallback = "---") => {
+    for (const fieldName of fieldNames) {
+        if (row?.[fieldName] !== undefined && row?.[fieldName] !== null) {
+            return row[fieldName];
+        }
+    }
+
+    if (row && typeof row === "object") {
+        const normalizedCandidates = new Set(
+            fieldNames.map((fieldName) => normalizeFieldName(fieldName)),
+        );
+
+        for (const [key, value] of Object.entries(row)) {
+            if (
+                normalizedCandidates.has(normalizeFieldName(key)) &&
+                value !== undefined &&
+                value !== null
+            ) {
+                return value;
+            }
+        }
+    }
+
+    return fallback;
+};
+
+const getCanonicalSimulatorKey = (name) => {
+    const normalized = String(name ?? "")
+        .toUpperCase()
+        .replace(/\s+/g, "");
+
+    if (normalized === "FTD" || normalized.includes("A109EFTD#1")) {
+        return "FTD";
+    }
+    if (normalized === "109FFS" || normalized.includes("A109EFFS#1")) {
+        return "109FFS";
+    }
+    if (normalized === "139#1" || normalized.includes("AW139FFS#1")) {
+        return "139#1";
+    }
+    if (normalized === "139#3" || normalized.includes("AW139FFS#3")) {
+        return "139#3";
+    }
+    if (normalized === "169" || normalized.includes("AW169FFS#1")) {
+        return "169";
+    }
+    if (normalized === "189" || normalized.includes("AW189FFS#1")) {
+        return "189";
+    }
+
+    return String(name ?? "").trim();
+};
+
+const buildTrainingLoadMap = (trainingLoads = []) => {
+    const rowsBySimulator = {};
+
+    trainingLoads.forEach((row) => {
+        const simulatorLabel = getField(
+            row,
+            ["SIMULATORE", "Simulatore", "Simulator"],
+            "",
+        );
+        const canonicalKey = getCanonicalSimulatorKey(simulatorLabel);
+        if (!canonicalKey) return;
+
+        if (!rowsBySimulator[canonicalKey]) {
+            rowsBySimulator[canonicalKey] = [];
+        }
+        rowsBySimulator[canonicalKey].push(row);
+    });
+
+    const selectedBySimulator = {};
+    Object.entries(rowsBySimulator).forEach(([key, rows]) => {
+        const preferredRow =
+            rows.find((row) => {
+                const comments = String(
+                    getField(row, ["Comments", "Comment"], ""),
+                ).toLowerCase();
+                return !comments.includes("dismissed");
+            }) || rows[0];
+
+        selectedBySimulator[key] = {
+            MASTER_CONFIG: getField(preferredRow, [
+                "Training Load",
+                "Training_Load",
+            ]),
+            DEBRIEF_CONFIG: getField(preferredRow, [
+                "Debrief Load",
+                "Debrief_Load",
+                "Debrief Config",
+                "DebriefConfig",
+            ]),
+            QTG_VERSION: getField(preferredRow, [
+                "QTG Tool version",
+                "QTG_Tool_version",
+            ]),
+        };
+    });
+
+    return selectedBySimulator;
+};
+
 /**
  * Exports tasks to a PDF file grouped by simulator
+ * Layout mirrors the bordered card style with header table, task list, and footer config table.
+ *
  * @param {Array} tasks - Array of task objects (can be pre-filtered)
  * @param {Date} date - The date for the report title (optional, null if using filters)
  * @param {Array} simulators - Array of simulator objects for today (optional)
@@ -62,6 +171,7 @@ export const exportTasksToPDF = (
     tasks,
     date = null,
     simulators = [],
+    trainingLoads = [],
     title = "Report Giornaliero",
     notesMap = {},
     users = [],
@@ -72,42 +182,77 @@ export const exportTasksToPDF = (
         (task) => (task?.STATUS || "").trim() !== "Rischedulato",
     );
 
-    // Create PDF
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
-    let yPosition = 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 20;
 
-    // Helper function to check and add new page if needed
-    const checkPageBreak = (requiredSpace = 10) => {
-        if (yPosition + requiredSpace > 270) {
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    const checkPageBreak = (needed = 10) => {
+        if (y + needed > pageHeight - 15) {
             doc.addPage();
-            yPosition = 20;
+            y = 20;
         }
     };
 
-    // Title
+    /**
+     * Draw a filled rectangle (used for header rows inside simulator cards).
+     */
+    const fillRect = (x, rectY, w, h, r, g, b) => {
+        doc.setFillColor(r, g, b);
+        doc.rect(x, rectY, w, h, "F");
+    };
+
+    /**
+     * Draw the outer border of a rectangle (no fill).
+     */
+    const strokeRect = (x, rectY, w, h, lw = 0.4) => {
+        doc.setLineWidth(lw);
+        doc.setDrawColor(160, 160, 160);
+        doc.rect(x, rectY, w, h, "S");
+    };
+
+    /**
+     * Draw a horizontal rule inside a card.
+     */
+    const hRule = (x, ruleY, w, lw = 0.3, r = 160, g = 160, b = 160) => {
+        doc.setLineWidth(lw);
+        doc.setDrawColor(r, g, b);
+        doc.line(x, ruleY, x + w, ruleY);
+    };
+
+    /**
+     * Draw a vertical rule.
+     */
+    const vRule = (x, ruleY, h, lw = 0.3) => {
+        doc.setLineWidth(lw);
+        doc.setDrawColor(160, 160, 160);
+        doc.line(x, ruleY, x, ruleY + h);
+    };
+
+    // ── Page title ────────────────────────────────────────────────────────────
+
     doc.setFontSize(14);
     doc.setFont(undefined, "bold");
-    doc.text(`${title} - ${formatDate(date)}`, margin, yPosition);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`${title} - ${formatDate(date)}`, margin, y);
+    y += 6;
+    hRule(margin, y, contentWidth, 0.6, 80, 80, 80);
+    y += 10;
 
-    // Line separator
-    yPosition += 10;
-    doc.setLineWidth(0.5);
-    doc.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += 15;
+    // ── Build simulator groupings ─────────────────────────────────────────────
 
-    // Define macro-simulator groupings
     const getMacroSimulator = (simName) => {
         const simxxi = ["FTD", "109FFS", "139#1"];
         const s3000 = ["139#3", "169", "189"];
-
         if (simxxi.includes(simName)) return "SIMXXI";
         if (s3000.includes(simName)) return "S3000";
         return "OTHERS";
     };
 
-    // Ensure all predefined simulators are included
     const predefinedSimulators = [
         "FTD",
         "109FFS",
@@ -117,539 +262,453 @@ export const exportTasksToPDF = (
         "189",
     ];
 
-    // Group tasks by simulator
     const tasksBySimulator = {};
     tasksForExport.forEach((task) => {
         const simName = task.SIMULATOR || "No Simulator";
-        if (!tasksBySimulator[simName]) {
-            tasksBySimulator[simName] = [];
-        }
+        if (!tasksBySimulator[simName]) tasksBySimulator[simName] = [];
         tasksBySimulator[simName].push(task);
     });
 
-    // Sort tasks within each simulator by status priority
     const statusPriority = {
         Completato: 1,
         "In corso": 2,
         "Non completato": 3,
     };
-
     Object.keys(tasksBySimulator).forEach((simName) => {
         tasksBySimulator[simName].sort((a, b) => {
-            const priorityA = statusPriority[a.STATUS] || 999;
-            const priorityB = statusPriority[b.STATUS] || 999;
-            return priorityA - priorityB;
+            return (
+                (statusPriority[a.STATUS] || 999) -
+                (statusPriority[b.STATUS] || 999)
+            );
         });
     });
 
-    // Create a map of simulators for quick lookup
     const simulatorMap = {};
-    if (simulators && simulators.length > 0) {
-        simulators.forEach((sim) => {
-            simulatorMap[sim.NAME] = sim;
-            // Add simulator to tasksBySimulator even if it has no tasks
-            if (!tasksBySimulator[sim.NAME]) {
-                tasksBySimulator[sim.NAME] = [];
-            }
-        });
-    }
-
-    // Always include predefined simulators even if they have no tasks
+    simulators.forEach((sim) => {
+        simulatorMap[sim.NAME] = sim;
+        if (!tasksBySimulator[sim.NAME]) tasksBySimulator[sim.NAME] = [];
+    });
+    const trainingLoadMap = buildTrainingLoadMap(trainingLoads);
     predefinedSimulators.forEach((simName) => {
-        if (!tasksBySimulator[simName]) {
-            tasksBySimulator[simName] = [];
-        }
+        if (!tasksBySimulator[simName]) tasksBySimulator[simName] = [];
     });
 
-    // Sort simulator names
-    const simulatorNames = Object.keys(tasksBySimulator).sort();
-
-    // Group simulators by macro-simulator
     const tasksByMacroSimulator = {};
-    simulatorNames.forEach((simName) => {
-        const macroSim = getMacroSimulator(simName);
-        if (!tasksByMacroSimulator[macroSim]) {
-            tasksByMacroSimulator[macroSim] = {};
-        }
-        tasksByMacroSimulator[macroSim][simName] = tasksBySimulator[simName];
-    });
+    Object.keys(tasksBySimulator)
+        .sort()
+        .forEach((simName) => {
+            const macro = getMacroSimulator(simName);
+            if (!tasksByMacroSimulator[macro])
+                tasksByMacroSimulator[macro] = {};
+            tasksByMacroSimulator[macro][simName] = tasksBySimulator[simName];
+        });
+    if (!tasksByMacroSimulator["OTHERS"]) tasksByMacroSimulator["OTHERS"] = {};
 
-    // Always ensure OTHERS exists, even if empty
-    if (!tasksByMacroSimulator["OTHERS"]) {
-        tasksByMacroSimulator["OTHERS"] = {};
-    }
-
-    // Sort macro-simulators (SIMXXI, S3000, OTHERS)
     const macroSimOrder = ["SIMXXI", "S3000", "OTHERS"];
     const macroSimulatorNames = macroSimOrder.filter(
-        (macro) => tasksByMacroSimulator[macro],
+        (m) => tasksByMacroSimulator[m],
     );
 
-    // If no tasks and no simulators
-    if (macroSimulatorNames.length === 0) {
-        doc.setFontSize(10);
-        doc.text("No tasks found.", margin, yPosition);
-    } else {
-        // Loop through each macro-simulator
-        macroSimulatorNames.forEach((macroSimName, macroIndex) => {
-            const simulatorsInMacro = tasksByMacroSimulator[macroSimName];
-            const simulatorNamesInMacro = Object.keys(simulatorsInMacro).sort();
+    // ── Status translation ────────────────────────────────────────────────────
 
-            checkPageBreak(40);
+    const statusTranslations = {
+        Completato: "Completed",
+        "In corso": "In progress",
+        "Non completato": "Not completed",
+        "Da definire": "To be defined",
+        "Non iniziato": "Not started",
+    };
 
-            // Macro-simulator header in dark red
-            doc.setFontSize(14);
-            doc.setFont(undefined, "bold");
-            doc.setTextColor(139, 0, 0); // Dark red
-            doc.text(macroSimName, margin, yPosition);
+    // ── Draw one simulator card ───────────────────────────────────────────────
+    /**
+     * Draws the full bordered card for a simulator, matching the reference image:
+     *
+     *  ┌──────────────────────────────────────────────────────────────────────┐
+     *  │ Sim: <NAME>  │  Training end time: HH:MM   │  Morning Readiness (PH) │
+     *  │              │  Training start time: HH:MM  │  Tech: <TECH>           │
+     *  ├──────────────────────────────────────────────────────────────────────┤
+     *  │  - Task 1 title (Assigned: X)                                        │
+     *  │  - Task 2 title (Assigned: X)   [status]                             │
+     *  │    Description …                                                     │
+     *  │    Notes …                                                            │
+     *  ├───────────────────┬───────────────────┬──────────────────────────────┤
+     *  │ Master config: X  │ Debrief config: X │ QTG tool version: X          │
+     *  └──────────────────────────────────────────────────────────────────────┘
+     */
+    const drawSimulatorCard = (simName, simTasks) => {
+        const sim = simulatorMap[simName] || {};
+        const configFromTrainingLoad =
+            trainingLoadMap[getCanonicalSimulatorKey(simName)] || {};
 
-            // For OTHERS, show simulator details next to header if available
-            if (
-                macroSimName === "OTHERS" &&
-                !showStatus &&
-                simulatorNamesInMacro.length > 0
-            ) {
-                const firstSimInOthers = simulatorNamesInMacro[0];
-                const sim = simulatorMap[firstSimInOthers];
-                if (sim) {
-                    doc.setFontSize(12);
-                    doc.setFont(undefined, "normal");
-                    const simDetailsPrefix = `  -  End time: ${formatTime(sim.START_HOUR)}   Start time: ${formatTime(sim.END_TIME)}   `;
-                    const simDetailsAssigned = `Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
-                    doc.setTextColor(139, 0, 0);
-                    doc.text(
-                        simDetailsPrefix,
-                        margin + doc.getTextWidth(macroSimName) + 5,
-                        yPosition,
+        // ── Estimate card height before drawing so we can page-break early ──
+        // Header rows: fixed 14 pt
+        const headerH = 14;
+
+        // Task body: estimate per task
+        let bodyH = 4; // top padding
+        if (simTasks.length === 0) {
+            bodyH += 8;
+        } else {
+            simTasks.forEach((task) => {
+                bodyH += 8; // title line
+                if (task.DESCRIPTION) {
+                    const lines = doc.splitTextToSize(
+                        task.DESCRIPTION,
+                        contentWidth - 20,
                     );
-                    doc.setTextColor(139, 0, 0);
-                    doc.text(
-                        simDetailsAssigned,
-                        margin +
-                            doc.getTextWidth(macroSimName) +
-                            5 +
-                            doc.getTextWidth(simDetailsPrefix),
-                        yPosition,
-                    );
+                    bodyH += lines.length * 5 + 2;
                 }
-            }
-
-            yPosition += 12;
-
-            // For OTHERS macro-simulator, display tasks directly without individual simulator names
-            if (macroSimName === "OTHERS") {
-                // Collect all tasks from all simulators in OTHERS
-                const allTasksInOthers = [];
-                simulatorNamesInMacro.forEach((simName) => {
-                    allTasksInOthers.push(...simulatorsInMacro[simName]);
-                });
-
-                if (allTasksInOthers.length === 0) {
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, "italic");
-                    doc.setTextColor(128, 128, 128);
-                    doc.text("No tasks assigned", margin + 10, yPosition);
-                    yPosition += 10;
-                } else {
-                    allTasksInOthers.forEach((task, index) => {
-                        checkPageBreak(15);
-
-                        // Determine if this is a logbook or task
-                        const isLogbook =
-                            task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
-
-                        // Type and Name with Assigned To inline
-                        doc.setFontSize(10);
-                        doc.setFont(undefined, "bold");
-                        if (isLogbook) {
-                            doc.setTextColor(255, 140, 0); // Orange for logbooks
-                        } else {
-                            doc.setTextColor(0, 102, 204); // Blue for tasks
-                        }
-                        const taskTitle = `${task.TITLE || "N/A"}`;
-                        doc.text(taskTitle, margin + 10, yPosition);
-
-                        // Assigned To inline
-                        doc.setFontSize(9);
-                        doc.setFont(undefined, "normal");
-                        doc.setTextColor(139, 0, 0);
-                        const assignedText = ` (Assigned to: ${task.ASSIGNED_TO || "N/A"})`;
-                        // Calculate width with the bold font size
-                        doc.setFontSize(10);
-                        doc.setFont(undefined, "bold");
-                        const titleWidth = doc.getTextWidth(taskTitle);
-                        doc.setFontSize(9);
-                        doc.setFont(undefined, "normal");
-                        doc.text(
-                            assignedText,
-                            margin + 10 + titleWidth,
-                            yPosition,
+                const notes = (notesMap[getNotesKeyForItem(task)] || []).filter(
+                    (n) => n.TYPE !== "automatico",
+                );
+                if (notes.length > 0) {
+                    bodyH += 6; // "Notes" label
+                    notes.forEach((note) => {
+                        bodyH += 5;
+                        const nl = doc.splitTextToSize(
+                            note.DESCRIPTION || "",
+                            contentWidth - 30,
                         );
-
-                        // Reset color to black for subsequent text
-                        doc.setTextColor(0, 0, 0);
-
-                        yPosition += 8;
-
-                        // Description
-                        if (task.DESCRIPTION) {
-                            const descLines = doc.splitTextToSize(
-                                `${task.DESCRIPTION}`,
-                                pageWidth - 2 * margin - 10,
-                            );
-                            checkPageBreak(6);
-                            doc.setFontSize(9);
-                            doc.text(descLines, margin + 15, yPosition);
-                            yPosition += descLines.length * 5;
-                        }
-
-                        // Notes (excluding system notes)
-                        const taskNotes = (
-                            notesMap[getNotesKeyForItem(task)] || []
-                        ).filter((note) => note.TYPE !== "automatico");
-                        if (taskNotes.length > 0) {
-                            yPosition += 4;
-                            checkPageBreak(5);
-
-                            doc.setFontSize(9);
-                            doc.setFont(undefined, "bold");
-                            doc.setTextColor(0, 102, 204);
-                            doc.text("Notes", margin + 15, yPosition);
-                            yPosition += 4;
-
-                            taskNotes.forEach((note) => {
-                                checkPageBreak(6);
-
-                                // Note author and description
-                                doc.setFontSize(8);
-                                doc.setFont(undefined, "bold");
-                                doc.setTextColor(0, 102, 204);
-                                const authorName = getUsernameById(
-                                    note.CREATEDBY,
-                                    users,
-                                );
-                                doc.text(
-                                    `${authorName}:`,
-                                    margin + 20,
-                                    yPosition,
-                                );
-                                yPosition += 4;
-
-                                // Note description
-                                doc.setFontSize(8);
-                                doc.setFont(undefined, "normal");
-                                doc.setTextColor(100, 100, 100);
-                                const noteLines = doc.splitTextToSize(
-                                    note.DESCRIPTION || "",
-                                    pageWidth - 2 * margin - 15,
-                                );
-                                checkPageBreak(5);
-                                doc.text(noteLines, margin + 20, yPosition);
-                                yPosition += noteLines.length * 4 + 3;
-                            });
-                        }
-
-                        // Status with color coding (only if showStatus is true)
-                        if (showStatus) {
-                            doc.setFontSize(9);
-                            doc.setFont(undefined, "bold");
-                            const status = task.STATUS || "N/A";
-
-                            // Translate status from Italian to English
-                            const statusTranslations = {
-                                Completato: "Completed",
-                                "In corso": "In progress",
-                                "Non completato": "Not completed",
-                                "Da definire": "To be defined",
-                                "Non iniziato": "Not started",
-                            };
-                            const translatedStatus =
-                                statusTranslations[status] || status;
-
-                            const isCompleted = status === "Completato";
-                            if (isCompleted) {
-                                doc.setTextColor(0, 128, 0); // Green for "Completato"
-                            } else {
-                                doc.setTextColor(255, 0, 0); // Red for other statuses
-                            }
-                            doc.text(
-                                `Status: ${translatedStatus}`,
-                                margin + 15,
-                                yPosition,
-                            );
-                            yPosition += 6;
-                        }
-
-                        doc.setFontSize(10);
-                        doc.setFont(undefined, "normal");
-                        doc.setTextColor(0, 0, 0);
-
-                        // Light separator between tasks
-                        if (index < allTasksInOthers.length - 1) {
-                            checkPageBreak(8);
-                            yPosition += 4;
-                            doc.setLineWidth(0.1);
-                            doc.setDrawColor(220, 220, 220);
-                            doc.line(
-                                margin + 10,
-                                yPosition,
-                                pageWidth - margin,
-                                yPosition,
-                            );
-                            yPosition += 6;
-                        }
+                        bodyH += nl.length * 4 + 4;
                     });
                 }
-            } else {
-                // For SIMXXI and S3000, show individual simulators
-                simulatorNamesInMacro.forEach((simName, simIndex) => {
-                    const simTasks = simulatorsInMacro[simName];
+                if (showStatus) bodyH += 6;
+                bodyH += 4; // spacing between tasks
+            });
+        }
+        bodyH += 4; // bottom padding
 
-                    checkPageBreak(40);
+        // Footer row: fixed 12 pt
+        const footerH = 12;
 
-                    // Simulator header in blue
-                    doc.setFontSize(12);
+        const totalCardH = headerH + bodyH + footerH;
+
+        checkPageBreak(totalCardH + 6);
+
+        const cardX = margin;
+        const cardW = contentWidth;
+        const cardY = y;
+
+        // ── Header row ────────────────────────────────────────────────────────
+        // Light grey background for header
+        fillRect(cardX, cardY, cardW, headerH, 240, 240, 240);
+
+        // Column split: sim name col ~28%, time col ~42%, readiness col ~30%
+        const col1W = cardW * 0.28;
+        const col2W = cardW * 0.42;
+        // Sim name
+        doc.setFontSize(10);
+        doc.setFont(undefined, "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Sim: ${simName}`, cardX + 4, cardY + 9);
+
+        // Vertical divider after col1
+        vRule(cardX + col1W, cardY, headerH);
+
+        // Training times (two rows)
+        const timeX = cardX + col1W + 4;
+        const endTime = sim.END_HOUR
+            ? formatTime(sim.END_HOUR)
+            : sim.START_HOUR
+              ? formatTime(sim.START_HOUR)
+              : "----";
+        const startTime = sim.START_HOUR
+            ? formatTime(sim.START_HOUR)
+            : sim.END_TIME
+              ? formatTime(sim.END_TIME)
+              : "----";
+
+        doc.setFontSize(8.5);
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Training end time:`, timeX, cardY + 5.5);
+        doc.setFont(undefined, "bold");
+        doc.text(
+            endTime,
+            timeX + doc.getTextWidth("Training end time: ") - 2,
+            cardY + 5.5,
+        );
+
+        doc.setFont(undefined, "normal");
+        doc.text(`Training start time:`, timeX, cardY + 11);
+        doc.setFont(undefined, "bold");
+        doc.text(
+            startTime,
+            timeX + doc.getTextWidth("Training start time: ") - 2,
+            cardY + 11,
+        );
+
+        // Vertical divider after col2
+        vRule(cardX + col1W + col2W, cardY, headerH);
+
+        // Morning readiness + Tech
+        const readX = cardX + col1W + col2W + 4;
+
+        // Morning readiness label
+        doc.setFontSize(8.5);
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(0, 0, 0);
+        const phLabel = sim.PHASE
+            ? `Morning Readiness (${sim.PHASE})`
+            : "Morning Readiness";
+        doc.text(phLabel, readX, cardY + 5.5);
+
+        // Tech label + colored name
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.text("Tech:", readX, cardY + 11);
+        if (sim.ASSIGNED_TO) {
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(200, 0, 0); // red like in image
+            doc.text(
+                ` ${sim.ASSIGNED_TO}`,
+                readX + doc.getTextWidth("Tech:"),
+                cardY + 11,
+            );
+        }
+
+        // Outer border for header
+        strokeRect(cardX, cardY, cardW, headerH, 0.5);
+
+        // ── Task body ─────────────────────────────────────────────────────────
+        const bodyY = cardY + headerH;
+        let by = bodyY + 5; // inner cursor
+
+        if (simTasks.length === 0) {
+            doc.setFontSize(9);
+            doc.setFont(undefined, "italic");
+            doc.setTextColor(130, 130, 130);
+            doc.text("No tasks assigned", cardX + 8, by + 3);
+            by += 8;
+        } else {
+            simTasks.forEach((task, idx) => {
+                const isLogbook =
+                    task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
+                const titleColor = isLogbook ? [200, 100, 0] : [0, 80, 180];
+
+                // Bullet + title
+                doc.setFontSize(9.5);
+                doc.setFont(undefined, "bold");
+                doc.setTextColor(...titleColor);
+                const bullet = "-  ";
+                doc.text(bullet, cardX + 6, by);
+
+                const taskTitle = task.TITLE || "N/A";
+                doc.text(taskTitle, cardX + 12, by);
+
+                // Assigned to inline (dark red)
+                const titleWidthPx = doc.getTextWidth(taskTitle);
+                doc.setFontSize(8.5);
+                doc.setFont(undefined, "normal");
+                doc.setTextColor(180, 0, 0);
+                const assignedText = `  (Assigned to: ${task.ASSIGNED_TO || "N/A"})`;
+                doc.text(assignedText, cardX + 12 + titleWidthPx, by);
+                doc.setTextColor(0, 0, 0);
+
+                by += 6.5;
+
+                // Description
+                if (task.DESCRIPTION) {
+                    const descLines = doc.splitTextToSize(
+                        task.DESCRIPTION,
+                        contentWidth - 22,
+                    );
+                    doc.setFontSize(8.5);
+                    doc.setFont(undefined, "normal");
+                    doc.setTextColor(50, 50, 50);
+                    descLines.forEach((line) => {
+                        doc.text(line, cardX + 14, by);
+                        by += 4.5;
+                    });
+                    by += 1;
+                }
+
+                // Notes
+                const taskNotes = (
+                    notesMap[getNotesKeyForItem(task)] || []
+                ).filter((n) => n.TYPE !== "automatico");
+                if (taskNotes.length > 0) {
+                    doc.setFontSize(8.5);
                     doc.setFont(undefined, "bold");
-                    doc.setTextColor(0, 102, 204); // Blue
-                    doc.text(simName, margin + 10, yPosition);
+                    doc.setTextColor(0, 80, 180);
+                    doc.text("Notes", cardX + 14, by);
+                    by += 4.5;
 
-                    // Simulator details inline (if available) - only show for activities, not reports
-                    if (!showStatus) {
-                        const sim = simulatorMap[simName];
-                        if (sim) {
-                            doc.setFontSize(12);
-                            doc.setFont(undefined, "normal");
-                            const simDetailsPrefix = `  -  End time: ${formatTime(sim.START_HOUR)}   Start time: ${formatTime(sim.END_HOUR)}   `;
-                            const simDetailsAssigned = `Assigned to: ${sim.ASSIGNED_TO || "N/A"}`;
-                            doc.setTextColor(0, 0, 0);
-                            doc.text(
-                                simDetailsPrefix,
-                                margin + 10 + doc.getTextWidth(simName) + 5,
-                                yPosition,
-                            );
-                            doc.setTextColor(139, 0, 0);
-                            doc.text(
-                                simDetailsAssigned,
-                                margin +
-                                    10 +
-                                    doc.getTextWidth(simName) +
-                                    5 +
-                                    doc.getTextWidth(simDetailsPrefix),
-                                yPosition,
-                            );
-                        } else {
-                            doc.setTextColor(0, 0, 0);
-                        }
-                    } else {
-                        doc.setTextColor(0, 0, 0);
-                    }
-
-                    yPosition += 10;
-
-                    // Tasks for this simulator
-                    if (simTasks.length === 0) {
-                        // No tasks for this simulator
-                        doc.setFontSize(9);
-                        doc.setFont(undefined, "italic");
-                        doc.setTextColor(128, 128, 128);
-                        doc.text("No tasks assigned", margin + 15, yPosition);
-                        yPosition += 10;
-                    } else {
-                        simTasks.forEach((task, index) => {
-                            checkPageBreak(15);
-
-                            // Determine if this is a logbook or task
-                            const isLogbook =
-                                task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
-
-                            // Type and Name with Assigned To inline
-                            doc.setFontSize(10);
-                            doc.setFont(undefined, "bold");
-                            if (isLogbook) {
-                                doc.setTextColor(255, 140, 0); // Orange for logbooks
-                            } else {
-                                doc.setTextColor(0, 102, 204); // Blue for tasks
-                            }
-                            const taskTitle = `${task.TITLE || "N/A"}`;
-                            doc.text(taskTitle, margin + 15, yPosition);
-
-                            // Assigned To inline
-                            doc.setFontSize(9);
-                            doc.setFont(undefined, "normal");
-                            doc.setTextColor(139, 0, 0);
-                            const assignedText = ` (Assigned to: ${task.ASSIGNED_TO || "N/A"})`;
-                            // Calculate width with the bold font size
-                            doc.setFontSize(10);
-                            doc.setFont(undefined, "bold");
-                            const titleWidth = doc.getTextWidth(taskTitle);
-                            doc.setFontSize(9);
-                            doc.setFont(undefined, "normal");
-                            doc.text(
-                                assignedText,
-                                margin + 15 + titleWidth,
-                                yPosition,
-                            );
-
-                            // Reset color to black for subsequent text
-                            doc.setTextColor(0, 0, 0);
-
-                            yPosition += 8;
-
-                            // Description
-                            if (task.DESCRIPTION) {
-                                const descLines = doc.splitTextToSize(
-                                    `${task.DESCRIPTION}`,
-                                    pageWidth - 2 * margin - 15,
-                                );
-                                checkPageBreak(5);
-                                doc.setFontSize(9);
-                                doc.text(descLines, margin + 20, yPosition);
-                                yPosition += descLines.length * 5;
-                            }
-
-                            // Notes (excluding system notes)
-                            const taskNotes = (
-                                notesMap[getNotesKeyForItem(task)] || []
-                            ).filter((note) => note.TYPE !== "automatico");
-                            if (taskNotes.length > 0) {
-                                yPosition += 4;
-                                checkPageBreak(5);
-
-                                doc.setFontSize(9);
-                                doc.setFont(undefined, "bold");
-                                doc.setTextColor(0, 102, 204);
-                                doc.text("Notes", margin + 20, yPosition);
-                                yPosition += 4;
-
-                                taskNotes.forEach((note) => {
-                                    checkPageBreak(5);
-
-                                    // Note author and description
-                                    doc.setFontSize(8);
-                                    doc.setFont(undefined, "bold");
-                                    doc.setTextColor(0, 102, 204);
-                                    const authorName = getUsernameById(
-                                        note.CREATEDBY,
-                                        users,
-                                    );
-                                    doc.text(
-                                        `${authorName}:`,
-                                        margin + 25,
-                                        yPosition,
-                                    );
-                                    yPosition += 4;
-
-                                    // Note description
-                                    doc.setFontSize(8);
-                                    doc.setFont(undefined, "normal");
-                                    doc.setTextColor(100, 100, 100);
-                                    const noteLines = doc.splitTextToSize(
-                                        note.DESCRIPTION || "",
-                                        pageWidth - 2 * margin - 20,
-                                    );
-                                    checkPageBreak(6);
-                                    doc.text(noteLines, margin + 25, yPosition);
-                                    yPosition += noteLines.length * 4 + 3;
-                                });
-                            }
-
-                            // Status with color coding (only if showStatus is true)
-                            if (showStatus) {
-                                doc.setFontSize(9);
-                                doc.setFont(undefined, "bold");
-                                const status = task.STATUS || "N/A";
-
-                                // Translate status from Italian to English
-                                const statusTranslations = {
-                                    Completato: "Completed",
-                                    "In corso": "In progress",
-                                    "Non completato": "Not completed",
-                                    "Da definire": "To be defined",
-                                    "Non iniziato": "Not started",
-                                };
-                                const translatedStatus =
-                                    statusTranslations[status] || status;
-
-                                const isCompleted = status === "Completato";
-                                if (isCompleted) {
-                                    doc.setTextColor(0, 128, 0); // Green for "Completato"
-                                } else {
-                                    doc.setTextColor(255, 0, 0); // Red for other statuses
-                                }
-                                doc.text(
-                                    `Status: ${translatedStatus}`,
-                                    margin + 20,
-                                    yPosition,
-                                );
-                                yPosition += 6;
-                            }
-
-                            doc.setFontSize(10);
-                            doc.setFont(undefined, "normal");
-                            doc.setTextColor(0, 0, 0);
-
-                            // Light separator between tasks
-                            if (index < simTasks.length - 1) {
-                                checkPageBreak(8);
-                                yPosition += 4;
-                                doc.setLineWidth(0.1);
-                                doc.setDrawColor(220, 220, 220);
-                                doc.line(
-                                    margin + 15,
-                                    yPosition,
-                                    pageWidth - margin,
-                                    yPosition,
-                                );
-                                yPosition += 6;
-                            }
-                        });
-                    }
-
-                    // Separator between simulators within the same macro
-                    if (simIndex < simulatorNamesInMacro.length - 1) {
-                        checkPageBreak(12);
-                        yPosition += 8;
-                        doc.setLineWidth(0.3);
-                        doc.setDrawColor(180, 180, 180);
-                        doc.line(
-                            margin + 10,
-                            yPosition,
-                            pageWidth - margin,
-                            yPosition,
+                    taskNotes.forEach((note) => {
+                        const authorName = getUsernameById(
+                            note.CREATEDBY,
+                            users,
                         );
-                        yPosition += 12;
-                    }
-                });
-            } // Close else block for SIMXXI and S3000
+                        doc.setFontSize(8);
+                        doc.setFont(undefined, "bold");
+                        doc.setTextColor(0, 80, 180);
+                        doc.text(`${authorName}:`, cardX + 18, by);
+                        by += 4;
 
-            // Bold separator between macro-simulators
-            if (macroIndex < macroSimulatorNames.length - 1) {
-                checkPageBreak(15);
-                yPosition += 10;
-                doc.setLineWidth(0.8);
-                doc.setDrawColor(100, 100, 100);
-                doc.line(margin, yPosition, pageWidth - margin, yPosition);
-                yPosition += 15;
+                        const noteLines = doc.splitTextToSize(
+                            note.DESCRIPTION || "",
+                            contentWidth - 30,
+                        );
+                        doc.setFontSize(8);
+                        doc.setFont(undefined, "normal");
+                        doc.setTextColor(100, 100, 100);
+                        noteLines.forEach((line) => {
+                            doc.text(line, cardX + 18, by);
+                            by += 4;
+                        });
+                        by += 2;
+                    });
+                }
+
+                // Status
+                if (showStatus) {
+                    const status = task.STATUS || "N/A";
+                    const translatedStatus =
+                        statusTranslations[status] || status;
+                    const isCompleted = status === "Completato";
+                    doc.setFontSize(8.5);
+                    doc.setFont(undefined, "bold");
+                    doc.setTextColor(
+                        isCompleted ? 0 : 200,
+                        isCompleted ? 140 : 0,
+                        0,
+                    );
+                    doc.text(`Status: ${translatedStatus}`, cardX + 14, by);
+                    by += 5.5;
+                }
+
+                // Thin separator between tasks (not after last)
+                if (idx < simTasks.length - 1) {
+                    by += 1;
+                    hRule(cardX + 8, by, contentWidth - 8, 0.2, 200, 200, 200);
+                    by += 4;
+                }
+            });
+        }
+
+        by += 4; // bottom padding of body
+
+        // Body border (left + right sides of body area)
+        const bodyActualH = by - bodyY;
+        strokeRect(cardX, bodyY, cardW, bodyActualH, 0.4);
+
+        // ── Footer / config row ───────────────────────────────────────────────
+        const fY = bodyY + bodyActualH;
+        fillRect(cardX, fY, cardW, footerH, 248, 248, 248);
+
+        const fc1W = cardW * 0.38;
+        const fc2W = cardW * 0.32;
+        // Master config
+        doc.setFontSize(8);
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(80, 80, 80);
+        doc.text("Master configuration:", cardX + 4, fY + 4.5);
+        doc.setFont(undefined, "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text(
+            configFromTrainingLoad.MASTER_CONFIG || sim.MASTER_CONFIG || "N/A",
+            cardX + 4,
+            fY + 9.5,
+        );
+
+        vRule(cardX + fc1W, fY, footerH, 0.3);
+
+        // Debrief config
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(80, 80, 80);
+        doc.text("Debrief configuration:", cardX + fc1W + 4, fY + 4.5);
+        doc.setFont(undefined, "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text(
+            configFromTrainingLoad.DEBRIEF_CONFIG ||
+                sim.DEBRIEF_CONFIG ||
+                "N/A",
+            cardX + fc1W + 4,
+            fY + 9.5,
+        );
+
+        vRule(cardX + fc1W + fc2W, fY, footerH, 0.3);
+
+        // QTG version
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(80, 80, 80);
+        doc.text("QTG tool version:", cardX + fc1W + fc2W + 4, fY + 4.5);
+        doc.setFont(undefined, "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text(
+            configFromTrainingLoad.QTG_VERSION || sim.QTG_VERSION || "N/A",
+            cardX + fc1W + fc2W + 4,
+            fY + 9.5,
+        );
+
+        // Footer border
+        strokeRect(cardX, fY, cardW, footerH, 0.5);
+
+        // Advance y past the full card + spacing
+        y = fY + footerH + 8;
+    };
+
+    // ── Loop macro groups ─────────────────────────────────────────────────────
+
+    if (macroSimulatorNames.length === 0) {
+        doc.setFontSize(10);
+        doc.text("No tasks found.", margin, y);
+    } else {
+        macroSimulatorNames.forEach((macroSimName, macroIdx) => {
+            const simulatorsInMacro = tasksByMacroSimulator[macroSimName];
+            const simNamesInMacro = Object.keys(simulatorsInMacro).sort();
+
+            checkPageBreak(30);
+
+            // Macro-group label
+            doc.setFontSize(13);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(139, 0, 0);
+            doc.text(macroSimName, margin, y);
+            y += 7;
+
+            if (macroSimName === "OTHERS") {
+                // Gather all tasks across all OTHERS simulators
+                const allOthersTasks = [];
+                simNamesInMacro.forEach((sn) =>
+                    allOthersTasks.push(...simulatorsInMacro[sn]),
+                );
+
+                // Use the first sim name as the "card" name, or "Others"
+                const displayName =
+                    simNamesInMacro.length > 0
+                        ? simNamesInMacro.join(", ")
+                        : "Others";
+                drawSimulatorCard(displayName, allOthersTasks);
+            } else {
+                simNamesInMacro.forEach((simName) => {
+                    drawSimulatorCard(simName, simulatorsInMacro[simName]);
+                });
+            }
+
+            // Bold separator between macro groups
+            if (macroIdx < macroSimulatorNames.length - 1) {
+                checkPageBreak(12);
+                y += 2;
+                hRule(margin, y, contentWidth, 0.8, 100, 100, 100);
+                y += 10;
             }
         });
     }
 
-    // Footer
+    // ── Footer (page numbers) ─────────────────────────────────────────────────
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont(undefined, "normal");
-        doc.setTextColor(0, 0, 0);
-        doc.text(
-            `Page ${i} of ${pageCount}`,
-            pageWidth / 2,
-            doc.internal.pageSize.getHeight() - 10,
-            { align: "center" },
-        );
+        doc.setTextColor(120, 120, 120);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 8, {
+            align: "center",
+        });
     }
 
-    // Save the PDF
+    // ── Save ──────────────────────────────────────────────────────────────────
     const fileName = date
         ? `Daily_Report_${formatDate(date).replace(/\//g, "-")}.pdf`
         : `Daily_Report_${new Date().getTime()}.pdf`;

@@ -14,6 +14,7 @@ import { useUnavailableLogbooks } from "../components/data/provider/unavailableL
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators";
+import { useTrainingLoads } from "../components/data/provider/trainingLoadAPI/useTrainingLoads";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 
 function Logbook() {
@@ -30,6 +31,7 @@ function Logbook() {
     } = useUnavailableLogbooks();
     const { logbooks, fetchLogbooks } = useLogbooks();
     const { simulators: todaySimulators } = useSimulators();
+    const { trainingLoads } = useTrainingLoads();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -277,6 +279,7 @@ function Logbook() {
                 itemsToExport,
                 hasActiveFilters ? null : startDate,
                 simulatorsToExport,
+                trainingLoads,
                 pdfTitle,
                 notesMap,
                 users,
