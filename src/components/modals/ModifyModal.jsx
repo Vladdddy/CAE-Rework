@@ -351,6 +351,11 @@ function ModifyModal({
             originalTaskDate &&
             originalTaskDate !== todayDate;
 
+        const shouldForceDiurnoOnMovedToday =
+            (shouldMoveCompletedTaskToToday ||
+                shouldMoveCompletedLogbookToToday) &&
+            passedCompletedCutoff;
+
         const modifiedTask = {
             title: title,
             description: description,
@@ -363,7 +368,7 @@ function ModifyModal({
                 shouldMoveCompletedLogbookToToday
                     ? todayDate
                     : selectedDate,
-            time: selectedRadio,
+            time: shouldForceDiurnoOnMovedToday ? "Diurno" : selectedRadio,
             assigned_to: selectedAssignees.join(", ") || null,
             status:
                 isConverting && isLogbook

@@ -174,15 +174,19 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             Boolean(originalDate) && originalDate !== todayDate;
         const shouldMoveTask =
             shouldMoveByDate && (!applyCompletedCutoff || passedCutoffTime);
+        const updatedTurno =
+            shouldMoveTask && passedCutoffTime ? "Diurno" : taskInfo.TIME;
 
         const updatedEntityData = taskInfo.ISLOGBOOK
             ? buildLogbookPayload(taskInfo, {
                   status: newStatus,
                   date: shouldMoveTask ? todayDate : originalDate,
+                  time: updatedTurno,
               })
             : buildTaskPayload(taskInfo, {
                   status: newStatus,
                   date: shouldMoveTask ? todayDate : originalDate,
+                  time: updatedTurno,
               });
 
         const updateResult = taskInfo.ISLOGBOOK
@@ -968,10 +972,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                 <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
                     <div className="flex flex-row items-center gap-2 text-[var(--black)]">
                         <TaskIcon
-                            className={`w-6 ${taskInfo.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
+                            className={`w-6 ${isPmPlanTask ? "text-[var(--green)]" : ""} ${taskInfo.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
                         />
                         <h1
-                            className={`text-xl ${taskInfo.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
+                            className={`text-xl ${isPmPlanTask ? "text-[var(--green)]" : ""} ${taskInfo.ISLOGBOOK ? "text-[var(--orange)]" : "text-[var(--primary)]"}`}
                         >
                             Dettagli{taskInfo.ISLOGBOOK ? " Entry" : " Task"} #
                             {taskInfo.ORIGINAL_TASK_ID || taskInfo.ID}{" "}
