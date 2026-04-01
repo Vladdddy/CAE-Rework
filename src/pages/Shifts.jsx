@@ -17,6 +17,7 @@ function Shifts() {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
+    const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [startDate, setStartDate] = useState(new Date());
     const [impagination, setImpagination] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,12 +57,18 @@ function Shifts() {
 
     return (
         <section className="flex">
-            <Sidebar active="shifts" isSidebarOpen={isSidebarOpen} />
+            <Sidebar
+                active="shifts"
+                isSidebarOpen={isSidebarOpen}
+                isMobileOpen={isMobileSidebarOpen}
+                onMobileClose={() => setMobileSidebarOpen(false)}
+            />
 
             <div className="flex-1">
                 <Topbar
                     isSidebarOpen={isSidebarOpen}
                     setSidebarStatus={setSidebarStatus}
+                    setMobileSidebarOpen={setMobileSidebarOpen}
                 />
 
                 <div className="flex-1 overflow-y-auto">

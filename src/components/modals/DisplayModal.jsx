@@ -991,7 +991,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                 </div>
 
                 <div className="flex flex-col gap-8">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
                             <div
                                 className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
@@ -1046,7 +1046,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 currentUserRole === "Shift Leader") &&
                             !taskInfo.ISLOGBOOK &&
                             !isPmPlanTask && (
-                                <div className="flex flex-col items-end gap-2">
+                                <div className="flex md:flex-col justify-between items-end gap-4 md:gap-2">
                                     <div
                                         className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
                                         onClick={handleDuplicateTask}
@@ -1132,7 +1132,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-2 w-1/2">
+                                <div className="flex flex-col gap-2 md:w-1/2 w-full">
                                     <h3 className="text-sm text-[var(--gray)]">
                                         Stato
                                     </h3>
@@ -1530,7 +1530,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             className="btn delete"
                                             onClick={() => handleDelete()}
                                         >
-                                            Elimina
+                                            <DeleteIcon className="w-6 md:hidden" />
+                                            <p className="hidden md:block">
+                                                Elimina
+                                            </p>
                                         </button>
                                     )}
 
@@ -1545,22 +1548,26 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                   onClick={handleFlagTask}
                                               >
                                                   <FlagIcon className="w-6" />
-                                                  <p>Flag task</p>
+                                                  <p className="hidden md:block">
+                                                      Flag task
+                                                  </p>
                                               </button>
                                           )
                                         : (currentUserRole === "Admin" ||
                                               currentUserRole ===
                                                   "Shift Leader") && (
                                               <button
-                                                  className="btn secondary flex items-center gap-1"
+                                                  className="btn secondary flex items-center gap-1 w-full md:w-auto"
                                                   onClick={handleRemoveFlag}
                                               >
                                                   <UnflagIcon className="w-6" />
-                                                  <p>Remove flag</p>
+                                                  <p className="hidden md:block">
+                                                      Remove flag
+                                                  </p>
                                               </button>
                                           ))}
 
-                                <div className="flex gap-1 ml-auto">
+                                <div className="flex gap-1 w-full md:w-auto md:ml-auto justify-end">
                                     <button
                                         className="btn gray-btn"
                                         onClick={onClose}
@@ -1606,7 +1613,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     [...notes].reverse().map((note) => (
                                         <div
                                             key={note.ID}
-                                            className={`flex justify-between gap-4`}
+                                            className={`flex flex-col lg:flex-row justify-between gap-4`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 {note.CREATEDBY ===

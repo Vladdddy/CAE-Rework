@@ -293,17 +293,17 @@ function SearchModal({ onClose, onDeleteSuccess }) {
 
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-start justify-center z-50 pt-16"
+            className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-start justify-center z-50 p-2 pt-3 sm:p-3 md:pt-16"
             onClick={onClose}
         >
             <div
-                className="max-w-4xl w-full mx-4"
+                className="max-w-5xl w-full h-full md:h-auto md:max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex gap-4">
+                <div className="flex gap-2 sm:gap-3 md:gap-4">
                     <button
                         onClick={onClose}
-                        className="bg-[var(--bento-bg)] p-2 rounded-md hover:bg-[var(--light-primary)] transition text-[var(--gray)] border border-[var(--light-primary)]"
+                        className="bg-[var(--bento-bg)] p-2 rounded-md hover:bg-[var(--light-primary)] transition text-[var(--gray)] border border-[var(--light-primary)] shrink-0"
                     >
                         <ArrowIcon className="w-6" />
                     </button>
@@ -319,7 +319,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                         />
                     </div>
                     <div
-                        className="flex items-center bg-[var(--bento-bg)] border border-[var(--light-primary)] rounded-md p-2 cursor-pointer transition-all duration-200"
+                        className="flex items-center bg-[var(--bento-bg)] border border-[var(--light-primary)] rounded-md p-2 cursor-pointer transition-all duration-200 shrink-0"
                         onClick={showFiltersFunction}
                     >
                         <FilterIcon className="w-6 text-[var(--black)] icon cursor-pointer" />
@@ -327,8 +327,8 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                 </div>
 
                 {showFilters && (
-                    <div className="flex flex-col gap-4 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)] mt-4">
-                        <div className="flex flex-row gap-4">
+                    <div className="flex flex-col gap-4 border border-[var(--light-primary)] rounded-lg p-3 sm:p-4 bg-[var(--bento-bg)] mt-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 sm:gap-4">
                             <div className="flex flex-col gap-1 w-full">
                                 <h3 className="text-sm text-[var(--gray)]">
                                     Stato
@@ -500,6 +500,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                                         }
                                         className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                     >
+                                        <option value="">...</option>
                                         {categories[selectedCategory]?.map(
                                             (subCategory, index) => (
                                                 <option
@@ -516,9 +517,9 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                             </div>
                         </div>
 
-                        <div className="flex flex-row gap-4">
-                            <div className="flex flex-col gap-1 w-1/2">
-                                <div className="flex flex-row justify-between gap-4">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex flex-col gap-1 w-full md:w-1/2">
+                                <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4">
                                     <div className="flex flex-col gap-1 w-full">
                                         <h3 className="text-sm text-[var(--gray)]">
                                             Da
@@ -560,7 +561,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                             </div>
 
                             <button
-                                className="btn delete flex gap-2 items-center h-[40px] mt-6"
+                                className="btn delete flex gap-2 items-center justify-center h-[40px] md:mt-6 w-full md:w-auto"
                                 onClick={() => {
                                     setSelectedCategory("");
                                     setSelectedSubCategory("");
@@ -579,10 +580,10 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                     </div>
                 )}
 
-                <div className="bg-[var(--bento-bg)] rounded-xl p-4 w-full shadow-xl border border-[var(--light-primary)] mt-4">
-                    <div className="flex items-start gap-4">
+                <div className="bg-[var(--bento-bg)] rounded-xl p-3 sm:p-4 w-full shadow-xl border border-[var(--light-primary)] mt-4 h-[calc(100%-4.5rem)] md:h-auto flex flex-col overflow-hidden">
+                    <div className="flex flex-col lg:flex-row items-start gap-4">
                         <div
-                            className={`flex flex-col gap-1 ${showFilters ? "max-h-[calc(80vh-20rem)]" : "max-h-[calc(100vh-20rem)]"}  overflow-y-auto pr-1 flex-1`}
+                            className={`flex flex-col gap-1 ${showFilters ? "max-h-[32vh] sm:max-h-[35vh] md:max-h-[calc(80vh-22rem)]" : "max-h-[55vh] sm:max-h-[45vh] md:max-h-[calc(100vh-20rem)]"} overflow-y-auto pr-1 flex-1 w-full`}
                         >
                             <div className="sticky top-0 flex items-center justify-start gap-2 border-b border-[var(--light-primary)] pb-2 mb-4 bg-[var(--bento-bg)]">
                                 <h1 className="text-md text-[var(--gray)]">
@@ -619,7 +620,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                         </div>
 
                         <div
-                            className={`flex flex-col gap-1 ${showFilters ? "max-h-[calc(80vh-20rem)]" : "max-h-[calc(100vh-20rem)]"}  overflow-y-auto pr-1 flex-1`}
+                            className={`flex flex-col gap-1 ${showFilters ? "max-h-[32vh] sm:max-h-[35vh] md:max-h-[calc(80vh-22rem)]" : "max-h-[40vh] sm:max-h-[45vh] md:max-h-[calc(100vh-20rem)]"} overflow-y-auto pr-1 flex-1 w-full`}
                         >
                             <div className="sticky top-0 flex items-center justify-start gap-2 border-b border-[var(--light-primary)] pb-2 mb-4 bg-[var(--bento-bg)]">
                                 <h1 className="text-md text-[var(--gray)]">

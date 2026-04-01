@@ -50,6 +50,7 @@ function TrainingLoad() {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
+    const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -78,12 +79,18 @@ function TrainingLoad() {
 
     return (
         <section className="flex h-screen">
-            <Sidebar active="training-load" isSidebarOpen={isSidebarOpen} />
+            <Sidebar
+                active="training-load"
+                isSidebarOpen={isSidebarOpen}
+                isMobileOpen={isMobileSidebarOpen}
+                onMobileClose={() => setMobileSidebarOpen(false)}
+            />
 
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <Topbar
                     isSidebarOpen={isSidebarOpen}
                     setSidebarStatus={setSidebarStatus}
+                    setMobileSidebarOpen={setMobileSidebarOpen}
                 />
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">

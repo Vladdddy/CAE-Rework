@@ -14,7 +14,7 @@ import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import { useEmployeeMessages } from "../data/provider/employeeMessageAPI/useEmployeeMessages";
 
-function Topbar({ isSidebarOpen, setSidebarStatus }) {
+function Topbar({ isSidebarOpen, setSidebarStatus, setMobileSidebarOpen }) {
     const { fetchTasks } = useTasks();
     const { fetchUnreadCount, unreadCount } = useEmployeeMessages();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -90,21 +90,25 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
         document.body.classList.toggle("dark-mode");
     };
 
+    const handleSidebarToggle = () => {
+        if (window.matchMedia("(max-width: 767px)").matches) {
+            setMobileSidebarOpen?.(true);
+            return;
+        }
+
+        setSidebarStatus(!isSidebarOpen);
+    };
+
     return (
-        <div className="bg-[var(--bento-bg)] text-[var(--black)] w-full h-auto p-4 flex items-center justify-between border-b border-[var(--light-primary)]">
-            <div className="flex items-center justify-start gap-4">
+        <div className="bg-[var(--bento-bg)] text-[var(--black)] w-full h-auto p-3 md:p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-[var(--light-primary)]">
+            <div className="flex items-center justify-start gap-4 min-w-0">
                 <SidebarIcon
                     className="w-6 cursor-pointer icon"
-                    onClick={() => setSidebarStatus(!isSidebarOpen)}
+                    onClick={handleSidebarToggle}
                 />
-                <h1 className="border-x border-[var(--light-primary)] px-4 text-l">
-                    Benvenuto,{" "}
-                    {currentUsername.split(".")[0].charAt(0).toUpperCase() +
-                        currentUsername.split(".")[0].slice(1)}
-                    !
-                </h1>
+
                 <div
-                    className="relative w-[30vw]"
+                    className="relative w-[30vw] hidden md:block"
                     onClick={() => handleSearchOpen()}
                 >
                     <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
@@ -120,15 +124,17 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                     currentUserRole === "Shift Leader") && (
                     <>
                         <button
-                            className="btn flex gap-2 items-center"
+                            className="btn flex gap-2 items-center px-3 md:px-4"
                             onClick={handleTaskClick}
                         >
                             <AddIcon className="w-6" />
-                            <p className="">Programma task</p>
+                            <p className="hidden lg:block truncate">
+                                Programma task
+                            </p>
                         </button>
                     </>
                 )}
-                <div className="flex items-center justify-center gap-1">
+                <div className="flex items-center justify-center gap-1 ml-auto md:ml-0">
                     <div
                         className="relative"
                         onClick={() => setNotificationsModal(true)}
@@ -139,30 +145,47 @@ function Topbar({ isSidebarOpen, setSidebarStatus }) {
                         )}
                     </div>
                     {unreadCount > 0 && (
-                        <p className="ml-2 text-xs text-white bg-red-500 rounded-full px-4 py-2">
+                        <p className="hidden lg:block ml-2 text-xs text-white bg-red-500 rounded-full px-4 py-2">
                             Hai {unreadCount} notifiche
                         </p>
                     )}
                 </div>
             </div>
+
+            <div
+                className="relative w-full md:hidden mt-2 mb-4"
+                onClick={() => handleSearchOpen()}
+            >
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 text-[var(--placeholder)]" />
+                <input
+                    type="search"
+                    placeholder="Cerca per titolo, stato, tecnico ecc..."
+                    readOnly
+                    onFocus={(e) => e.target.blur()}
+                    className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
+                />
+            </div>
+
             {isDarkMode ? (
                 <div
-                    className="flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition  rounded-md p-2 px-4 cursor-pointer ml-auto mr-4"
+                    className="hidden md:flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition rounded-md p-2 px-3 md:px-4 cursor-pointer ml-auto md:mr-4"
                     onClick={toggleDarkMode}
                 >
                     <DayIcon className="w-6" />
-                    <p className="">Tema chiaro</p>
+                    <p className="hidden lg:block truncate">Tema chiaro</p>
                 </div>
             ) : (
                 <div
-                    className="flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition  rounded-md p-2 px-4 cursor-pointer ml-auto mr-4"
+                    className="hidden md:flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition rounded-md p-2 px-3 md:px-4 cursor-pointer ml-auto md:mr-4"
                     onClick={toggleDarkMode}
                 >
                     <NightIcon className="w-6" />
-                    <p className="">Tema scuro</p>
+                    <p className="hidden lg:block truncate">Tema scuro</p>
                 </div>
             )}
-            <CurrentTime />
+            <div className="hidden lg:block">
+                <CurrentTime />
+            </div>
 
             {isModalOpen && (
                 <CreateModal

@@ -31,6 +31,7 @@ function Dashboard() {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
+    const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [showContrast, setShowContrast] = useState(() => {
         const saved = localStorage.getItem("showContrast");
         return saved !== null ? JSON.parse(saved) : true;
@@ -249,21 +250,27 @@ function Dashboard() {
         });
 
     return (
-        <section className="flex">
-            <Sidebar active="dashboard" isSidebarOpen={isSidebarOpen} />
+        <section className="flex h-screen overflow-hidden">
+            <Sidebar
+                active="dashboard"
+                isSidebarOpen={isSidebarOpen}
+                isMobileOpen={isMobileSidebarOpen}
+                onMobileClose={() => setMobileSidebarOpen(false)}
+            />
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
                 <Topbar
                     isSidebarOpen={isSidebarOpen}
                     setSidebarStatus={setSidebarStatus}
+                    setMobileSidebarOpen={setMobileSidebarOpen}
                 />
 
-                <div className="overflow-y-auto h-screen pb-16">
-                    <div className="flex flex-col gap-8 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)] m-8">
+                <div className="overflow-y-auto h-full pb-6 sm:pb-10">
+                    <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8 border border-[var(--light-primary)] rounded-lg p-3 sm:p-4 bg-[var(--bento-bg)] m-3 sm:m-4 lg:m-8">
                         <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
                             Turni di oggi
                         </p>
-                        <div className="flex flex justify-between max-h-[calc(50vh-14rem)] overflow-y-auto pr-1 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 max-h-none xl:max-h-[calc(50vh-14rem)] overflow-visible xl:overflow-y-auto pr-0 xl:pr-1">
                             <div
                                 className={`flex flex-col gap-2 ${showContrast ? "border-gray-500" : "border-[var(--light-primary)]"} bg-[var(--pure-white)] rounded-md p-4 flex-1 border`}
                             >
@@ -273,7 +280,7 @@ function Dashboard() {
                                         Shift Leader presenti
                                     </p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {usersLoading || shiftsLoading ? (
                                         <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
                                             Caricamento...
@@ -310,7 +317,7 @@ function Dashboard() {
                                         Giorno
                                     </p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {usersLoading || shiftsLoading ? (
                                         <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
                                             Caricamento...
@@ -348,7 +355,7 @@ function Dashboard() {
                                         Notte
                                     </p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {usersLoading || shiftsLoading ? (
                                         <div className="col-span-2 text-center text-sm text-[var(--gray)] py-4">
                                             Caricamento...
@@ -380,7 +387,7 @@ function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="m-8 gap-4 grid grid-cols-3">
+                    <div className="m-3 sm:m-4 lg:m-8 gap-3 sm:gap-4 grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3">
                         <div
                             className={`${showContrast ? "border-[var(--purple-panoramica)]" : "border-[var(--light-primary)]"} flex flex-col gap-8 border rounded-lg p-4 bg-[var(--bento-bg)]`}
                         >
@@ -399,7 +406,7 @@ function Dashboard() {
                                     className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
                                 />
                             </div>
-                            <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                            <div className="flex flex-col gap-8 max-h-[50vh] lg:max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
                                 <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
                                     <div className="flex flex-row items-center gap-2">
                                         <DayIcon className="w-6 text-[var(--black)]" />
@@ -488,7 +495,7 @@ function Dashboard() {
                                     className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
                                 />
                             </div>
-                            <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                            <div className="flex flex-col gap-8 max-h-[50vh] lg:max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
                                 <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
                                     <div className="flex flex-row items-center gap-2">
                                         <p className="text-l text-[var(--black)]">
@@ -624,7 +631,7 @@ function Dashboard() {
                                     className="border border-[var(--light-primary)] rounded-md pl-10 pr-2 py-2 bg-[var(--pure-white)] w-full text-md placeholder:text-[var(--placeholder)] focus:outline-none focus:border-[var(--separator)]"
                                 />
                             </div>
-                            <div className="flex flex-col gap-8 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
+                            <div className="flex flex-col gap-8 max-h-[50vh] lg:max-h-[calc(100vh-20rem)] overflow-y-auto pr-1">
                                 <div className="flex flex-col gap-2 border-b border-[var(--light-primary)] pb-8">
                                     <div className="flex flex-row items-center gap-2">
                                         <p className="text-l text-[var(--black)]">

@@ -36,6 +36,7 @@ function Logbook() {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
     });
+    const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
     const [popupType, setPopupType] = useState("success");
@@ -362,12 +363,18 @@ function Logbook() {
 
     return (
         <section className="flex h-screen">
-            <Sidebar active="logbook" isSidebarOpen={isSidebarOpen} />
+            <Sidebar
+                active="logbook"
+                isSidebarOpen={isSidebarOpen}
+                isMobileOpen={isMobileSidebarOpen}
+                onMobileClose={() => setMobileSidebarOpen(false)}
+            />
 
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <Topbar
                     isSidebarOpen={isSidebarOpen}
                     setSidebarStatus={setSidebarStatus}
+                    setMobileSidebarOpen={setMobileSidebarOpen}
                 />
 
                 <div className="flex-1 overflow-y-auto">
