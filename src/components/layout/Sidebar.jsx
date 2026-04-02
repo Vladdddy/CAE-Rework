@@ -330,6 +330,11 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                         </div>
                         <div className="flex flex-col gap-2 mt-2 p-2 max-h-80 overflow-y-auto">
                             <Update
+                                title="Mobile Version 2.04.26"
+                                text="Rilasciata la versione mobile dell'applicazione, con un design responsive e tutte le funzionalità principali accessibili da smartphone."
+                                date="2/04/2026 - 14:30"
+                            />
+                            <Update
                                 title="Training Load PDF 1.04.26"
                                 text="Aggiunta l'esportazione del Training Load in PDF, con un layout chiaro e professionale che include tutte le informazioni essenziali."
                                 date="1/04/2026 - 15:12"

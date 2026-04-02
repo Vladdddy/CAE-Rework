@@ -407,15 +407,15 @@ export const exportTasksToPDF = (
 
         // Training times (two rows)
         const timeX = cardX + col1W + 4;
-        const endTime = sim.END_HOUR
+        const endTime = sim.START_HOUR
+            ? formatTime(sim.START_HOUR)
+            : sim.END_HOUR
+              ? formatTime(sim.END_HOUR)
+              : "----";
+        const startTime = sim.END_HOUR
             ? formatTime(sim.END_HOUR)
             : sim.START_HOUR
               ? formatTime(sim.START_HOUR)
-              : "----";
-        const startTime = sim.START_HOUR
-            ? formatTime(sim.START_HOUR)
-            : sim.END_TIME
-              ? formatTime(sim.END_TIME)
               : "----";
 
         doc.setFontSize(8.5);
