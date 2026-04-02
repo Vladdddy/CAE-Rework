@@ -189,96 +189,108 @@ function Tasks() {
                         </>
                     ) : (
                         <>
-                            <div className="m-8 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
+                            {/* ── Top navigation bar ── */}
+                            <div className="mx-3 mt-4 mb-2 md:m-8 md:mb-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-center gap-4 flex-wrap">
                                     <button
-                                        className="btn flex gap-2 items-center"
+                                        className="btn flex gap-2 items-center w-full md:w-auto justify-center"
                                         onClick={handleBackToCalendar}
                                     >
                                         <BackIcon className="w-6" />
-                                        <p>Torna al Calendario</p>
+                                        <p className="text-sm md:text-base">
+                                            Torna al Calendario
+                                        </p>
                                     </button>
 
-                                    <DatePickerComponent
-                                        startDate={startDate}
-                                        setStartDate={setStartDate}
-                                        isCalendar={false}
-                                    />
+                                    <div className="flex justify-center items-center gap-2 w-full md:w-auto mt-2 sm:mt-0">
+                                        <DatePickerComponent
+                                            startDate={startDate}
+                                            setStartDate={setStartDate}
+                                            isCalendar={false}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="m-8 gap-8 grid grid-cols-1">
-                                <div className="flex flex-col gap-4 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
-                                    <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
+                            {/* ── Main content card ── */}
+                            <div className="mx-3 my-3 md:m-8 gap-8 grid grid-cols-1">
+                                <div className="flex flex-col gap-3 md:gap-4 border border-[var(--light-primary)] rounded-lg p-3 md:p-4 bg-[var(--bento-bg)]">
+                                    {/* Card title */}
+                                    <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-3 md:pb-4">
                                         Tabella task
                                     </p>
 
-                                    <div className="flex items-center w-full justify-between gap-4">
-                                        <div className="flex items-center gap-4">
+                                    {/* Action bar: buttons + view toggle */}
+                                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
+                                        {/* Left: action buttons */}
+                                        <div className="flex flex-col md:flex-row items-center gap-4 flex-wrap">
                                             {(currentUserRole === "Admin" ||
                                                 currentUserRole ===
                                                     "Shift Leader") && (
-                                                <>
-                                                    <button
-                                                        className="btn flex gap-2 items-center"
-                                                        onClick={
-                                                            handleTaskClick
-                                                        }
-                                                    >
-                                                        <TaskIcon className="w-6" />
-                                                        <p>Aggiungi task</p>
-                                                    </button>
-                                                </>
+                                                <button
+                                                    className="btn flex gap-2 items-center text-sm w-full md:w-fit md:w-auto justify-center"
+                                                    onClick={handleTaskClick}
+                                                >
+                                                    <TaskIcon className="w-6 shrink-0" />
+                                                    <p>Aggiungi task</p>
+                                                </button>
                                             )}
 
                                             {GetTodayDate(startDate) ===
                                                 GetTodayDate(new Date()) && (
                                                 <button
-                                                    className="btn secondary flex gap-2 items-center"
+                                                    className="btn secondary flex gap-2 items-center text-sm w-full md:w-fit md:w-auto justify-center"
                                                     onClick={() =>
                                                         handleSimulatorClick(
                                                             true,
                                                         )
                                                     }
                                                 >
-                                                    <SimulatorIcon className="w-6" />
+                                                    <SimulatorIcon className="w-6 shrink-0" />
                                                     <p>Imposta simulatore</p>
                                                 </button>
                                             )}
                                         </div>
 
-                                        <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
-                                            <div
-                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 1 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
-                                                onClick={() => setViewDays(1)}
-                                            >
-                                                <p className="text-sm">Oggi</p>
-                                            </div>
-
-                                            <div
-                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 7 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
-                                                onClick={() => setViewDays(7)}
-                                            >
-                                                <p className="text-sm">
-                                                    1 settimana
-                                                </p>
-                                            </div>
-
-                                            <div
-                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 14 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
-                                                onClick={() => setViewDays(14)}
-                                            >
-                                                <p className="text-sm">
-                                                    2 settimane
-                                                </p>
+                                        {/* Right: view toggle — scrollable on very small screens */}
+                                        <div className="overflow-x-auto pb-0.5">
+                                            <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-full p-1 min-w-max">
+                                                {[
+                                                    { label: "Oggi", days: 1 },
+                                                    {
+                                                        label: "1 settimana",
+                                                        days: 7,
+                                                    },
+                                                    {
+                                                        label: "2 settimane",
+                                                        days: 14,
+                                                    },
+                                                ].map(({ label, days }) => (
+                                                    <div
+                                                        key={days}
+                                                        className={`flex items-center gap-2 p-2 px-3 md:px-4 rounded-md cursor-pointer whitespace-nowrap flex-1 justify-center ${
+                                                            viewDays === days
+                                                                ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                                                : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                                        } transition-all duration-200`}
+                                                        onClick={() =>
+                                                            setViewDays(days)
+                                                        }
+                                                    >
+                                                        <p className="text-sm">
+                                                            {label}
+                                                        </p>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
 
+                                    {/* Date sections */}
                                     {datesList.map((currentDate, index) => (
                                         <div key={currentDate.toISOString()}>
                                             {viewDays > 1 && (
-                                                <h1 className="text-xl font-semibold text-[var(--black)] mb-1 mt-4">
+                                                <h1 className="text-base md:text-xl font-semibold text-[var(--black)] mb-1 mt-4">
                                                     {getSelectedDateString(
                                                         currentDate,
                                                     )}
@@ -286,8 +298,9 @@ function Tasks() {
                                             )}
                                             <div
                                                 className={
-                                                    viewDays > 1 &&
-                                                    "p-4 bg-[var(--pure-white)] rounded-xl"
+                                                    viewDays > 1
+                                                        ? "p-3 md:p-4 bg-[var(--pure-white)] rounded-xl"
+                                                        : ""
                                                 }
                                             >
                                                 <Table

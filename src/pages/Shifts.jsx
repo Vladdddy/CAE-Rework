@@ -56,7 +56,7 @@ function Shifts() {
     const employeeShifts = ["D", "N", "F", "M", "R", "C", "CA"];*/
 
     return (
-        <section className="flex">
+        <section className="flex h-screen">
             <Sidebar
                 active="shifts"
                 isSidebarOpen={isSidebarOpen}
@@ -64,7 +64,7 @@ function Shifts() {
                 onMobileClose={() => setMobileSidebarOpen(false)}
             />
 
-            <div className="flex-1">
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <Topbar
                     isSidebarOpen={isSidebarOpen}
                     setSidebarStatus={setSidebarStatus}
@@ -72,24 +72,26 @@ function Shifts() {
                 />
 
                 <div className="flex-1 overflow-y-auto">
-                    <div className="m-8 flex items-start justify-between">
-                        <div className="flex items-center gap-4">
-                            <ShiftMonthPicker
-                                startDate={startDate}
-                                setStartDate={setStartDate}
-                                isCalendar={false}
-                            />
+                    <div className="m-4 md:m-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                            <div className="flex md:block items-center justify-center mb-8 md:mb-0">
+                                <ShiftMonthPicker
+                                    startDate={startDate}
+                                    setStartDate={setStartDate}
+                                    isCalendar={false}
+                                />
+                            </div>
 
-                            <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
+                            <div className="flex items-center w-full justify-start border border-[var(--light-primary)] rounded-md w-full md:w-fit p-1 overflow-x-auto">
                                 <div
-                                    className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${impagination === 1 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
+                                    className={`flex items-center justify-center flex-1 gap-2 p-2 px-4 rounded-md cursor-pointer whitespace-nowrap ${impagination === 1 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
                                     onClick={() => setImpagination(1)}
                                 >
                                     <p className="text-sm">Tabella turni</p>
                                 </div>
 
                                 <div
-                                    className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${impagination === 2 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
+                                    className={`flex items-center justify-center flex-1 gap-2 p-2 px-4 rounded-md cursor-pointer whitespace-nowrap ${impagination === 2 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
                                     onClick={() => setImpagination(2)}
                                 >
                                     <p className="text-sm">Conteggio ore</p>
@@ -98,7 +100,7 @@ function Shifts() {
 
                             {currentUserRole !== "Employee" && (
                                 <div
-                                    className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)]"
+                                    className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)] w-fit my-4 md:my-0"
                                     onClick={() => setPatternsModalOpen(true)}
                                 >
                                     <PatternIcon className="w-6" />
@@ -111,17 +113,13 @@ function Shifts() {
                         </div>
 
                         {impagination === 1 && (
-                            <div className="flex items-start gap-4">
-                                {/*<button className="btn secondary">
-                                    Export PDF
-                                </button>*/}
-
+                            <div className="flex items-start gap-4 w-full lg:w-auto">
                                 <ShiftLegend />
                             </div>
                         )}
                     </div>
 
-                    <div className="m-8 flex flex-row items-start justify-between gap-8">
+                    <div className="m-4 md:m-8 flex flex-row items-start justify-between gap-8">
                         {impagination === 1 && (
                             <>
                                 <ShiftsTableVariant

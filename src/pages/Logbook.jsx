@@ -140,7 +140,6 @@ function Logbook() {
                 ...normalizedUnavailableTasks,
             ];
 
-            // Pass null as date if filters are active, otherwise pass startDate
             const hasActiveFilters = false;
 
             const normalizedUnavailableLogbooks = (
@@ -159,22 +158,18 @@ function Logbook() {
             let simulatorsToExport;
 
             if (hasActiveFilters) {
-                // If filters are active, use the filtered results
                 itemsToExport = [...allTasksForExport, ...allLogbooksForExport];
                 simulatorsToExport = [];
             } else {
-                // If no filters are active, filter by the selected date only
                 const selectedDate = new Date(startDate);
                 selectedDate.setHours(0, 0, 0, 0);
 
-                // Filter tasks by selected date
                 const tasksForDate = allTasksForExport.filter((task) => {
                     const taskDate = new Date(task.DATE);
                     taskDate.setHours(0, 0, 0, 0);
                     return taskDate.getTime() === selectedDate.getTime();
                 });
 
-                // Filter logbooks by selected date
                 const logbooksForDate = allLogbooksForExport.filter(
                     (logbook) => {
                         const logbookDate = new Date(logbook.DATE);
@@ -185,7 +180,6 @@ function Logbook() {
 
                 itemsToExport = [...tasksForDate, ...logbooksForDate];
 
-                // Filter simulators by selected date
                 const year = selectedDate.getFullYear();
                 const month = String(selectedDate.getMonth() + 1).padStart(
                     2,
@@ -208,19 +202,16 @@ function Logbook() {
                 });
             }
 
-            // Filter by time if timeFilter is provided
             if (timeFilter) {
                 itemsToExport = itemsToExport.filter(
                     (item) => item.TIME === timeFilter,
                 );
             }
 
-            // Filter out logbooks if exporting activities only
             if (exportType === "activities" || exportType === "activity") {
                 itemsToExport = itemsToExport.filter((item) => !item.ISLOGBOOK);
             }
 
-            // Sort items by status priority: Completato, In corso, Non completato, others
             const statusPriority = {
                 Completato: 1,
                 "In corso": 2,
@@ -233,7 +224,6 @@ function Logbook() {
                 return priorityA - priorityB;
             });
 
-            // Fetch notes for all items (tasks and logbooks)
             const API_URL = import.meta.env.VITE_API_URL;
             const notesMap = {};
 
@@ -265,7 +255,6 @@ function Logbook() {
                 }),
             );
 
-            // Determine the title based on timeFilter and exportType
             let pdfTitle;
             if (exportType === "activity" || exportType === "activities") {
                 pdfTitle =
@@ -285,7 +274,7 @@ function Logbook() {
                 pdfTitle,
                 notesMap,
                 users,
-                exportType !== "activity" && exportType !== "activities", // showStatus only for reports, not activities
+                exportType !== "activity" && exportType !== "activities",
             );
             setPopupType("success");
             setPopupMessage(
@@ -294,9 +283,7 @@ function Logbook() {
                 })`,
             );
             setShowPopup(true);
-            setTimeout(() => {
-                setShowPopup(false);
-            }, 2000);
+            setTimeout(() => setShowPopup(false), 2000);
             setShowExportReportMenu(false);
             setShowExportActivityMenu(false);
         } catch (error) {
@@ -304,9 +291,7 @@ function Logbook() {
             setPopupType("error");
             setPopupMessage("Errore durante l'esportazione del PDF");
             setShowPopup(true);
-            setTimeout(() => {
-                setShowPopup(false);
-            }, 2000);
+            setTimeout(() => setShowPopup(false), 2000);
             setShowExportReportMenu(false);
             setShowExportActivityMenu(false);
         }
@@ -322,23 +307,15 @@ function Logbook() {
 
     const mergedTasks = useMemo(() => {
         const normalizedUnavailableTasks = (unavailableTasks || []).map(
-            (task) => ({
-                ...task,
-                IS_UNAVAILABLE: true,
-            }),
+            (task) => ({ ...task, IS_UNAVAILABLE: true }),
         );
-
         return [...(tasks || []), ...normalizedUnavailableTasks];
     }, [tasks, unavailableTasks]);
 
     const mergedLogbooks = useMemo(() => {
         const normalizedUnavailableLogbooks = (unavailableLogbooks || []).map(
-            (logbook) => ({
-                ...logbook,
-                IS_UNAVAILABLE: true,
-            }),
+            (logbook) => ({ ...logbook, IS_UNAVAILABLE: true }),
         );
-
         return [...(logbooks || []), ...normalizedUnavailableLogbooks];
     }, [logbooks, unavailableLogbooks]);
 
@@ -361,6 +338,41 @@ function Logbook() {
                 .slice(1)
         );
     };
+
+    // Reusable export dropdown component
+    const ExportDropdown = ({
+        label,
+        menuRef,
+        isOpen,
+        setIsOpen,
+        onDiurno,
+        onNotturno,
+    }) => (
+        <div className="relative w-full sm:w-auto" ref={menuRef}>
+            <button
+                className="btn secondary w-full sm:w-auto justify-center flex items-center gap-1"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                {label}
+            </button>
+            {isOpen && (
+                <div className="absolute right-0 mt-2 w-44 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
+                    <button
+                        className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
+                        onClick={onDiurno}
+                    >
+                        Giorno
+                    </button>
+                    <button
+                        className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-b-lg"
+                        onClick={onNotturno}
+                    >
+                        Notte
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 
     return (
         <section className="flex h-screen">
@@ -401,159 +413,125 @@ function Logbook() {
                         </>
                     ) : (
                         <>
-                            <div className="m-8 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
+                            {/* ── Top navigation bar ── */}
+                            <div className="mx-3 mt-4 mb-2 md:m-8 md:mb-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                {/* Left: back + date picker */}
+                                <div className="flex items-center gap-3 flex-wrap">
                                     <button
-                                        className="btn flex gap-2 items-center"
+                                        className="btn flex gap-2 items-center w-full sm:w-auto justify-center"
                                         onClick={handleBackToCalendar}
                                     >
-                                        <BackIcon className="w-6" />
-                                        <p>Torna al Calendario</p>
+                                        <BackIcon className="w-5 md:w-6" />
+                                        <p className="text-sm md:text-base">
+                                            Torna al Calendario
+                                        </p>
                                     </button>
 
-                                    <DatePickerComponent
-                                        startDate={startDate}
-                                        setStartDate={setStartDate}
-                                        isCalendar={false}
-                                    />
+                                    <div className="flex justify-center items-center w-full sm:w-auto">
+                                        <DatePickerComponent
+                                            startDate={startDate}
+                                            setStartDate={setStartDate}
+                                            isCalendar={false}
+                                        />
+                                    </div>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                    <div
-                                        className="relative"
-                                        ref={exportReportMenuRef}
-                                    >
-                                        <button
-                                            className="btn secondary"
-                                            onClick={() =>
-                                                setShowExportReportMenu(
-                                                    !showExportReportMenu,
-                                                )
-                                            }
-                                        >
-                                            Export Report
-                                        </button>
-                                        {showExportReportMenu && (
-                                            <div className="absolute right-0 mt-2 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
-                                                <button
-                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
-                                                    onClick={() =>
-                                                        handleExportPDF(
-                                                            "Diurno",
-                                                            "report",
-                                                        )
-                                                    }
-                                                >
-                                                    Giorno
-                                                </button>
-                                                <button
-                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-b-lg"
-                                                    onClick={() =>
-                                                        handleExportPDF(
-                                                            "Notturno",
-                                                            "report",
-                                                        )
-                                                    }
-                                                >
-                                                    Notte
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div
-                                        className="relative"
-                                        ref={exportActivityMenuRef}
-                                    >
-                                        <button
-                                            className="btn secondary"
-                                            onClick={() =>
-                                                setShowExportActivityMenu(
-                                                    !showExportActivityMenu,
-                                                )
-                                            }
-                                        >
-                                            Export Activity
-                                        </button>
-                                        {showExportActivityMenu && (
-                                            <div className="absolute right-0 mt-2 w-48 bg-[var(--pure-white)] border border-[var(--light-primary)] rounded-lg shadow-lg z-50 text-[var(--black)]">
-                                                <button
-                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-t-lg border-b border-[var(--light-primary)]"
-                                                    onClick={() =>
-                                                        handleExportPDF(
-                                                            "Diurno",
-                                                            "activities",
-                                                        )
-                                                    }
-                                                >
-                                                    Giorno
-                                                </button>
-                                                <button
-                                                    className="w-full text-left px-4 py-3 hover:bg-[var(--bento-bg)] transition-colors duration-200 rounded-b-lg"
-                                                    onClick={() =>
-                                                        handleExportPDF(
-                                                            "Notturno",
-                                                            "activities",
-                                                        )
-                                                    }
-                                                >
-                                                    Notte
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                                {/* Right: export buttons */}
+                                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                                    <ExportDropdown
+                                        label="Export Report"
+                                        menuRef={exportReportMenuRef}
+                                        isOpen={showExportReportMenu}
+                                        setIsOpen={setShowExportReportMenu}
+                                        onDiurno={() =>
+                                            handleExportPDF("Diurno", "report")
+                                        }
+                                        onNotturno={() =>
+                                            handleExportPDF(
+                                                "Notturno",
+                                                "report",
+                                            )
+                                        }
+                                    />
+                                    <ExportDropdown
+                                        label="Export Activity"
+                                        menuRef={exportActivityMenuRef}
+                                        isOpen={showExportActivityMenu}
+                                        setIsOpen={setShowExportActivityMenu}
+                                        onDiurno={() =>
+                                            handleExportPDF(
+                                                "Diurno",
+                                                "activities",
+                                            )
+                                        }
+                                        onNotturno={() =>
+                                            handleExportPDF(
+                                                "Notturno",
+                                                "activities",
+                                            )
+                                        }
+                                    />
                                 </div>
                             </div>
 
-                            <div className="m-8 gap-8 grid grid-cols-1">
-                                <div className="flex flex-col gap-4 border border-[var(--light-primary)] rounded-lg p-4 bg-[var(--bento-bg)]">
-                                    <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-4">
+                            {/* ── Main content card ── */}
+                            <div className="mx-3 my-3 md:m-8 gap-8 grid grid-cols-1">
+                                <div className="flex flex-col gap-3 md:gap-4 border border-[var(--light-primary)] rounded-lg p-3 md:p-4 bg-[var(--bento-bg)]">
+                                    {/* Card title */}
+                                    <p className="text-l text-[var(--gray)] border-b border-[var(--light-primary)] pb-3 md:pb-4">
                                         Tabella logbook
                                     </p>
 
-                                    <div className="flex items-center w-full justify-between gap-4">
-                                        <div className="flex items-center gap-4">
-                                            <button
-                                                className="btn tertiary flex gap-2 items-center"
-                                                onClick={handleTaskClick}
-                                            >
-                                                <LogbookIcon className="w-6" />
-                                                <p>Aggiungi entry</p>
-                                            </button>
-                                        </div>
+                                    {/* Action bar: add button + view toggle */}
+                                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
+                                        {/* Left: add entry button */}
+                                        <button
+                                            className="btn tertiary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
+                                            onClick={handleTaskClick}
+                                        >
+                                            <LogbookIcon className="w-5 shrink-0" />
+                                            <p>Aggiungi entry</p>
+                                        </button>
 
-                                        <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-fit p-1">
-                                            <div
-                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 1 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
-                                                onClick={() => setViewDays(1)}
-                                            >
-                                                <p className="text-sm">Oggi</p>
-                                            </div>
-
-                                            <div
-                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 7 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
-                                                onClick={() => setViewDays(7)}
-                                            >
-                                                <p className="text-sm">
-                                                    1 settimana
-                                                </p>
-                                            </div>
-
-                                            <div
-                                                className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer ${viewDays === 14 ? "bg-[var(--light-primary)] text-[var(--primary)]" : "text-[var(--black)] hover:bg-[var(--light-primary)]"} transition-all duration-200`}
-                                                onClick={() => setViewDays(14)}
-                                            >
-                                                <p className="text-sm">
-                                                    2 settimane
-                                                </p>
+                                        {/* Right: view toggle */}
+                                        <div className="overflow-x-auto pb-0.5">
+                                            <div className="flex items-center justify-start border border-[var(--light-primary)] rounded-md w-full p-1 min-w-max">
+                                                {[
+                                                    { label: "Oggi", days: 1 },
+                                                    {
+                                                        label: "1 settimana",
+                                                        days: 7,
+                                                    },
+                                                    {
+                                                        label: "2 settimane",
+                                                        days: 14,
+                                                    },
+                                                ].map(({ label, days }) => (
+                                                    <div
+                                                        key={days}
+                                                        className={`flex items-center gap-2 p-2 px-3 md:px-4 rounded-md cursor-pointer whitespace-nowrap flex-1 justify-center ${
+                                                            viewDays === days
+                                                                ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                                                : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                                        } transition-all duration-200`}
+                                                        onClick={() =>
+                                                            setViewDays(days)
+                                                        }
+                                                    >
+                                                        <p className="text-sm">
+                                                            {label}
+                                                        </p>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
 
+                                    {/* Date sections */}
                                     {datesList.map((currentDate, index) => (
                                         <div key={currentDate.toISOString()}>
                                             {viewDays > 1 && (
-                                                <h1 className="text-xl font-semibold text-[var(--black)] mb-1 mt-4">
+                                                <h1 className="text-base md:text-xl font-semibold text-[var(--black)] mb-1 mt-4">
                                                     {getSelectedDateString(
                                                         currentDate,
                                                     )}
@@ -561,8 +539,9 @@ function Logbook() {
                                             )}
                                             <div
                                                 className={
-                                                    viewDays > 1 &&
-                                                    "p-4 bg-[var(--pure-white)] rounded-xl"
+                                                    viewDays > 1
+                                                        ? "p-3 md:p-4 bg-[var(--pure-white)] rounded-xl"
+                                                        : ""
                                                 }
                                             >
                                                 <Table

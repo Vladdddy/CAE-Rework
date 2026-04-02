@@ -37,7 +37,7 @@ export function GetSimulators({
             <div
                 className={`${
                     type === "table"
-                        ? "grid grid-cols-7 gap-4 justify-start items-start gap-1"
+                        ? "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4 justify-start items-start"
                         : ""
                 } `}
             >
@@ -53,7 +53,6 @@ export function GetSimulators({
                                               const matchesSimulator =
                                                   task?.SIMULATOR === simulator;
 
-                                              // Properly format the date with zero-padding
                                               const year = date.getFullYear();
                                               const month = String(
                                                   date.getMonth() + 1,
@@ -285,7 +284,6 @@ export function GetTableSimulators({
         if (!dbTime) return "";
         let timePart = dbTime;
 
-        // Normalize date-time strings and return HH:MM
         if (timePart.includes("T")) timePart = timePart.split("T")[1];
         if (timePart.includes(" ")) timePart = timePart.split(" ")[1];
         timePart = timePart.split(".")[0];
@@ -350,12 +348,20 @@ export function GetTableSimulators({
 
     return (
         <>
+            {/*
+                Responsive grid:
+                - mobile:  2 columns (compact, scrollable task cards)
+                - sm:      4 columns
+                - md+:     7 columns (original desktop layout)
+                Wrapped in overflow-x-auto so that on very narrow screens
+                the grid never clips — users can scroll horizontally.
+            */}
             <div
                 className={`${
                     type === "table" || type === "table&logbook"
-                        ? "grid grid-cols-7 gap-4 justify-start items-start gap-1"
+                        ? "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 md:gap-4 justify-start items-start"
                         : ""
-                } `}
+                }`}
             >
                 {simulators.map((simulator, index) => {
                     const matchingSimulator = findMatchingSimulator(simulator);
@@ -374,9 +380,9 @@ export function GetTableSimulators({
                         isToday;
 
                     return (
-                        <div key={index} className={"flex flex-col gap-2"}>
+                        <div key={index} className="flex flex-col gap-2">
                             <div className="sticky top-0 z-10 flex items-start gap-1 pb-2">
-                                {/* Simulatore */}
+                                {/* Clock icon for simulator info */}
                                 {(() => {
                                     if (type !== "table") return null;
                                     if (!isToday) return null;
@@ -387,54 +393,58 @@ export function GetTableSimulators({
                                                     matchingSimulator,
                                                 )
                                             }
-                                            className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200"
+                                            className="bg-[var(--primary)] rounded-md p-1 flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-all duration-200 flex-shrink-0"
                                         >
                                             <ClockIcon className="w-4 text-[#ffffff]" />
                                         </div>
                                     ) : null;
                                 })()}
-                                <div className="text-center bg-[var(--light-primary)] rounded-md px-2 flex-1">
-                                    <h1 className="text-[var(--primary)]">
+
+                                <div className="text-center bg-[var(--light-primary)] rounded-md px-2 flex-1 min-w-0">
+                                    <h1 className="text-[var(--primary)] text-sm truncate">
                                         {simulator}
                                     </h1>
 
                                     {shouldShowSimulatorInfo && (
-                                        <div className="text-[var(--black)] text-xs mt-1 flex-1 flex flex-row gap-2 justify-center items-center pb-1">
-                                            <div className="flex flex-col items-start gap-1">
-                                                <p className="text-[var(--gray)]">
-                                                    Fine
-                                                </p>
-                                                <p>
-                                                    {toTimeInputValue(
-                                                        matchingSimulator.START_HOUR,
-                                                    )}
-                                                </p>
-                                            </div>
+                                        <div className="text-[var(--black)] text-xs mt-1 flex-1 flex flex-col sm:flex-row gap-1 sm:gap-2 justify-center items-start sm:items-center pb-1">
+                                            <div className="flex flex-row gap-2 flex-wrap">
+                                                <div className="flex flex-col items-start gap-0.5">
+                                                    <p className="text-[var(--gray)] text-[10px]">
+                                                        Fine
+                                                    </p>
+                                                    <p className="text-xs">
+                                                        {toTimeInputValue(
+                                                            matchingSimulator.START_HOUR,
+                                                        )}
+                                                    </p>
+                                                </div>
 
-                                            <div className="flex flex-col items-start gap-1">
-                                                <p className="text-[var(--gray)]">
-                                                    Inizio
-                                                </p>
-                                                <p>
-                                                    {toTimeInputValue(
-                                                        matchingSimulator.END_HOUR,
-                                                    )}
-                                                </p>
-                                            </div>
+                                                <div className="flex flex-col items-start gap-0.5">
+                                                    <p className="text-[var(--gray)] text-[10px]">
+                                                        Inizio
+                                                    </p>
+                                                    <p className="text-xs">
+                                                        {toTimeInputValue(
+                                                            matchingSimulator.END_HOUR,
+                                                        )}
+                                                    </p>
+                                                </div>
 
-                                            <div className="flex flex-col items-start gap-1">
-                                                <p className="text-[var(--gray)]">
-                                                    Assegnatari
-                                                </p>
-                                                <p className="truncate max-w-[100px]">
-                                                    {matchingSimulator.ASSIGNED_TO ||
-                                                        "N/A"}
-                                                </p>
+                                                <div className="flex flex-col items-start gap-0.5">
+                                                    <p className="text-[var(--gray)] text-[10px]">
+                                                        Assegnatari
+                                                    </p>
+                                                    <p className="text-xs truncate max-w-[80px] sm:max-w-[100px]">
+                                                        {matchingSimulator.ASSIGNED_TO ||
+                                                            "N/A"}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             </div>
+
                             {!taskList || taskList.length === 0
                                 ? ""
                                 : (() => {
@@ -445,7 +455,6 @@ export function GetTableSimulators({
                                               const matchesSimulator =
                                                   task?.SIMULATOR === simulator;
 
-                                              // If no date provided, only filter by time and simulator
                                               if (!date) {
                                                   return (
                                                       matchesTime &&
@@ -472,12 +481,10 @@ export function GetTableSimulators({
                                           },
                                       );
 
-                                      // Check if simulator has hours set for this date
                                       const hasSimulatorHours =
                                           matchingSimulator !== null &&
                                           matchingSimulator !== undefined;
 
-                                      // Show if there are tasks OR if simulator has hours set
                                       return filteredTasks.length > 0 ||
                                           hasSimulatorHours ? (
                                           <>

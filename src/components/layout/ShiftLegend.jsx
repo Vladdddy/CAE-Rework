@@ -5,7 +5,7 @@ import CloseIcon from "../../assets/icons/close.tsx";
 function ShiftLegend() {
     const [showLegend, setShowLegend] = useState(false);
     const [position, setPosition] = useState(() => ({
-        x: window.innerWidth - 340, // 340px is the width of the legend
+        x: Math.max(16, window.innerWidth - 356),
         y: 16, // mt-4 is typically 1rem = 16px
     }));
     const [isDragging, setIsDragging] = useState(false);
@@ -67,6 +67,18 @@ function ShiftLegend() {
         };
     }, [isDragging]);
 
+    useEffect(() => {
+        const handleResize = () => {
+            setPosition((prev) => ({
+                x: Math.min(prev.x, Math.max(16, window.innerWidth - 356)),
+                y: Math.max(16, prev.y),
+            }));
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     /*return (
         <div
             className={`flex flex-col justify-between items-start text-center bg-[var(--white)] border border-[var(--light-primary)] rounded-xl px-2 py-4 transition-all duration-300 ${showLegend ? "gap-8 w-auto" : "gap-0 w-fit"}`}
@@ -112,9 +124,9 @@ function ShiftLegend() {
                 <p className="text-md">Legenda turni</p>
             </button>
             <div
-                className={`fixed z-40 bg-[var(--white)] w-[340px] p-4 py-0 rounded-lg overflow-y-auto pr-2 overflow-hidden transition-opacity duration-300 shadow-lg border border-[var(--separator)] ${showLegend ? "max-h-[calc(100vh-20rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
+                className={`fixed z-40 bg-[var(--white)] w-[90vw] max-w-[340px] p-4 py-0 rounded-lg overflow-y-auto pr-2 overflow-hidden transition-opacity duration-300 shadow-lg border border-[var(--separator)] ${showLegend ? "max-h-[calc(100vh-20rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
                 style={{
-                    left: `${position.x}px`,
+                    left: `${Math.max(16, Math.min(position.x, window.innerWidth - 356))}px`,
                     top: `${position.y}px`,
                     cursor: isDragging ? "grabbing" : "default",
                 }}

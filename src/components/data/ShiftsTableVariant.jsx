@@ -26,6 +26,10 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     const scrollContainerRef = useRef(null);
     const todayColumnRef = useRef(null);
     const [popup, setPopup] = useState({ show: false, type: "", message: "" });
+    // Track if we're on mobile — initialize synchronously to avoid layout flash
+    const [isMobile, setIsMobile] = useState(
+        () => typeof window !== "undefined" && window.innerWidth < 768,
+    );
 
     // Track POST and PUT changes
     const [postChanges, setPostChanges] = useState(() => {
@@ -54,31 +58,31 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         "ND",
     ];
 
+    // Detect mobile viewport
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
+
     // Apply shift order from database
     useEffect(() => {
-        // Wait for shift orders to finish loading
-        if (shiftOrdersLoading) {
-            return;
-        }
-
+        if (shiftOrdersLoading) return;
         if (users.length === 0) {
             setOrderedUsers([]);
             return;
         }
-
-        // If no shift orders exist, use default user order
         if (shiftOrders.length === 0) {
             setOrderedUsers(users);
             return;
         }
 
-        // Create a map of user ID to position
         const positionMap = {};
         shiftOrders.forEach((order) => {
             positionMap[order.POSITIONED_USER_ID] = order.POSITION;
         });
 
-        // Sort users by position, putting users without position at the end
         const sorted = [...users].sort((a, b) => {
             const posA = positionMap[a.ID] || 9999;
             const posB = positionMap[b.ID] || 9999;
@@ -117,27 +121,19 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
             const postChangesWithSource = Object.fromEntries(
                 Object.entries(newPostChanges).map(([key, value]) => [
                     key,
-                    {
-                        ...value,
-                        CHANGE_SOURCE: "pattern",
-                    },
+                    { ...value, CHANGE_SOURCE: "pattern" },
                 ]),
             );
             const putChangesWithSource = Object.fromEntries(
                 Object.entries(newPutChanges).map(([key, value]) => [
                     key,
-                    {
-                        ...value,
-                        CHANGE_SOURCE: "pattern",
-                    },
+                    { ...value, CHANGE_SOURCE: "pattern" },
                 ]),
             );
 
-            // Merge pattern changes with existing changes
             setPostChanges((prev) => ({ ...prev, ...postChangesWithSource }));
             setPutChanges((prev) => ({ ...prev, ...putChangesWithSource }));
 
-            // Update shiftValues for visual feedback
             setShiftValues((prev) => {
                 const updated = { ...prev };
                 Object.entries(postChangesWithSource).forEach(
@@ -173,7 +169,6 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
             novembre: 10,
             dicembre: 11,
         };
-
         const [monthName, year] = selectedMonth.split(" ");
         const monthIndex = months[monthName.toLowerCase()];
         return new Date(parseInt(year), monthIndex, 1);
@@ -185,7 +180,6 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         date.getMonth() + 1,
         0,
     ).getDate();
-
     const numericDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
     const dayOfWeekLabels = [
@@ -197,12 +191,18 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         "Venerdì",
         "Sabato",
     ];
+    const dayOfWeekShort = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
     const dayOfWeek = numericDays.map((day) => {
         const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
         return dayOfWeekLabels[currentDate.getDay()];
     });
 
-    // Calculate Easter Sunday using Computus algorithm
+    const dayOfWeekShortArr = numericDays.map((day) => {
+        const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
+        return dayOfWeekShort[currentDate.getDay()];
+    });
+
     const calculateEaster = (year) => {
         const a = year % 19;
         const b = Math.floor(year / 100);
@@ -226,28 +226,24 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         const month = currentDate.getMonth() + 1;
         const dayOfMonth = currentDate.getDate();
         const year = date.getFullYear();
-
-        // Calculate Easter for the current year
         const easter = calculateEaster(year);
-
-        // Calculate Easter Monday (day after Easter)
         const easterDate = new Date(year, easter.month - 1, easter.day);
         const easterMonday = new Date(easterDate);
         easterMonday.setDate(easterDate.getDate() + 1);
 
         const holidays = [
-            { month: 1, day: 1 }, // New Year's Day (Capodanno)
-            { month: 1, day: 6 }, // Epiphany (Epifania)
-            { month: easter.month, day: easter.day }, // Easter Sunday (Pasqua)
-            { month: easterMonday.getMonth() + 1, day: easterMonday.getDate() }, // Easter Monday (Pasquetta)
-            { month: 4, day: 25 }, // Liberation Day (Festa della Liberazione)
-            { month: 5, day: 1 }, // Labor Day (Festa del Lavoro)
-            { month: 6, day: 2 }, // Republic Day (Festa della Repubblica)
-            { month: 8, day: 15 }, // Assumption of Mary (Ferragosto)
-            { month: 11, day: 1 }, // All Saints' Day (Ognissanti)
-            { month: 12, day: 8 }, // Immaculate Conception (Immacolata Concezione)
-            { month: 12, day: 25 }, // Christmas Day (Natale)
-            { month: 12, day: 26 }, // Saint Stephen's Day (Santo Stefano)
+            { month: 1, day: 1 },
+            { month: 1, day: 6 },
+            { month: easter.month, day: easter.day },
+            { month: easterMonday.getMonth() + 1, day: easterMonday.getDate() },
+            { month: 4, day: 25 },
+            { month: 5, day: 1 },
+            { month: 6, day: 2 },
+            { month: 8, day: 15 },
+            { month: 11, day: 1 },
+            { month: 12, day: 8 },
+            { month: 12, day: 25 },
+            { month: 12, day: 26 },
         ];
 
         return holidays.some(
@@ -255,7 +251,6 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         );
     };
 
-    // Check if today is in the current displayed month
     const today = new Date();
     const isCurrentMonth =
         date.getMonth() === today.getMonth() &&
@@ -265,32 +260,23 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
 
     // Auto-scroll to today's date or start of table
     useEffect(() => {
-        if (scrollContainerRef.current) {
+        if (scrollContainerRef.current && !isMobile) {
             const containerElement = scrollContainerRef.current;
-
             if (isCurrentMonth && todayColumnRef.current) {
-                // Scroll to today's column for current month
                 const columnElement = todayColumnRef.current;
-
-                // Calculate scroll position to center today's column
                 const scrollPosition =
                     columnElement.offsetLeft -
                     containerElement.clientWidth / 2 +
                     columnElement.clientWidth / 2;
-
                 containerElement.scrollTo({
                     left: Math.max(0, scrollPosition),
                     behavior: "smooth",
                 });
             } else {
-                // Scroll to start for other months
-                containerElement.scrollTo({
-                    left: 0,
-                    behavior: "smooth",
-                });
+                containerElement.scrollTo({ left: 0, behavior: "smooth" });
             }
         }
-    }, [selectedMonth, isCurrentMonth, todayIndex]);
+    }, [selectedMonth, isCurrentMonth, todayIndex, isMobile]);
 
     const formatUsername = (user) => {
         return (
@@ -305,41 +291,31 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     // Drag and drop handlers
     const handleDragStart = (e, index) => {
         const user = orderedUsers[index];
-        // Only allow dragging for Employee role
         if (user.Role !== "Employee") {
             e.preventDefault();
             return;
         }
         setDraggedIndex(index);
         e.dataTransfer.effectAllowed = "move";
-        // Add a slight delay to prevent the dragged item from being transparent
         e.dataTransfer.setData("text/html", e.currentTarget);
     };
 
     const handleDragOver = (e, index) => {
         e.preventDefault();
-
-        // Only allow dropping on Employee roles
         const targetUser = orderedUsers[index];
         if (targetUser.Role !== "Employee") {
             e.dataTransfer.dropEffect = "none";
             return;
         }
-
         e.dataTransfer.dropEffect = "move";
-
-        if (draggedIndex !== null && draggedIndex !== index) {
+        if (draggedIndex !== null && draggedIndex !== index)
             setDragOverIndex(index);
-        }
     };
 
-    const handleDragLeave = () => {
-        setDragOverIndex(null);
-    };
+    const handleDragLeave = () => setDragOverIndex(null);
 
     const handleDrop = (e, dropIndex) => {
         e.preventDefault();
-
         if (draggedIndex === null || draggedIndex === dropIndex) {
             setDragOverIndex(null);
             return;
@@ -347,47 +323,35 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
 
         const newUsers = [...orderedUsers];
         const draggedUser = newUsers[draggedIndex];
-
-        // Remove the dragged item
         newUsers.splice(draggedIndex, 1);
-        // Insert it at the drop position
         newUsers.splice(dropIndex, 0, draggedUser);
-
         setOrderedUsers(newUsers);
         setDragOverIndex(null);
 
-        // Save the new order to backend
         const orderedUserIds = newUsers.map((user) => user.ID);
         saveShiftOrders(orderedUserIds)
             .then((result) => {
                 if (result.success) {
-                    console.log("Shift order saved successfully");
                     setPopup({
                         show: true,
                         type: "success",
                         message:
                             "Hai spostato con successo la posizione del tecnico",
                     });
-                    setTimeout(
-                        () => setPopup({ show: false, type: "", message: "" }),
-                        3000,
-                    );
                 } else {
-                    console.error("Failed to save shift order:", result.error);
                     setPopup({
                         show: true,
                         type: "error",
                         message:
                             "Non è stato possibile spostare la posizione del tecnico",
                     });
-                    setTimeout(
-                        () => setPopup({ show: false, type: "", message: "" }),
-                        3000,
-                    );
                 }
+                setTimeout(
+                    () => setPopup({ show: false, type: "", message: "" }),
+                    3000,
+                );
             })
-            .catch((err) => {
-                console.error("Error saving shift order:", err);
+            .catch(() => {
                 setPopup({
                     show: true,
                     type: "error",
@@ -408,17 +372,12 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
 
     const handleShiftChange = (userIndex, dayIndex, value) => {
         const user = orderedUsers[userIndex];
-
-        // Construct date string
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const day = String(dayIndex + 1).padStart(2, "0");
         const formattedDate = `${year}-${month}-${day}`;
-
-        // Use employee ID and date as key to ensure uniqueness across months
         const key = `${user.ID}-${formattedDate}`;
 
-        // Get current shift value from database
         const matchingShift = employeeShifts.find(
             (shift) =>
                 shift.EMPLOYEE_ID === user.ID &&
@@ -429,34 +388,27 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         const currentDbValue = matchingShift ? matchingShift.SHIFT_TYPE : "--";
         const shiftId = matchingShift ? matchingShift.ID : null;
 
-        // If value matches database value, remove from shiftValues and tracking
         if (value === currentDbValue) {
             setShiftValues((prev) => {
-                const newValues = { ...prev };
-                delete newValues[key];
-                return newValues;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
             setPostChanges((prev) => {
-                const newChanges = { ...prev };
-                delete newChanges[key];
-                return newChanges;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
             setPutChanges((prev) => {
-                const newChanges = { ...prev };
-                delete newChanges[key];
-                return newChanges;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
             return;
         }
 
-        // Determine if this is POST, PUT, or DELETE
         if (value === "--" && currentDbValue !== "--") {
-            // DELETE: User is removing an existing shift (set to null/delete)
-            // Store null in shiftValues to indicate deletion
-            setShiftValues((prev) => ({
-                ...prev,
-                [key]: null,
-            }));
+            setShiftValues((prev) => ({ ...prev, [key]: null }));
             setPutChanges((prev) => ({
                 ...prev,
                 [key]: {
@@ -467,35 +419,29 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                     CHANGE_SOURCE: "manual",
                 },
             }));
-            // Remove from POST if it was there
             setPostChanges((prev) => {
-                const newChanges = { ...prev };
-                delete newChanges[key];
-                return newChanges;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
         } else if (value === "--") {
-            // User reset to "--" and DB also has "--", remove from shiftValues and tracking
             setShiftValues((prev) => {
-                const newValues = { ...prev };
-                delete newValues[key];
-                return newValues;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
             setPostChanges((prev) => {
-                const newChanges = { ...prev };
-                delete newChanges[key];
-                return newChanges;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
             setPutChanges((prev) => {
-                const newChanges = { ...prev };
-                delete newChanges[key];
-                return newChanges;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
         } else if (currentDbValue === "--") {
-            // POST: Adding new shift (database had no value)
-            setShiftValues((prev) => ({
-                ...prev,
-                [key]: value,
-            }));
+            setShiftValues((prev) => ({ ...prev, [key]: value }));
             setPostChanges((prev) => ({
                 ...prev,
                 [key]: {
@@ -505,18 +451,13 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                     CHANGE_SOURCE: "manual",
                 },
             }));
-            // Remove from PUT if it was there
             setPutChanges((prev) => {
-                const newChanges = { ...prev };
-                delete newChanges[key];
-                return newChanges;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
         } else {
-            // PUT: Updating existing shift (database had a value)
-            setShiftValues((prev) => ({
-                ...prev,
-                [key]: value,
-            }));
+            setShiftValues((prev) => ({ ...prev, [key]: value }));
             setPutChanges((prev) => ({
                 ...prev,
                 [key]: {
@@ -527,36 +468,28 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                     CHANGE_SOURCE: "manual",
                 },
             }));
-            // Remove from POST if it was there
             setPostChanges((prev) => {
-                const newChanges = { ...prev };
-                delete newChanges[key];
-                return newChanges;
+                const n = { ...prev };
+                delete n[key];
+                return n;
             });
         }
     };
 
     const getShiftValue = (userIndex, dayIndex) => {
-        // Get the user and construct the date for this day
         const user = orderedUsers[userIndex];
         if (!user) return "--";
 
-        // Construct date string directly to avoid timezone issues
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-indexed
+        const month = String(date.getMonth() + 1).padStart(2, "0");
         const day = String(dayIndex + 1).padStart(2, "0");
         const formattedDate = `${year}-${month}-${day}`;
-
-        // Use employee ID and date as key
         const key = `${user.ID}-${formattedDate}`;
 
-        // Check if there's a manual change first
         if (key in shiftValues) {
-            // If value is null (DELETE operation), show as "--"
             return shiftValues[key] === null ? "--" : shiftValues[key];
         }
 
-        // Find a matching shift in employeeShifts
         const matchingShift = employeeShifts.find(
             (shift) =>
                 shift.EMPLOYEE_ID === user.ID &&
@@ -568,89 +501,60 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     };
 
     const countShiftsForDay = (time, day) => {
-        // Construct date string for the given day
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const dayStr = String(day).padStart(2, "0");
         const formattedDate = `${year}-${month}-${dayStr}`;
-
-        // Define which shift types to count based on time
         const shiftTypes = time === "Diurno" ? ["D"] : ["N"];
-
-        // Create a map to track shift values for each employee on this day
         const shiftsMap = {};
 
-        // First, add shifts from database
         employeeShifts.forEach((shift) => {
             if (!shift.SELECTED_DATE) return;
-            const shiftDate = shift.SELECTED_DATE.split("T")[0];
-            if (shiftDate === formattedDate) {
+            if (shift.SELECTED_DATE.split("T")[0] === formattedDate) {
                 shiftsMap[shift.EMPLOYEE_ID] = shift.SHIFT_TYPE;
             }
         });
 
-        // Then, override with pending changes (POST and PUT)
         Object.values(postChanges).forEach((change) => {
-            if (change.SELECTED_DATE === formattedDate) {
+            if (change.SELECTED_DATE === formattedDate)
                 shiftsMap[change.EMPLOYEE_ID] = change.SHIFT_TYPE;
-            }
         });
 
         Object.values(putChanges).forEach((change) => {
             if (change.SELECTED_DATE === formattedDate) {
-                // If SHIFT_TYPE is null (DELETE), remove from map
-                if (change.SHIFT_TYPE === null) {
+                if (change.SHIFT_TYPE === null)
                     delete shiftsMap[change.EMPLOYEE_ID];
-                } else {
-                    shiftsMap[change.EMPLOYEE_ID] = change.SHIFT_TYPE;
-                }
+                else shiftsMap[change.EMPLOYEE_ID] = change.SHIFT_TYPE;
             }
         });
 
-        // Count only shifts that match the shift types, excluding "--" and null
-        const count = Object.values(shiftsMap).filter((shiftType) => {
-            return (
+        const count = Object.values(shiftsMap).filter(
+            (shiftType) =>
                 shiftType !== "--" &&
                 shiftType !== null &&
-                shiftTypes.includes(shiftType)
-            );
-        }).length;
+                shiftTypes.includes(shiftType),
+        ).length;
 
-        // Return formatted string with count
         const prefix = time === "Diurno" ? "D" : "N";
         return `${prefix}-${count}`;
     };
 
     const getShiftCountColor = (time, day) => {
-        // Extract the count from the result
         const result = countShiftsForDay(time, day);
         const count = parseInt(result.split("-")[1]);
-
-        // Return classes based on count:
-        // 0-1: red, 2: orange, 3: green, 4+: darker green
-        if (count <= 1) {
-            return "text-white bg-[var(--red)]";
-        } else if (count === 2) {
-            return "text-white bg-[var(--orange)]";
-        } else if (count === 3) {
-            return "text-white bg-[var(--green)]";
-        } else {
-            // 4 or above: darker green
-            return "text-white bg-[var(--dark-green)]";
-        }
+        if (count <= 1) return "text-white bg-[var(--red)]";
+        else if (count === 2) return "text-white bg-[var(--orange)]";
+        else if (count === 3) return "text-white bg-[var(--green)]";
+        else return "text-white bg-[var(--dark-green)]";
     };
 
     const isCellModified = (userIndex, dayIndex) => {
         const user = orderedUsers[userIndex];
         if (!user) return false;
-
-        // Construct date string
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const day = String(dayIndex + 1).padStart(2, "0");
         const formattedDate = `${year}-${month}-${day}`;
-
-        // Use employee ID and date as key
         const key = `${user.ID}-${formattedDate}`;
         return (
             Object.hasOwn(postChanges, key) || Object.hasOwn(putChanges, key)
@@ -660,26 +564,274 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     const isUserRowModified = (userIndex) => {
         const user = orderedUsers[userIndex];
         if (!user) return false;
-
-        // Check if any day in the month has been modified for this user
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
-
         for (let dayIndex = 0; dayIndex < daysInMonth; dayIndex++) {
             const day = String(dayIndex + 1).padStart(2, "0");
             const formattedDate = `${year}-${month}-${day}`;
             const key = `${user.ID}-${formattedDate}`;
-
             if (
                 Object.hasOwn(postChanges, key) ||
                 Object.hasOwn(putChanges, key)
-            ) {
+            )
                 return true;
-            }
         }
         return false;
     };
 
+    const canEdit =
+        currentUserRole === "Admin" || currentUserRole === "Shift Leader";
+
+    // ─── MOBILE CARD LAYOUT ──────────────────────────────────────────────────
+    if (isMobile) {
+        return (
+            <div className="flex flex-col gap-3 w-full max-h-[calc(100vh-10rem)] overflow-y-auto pb-4 px-2">
+                {/* ── Shift Counter Card (separate table at the top) ── */}
+                <div className="border border-[var(--separator)] rounded-xl bg-[var(--bento-bg)] shadow-sm">
+                    <div className="px-4 py-3 border-b border-[var(--separator)] bg-[var(--light-primary)] rounded-t-xl">
+                        <p className="text-sm font-semibold text-[var(--black)]">
+                            Conteggio turni
+                        </p>
+                    </div>
+                    <div
+                        className="overflow-x-auto w-full"
+                        style={{ minHeight: "5rem" }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                width: "max-content",
+                            }}
+                        >
+                            {numericDays.map((day, index) => {
+                                const isWeekend =
+                                    dayOfWeek[index] === "Sabato" ||
+                                    dayOfWeek[index] === "Domenica";
+                                const isHolidayDay = isHoliday(day);
+                                const isToday = index === todayIndex;
+
+                                let cellBg = "bg-[var(--light-primary)]";
+                                if (isToday)
+                                    cellBg = "bg-[var(--weekend-cells)]";
+                                else if (isHolidayDay)
+                                    cellBg = "bg-[var(--holiday-cells)]";
+
+                                return (
+                                    <div
+                                        key={`counter-day-${index}`}
+                                        className={`flex flex-col items-center border-r border-[var(--separator)] ${cellBg}`}
+                                        style={{
+                                            minWidth: "4.5rem",
+                                            width: "4.5rem",
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {/* Day label */}
+                                        <div
+                                            className={`w-full text-center py-1 border-b border-[var(--separator)] ${isToday ? "text-[var(--weekend-text)]" : isHolidayDay ? "text-[var(--holiday-text)]" : "text-[var(--gray)]"}`}
+                                        >
+                                            <p className="text-[10px] font-medium leading-tight">
+                                                {dayOfWeekShortArr[index]}
+                                            </p>
+                                            <p className="text-sm font-bold leading-tight">
+                                                {day}
+                                            </p>
+                                        </div>
+                                        {/* Badges */}
+                                        <div className="flex flex-col items-center gap-1 py-2">
+                                            <span
+                                                className={`${getShiftCountColor("Diurno", day)} text-xs font-bold px-2 py-0.5 rounded leading-none`}
+                                            >
+                                                {countShiftsForDay(
+                                                    "Diurno",
+                                                    day,
+                                                )}
+                                            </span>
+                                            <span
+                                                className={`${getShiftCountColor("Notturno", day)} text-xs font-bold px-2 py-0.5 rounded leading-none`}
+                                            >
+                                                {countShiftsForDay(
+                                                    "Notturno",
+                                                    day,
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Employee Cards ── */}
+                {loading || shiftOrdersLoading ? (
+                    <div className="p-8 text-center text-[var(--black)] text-sm">
+                        Caricamento...
+                    </div>
+                ) : orderedUsers.length === 0 ? (
+                    <div className="p-8 text-center text-[var(--gray)] text-sm">
+                        Nessun utente trovato.
+                    </div>
+                ) : (
+                    orderedUsers.map((user, userIndex) => {
+                        const isEmployee = user.Role === "Employee";
+                        const isModified = isUserRowModified(userIndex);
+
+                        return (
+                            <div
+                                key={`mobile-user-${userIndex}`}
+                                className={`border rounded-xl bg-[var(--bento-bg)] shadow-sm ${isModified ? "border-[var(--orange)] border-2" : "border-[var(--separator)]"}`}
+                            >
+                                {/* Card header: employee name */}
+                                <div
+                                    className={`flex items-center gap-2 px-4 py-3 border-b border-[var(--separator)] rounded-t-xl ${isModified ? "bg-[var(--orange-light)]" : "bg-[var(--light-primary)]"}`}
+                                >
+                                    {isEmployee && canEdit && (
+                                        <DragIcon className="w-5 text-[var(--gray)] flex-shrink-0" />
+                                    )}
+                                    <p className="text-sm font-semibold text-[var(--black)] flex-1 select-none">
+                                        {formatUsername(user.Username)}
+                                    </p>
+                                    {isModified && (
+                                        <span className="text-xs bg-[var(--orange)] text-white px-2 py-0.5 rounded-full font-medium">
+                                            Modificato
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Horizontally scrollable day strip — no per-cell counters, bigger text */}
+                                <div
+                                    className="overflow-x-auto w-full"
+                                    style={{ minHeight: "6rem" }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            width: "max-content",
+                                        }}
+                                    >
+                                        {numericDays.map((day, index) => {
+                                            const isWeekend =
+                                                dayOfWeek[index] === "Sabato" ||
+                                                dayOfWeek[index] === "Domenica";
+                                            const isHolidayDay = isHoliday(day);
+                                            const isToday =
+                                                index === todayIndex;
+                                            const modified = isCellModified(
+                                                userIndex,
+                                                index,
+                                            );
+
+                                            let cellBg = "";
+                                            if (modified)
+                                                cellBg =
+                                                    "bg-[var(--orange-light)]";
+                                            else if (isToday)
+                                                cellBg =
+                                                    "bg-[var(--weekend-cells)]";
+                                            else if (isHolidayDay)
+                                                cellBg =
+                                                    "bg-[var(--holiday-cells)]";
+                                            else if (isWeekend)
+                                                cellBg =
+                                                    "bg-[var(--light-primary)]";
+
+                                            return (
+                                                <div
+                                                    key={`mobile-user-${userIndex}-day-${index}`}
+                                                    className={`flex flex-col items-center border-r border-[var(--separator)] ${cellBg}`}
+                                                    style={{
+                                                        minWidth: "4.5rem",
+                                                        width: "4.5rem",
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    {/* Day label */}
+                                                    <div
+                                                        className={`w-full text-center py-1 border-b border-[var(--separator)] ${isToday ? "text-[var(--weekend-text)]" : isHolidayDay ? "text-[var(--holiday-text)]" : "text-[var(--gray)]"}`}
+                                                    >
+                                                        <p className="text-[10px] font-medium leading-tight">
+                                                            {
+                                                                dayOfWeekShortArr[
+                                                                    index
+                                                                ]
+                                                            }
+                                                        </p>
+                                                        <p className="text-sm font-bold leading-tight">
+                                                            {day}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Shift select — bigger */}
+                                                    <div className="py-2 px-1 flex items-center justify-center flex-1">
+                                                        <select
+                                                            value={getShiftValue(
+                                                                userIndex,
+                                                                index,
+                                                            )}
+                                                            onChange={(e) =>
+                                                                handleShiftChange(
+                                                                    userIndex,
+                                                                    index,
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            disabled={!canEdit}
+                                                            className={`
+                                                                text-base font-bold text-center rounded border border-[var(--light-primary)]
+                                                                focus:outline-none transition-all duration-200 appearance-none
+                                                                ${canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-60"}
+                                                                ${GetColorForShift(getShiftValue(userIndex, index))}
+                                                            `}
+                                                            style={{
+                                                                width: "3.8rem",
+                                                                padding:
+                                                                    "5px 2px",
+                                                            }}
+                                                        >
+                                                            <option value="--">
+                                                                --
+                                                            </option>
+                                                            {shiftMeanings.map(
+                                                                (value) => (
+                                                                    <option
+                                                                        key={
+                                                                            value
+                                                                        }
+                                                                        value={
+                                                                            value
+                                                                        }
+                                                                    >
+                                                                        {value ===
+                                                                        "CG"
+                                                                            ? "CD"
+                                                                            : value}
+                                                                    </option>
+                                                                ),
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+
+                {popup.show && (
+                    <Popup type={popup.type} message={popup.message} />
+                )}
+            </div>
+        );
+    }
+
+    // ─── DESKTOP TABLE LAYOUT (unchanged) ────────────────────────────────────
     return (
         <div
             ref={scrollContainerRef}
@@ -762,33 +914,25 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                         </div>
                     </div>
                     <div className="flex border-b border-[var(--separator)]">
-                        {numericDays.map((day, index) => {
-                            const isWeekend =
-                                dayOfWeek[index] === "Sabato" ||
-                                dayOfWeek[index] === "Domenica";
-                            return (
-                                <div
-                                    key={`count-${index}`}
-                                    className="min-w-[8rem] w-[8rem]"
-                                >
-                                    <div
-                                        className={`text-[var(--primary)] ${isWeekend ? "bg-[var(--light-primary)] " : "bg-[var(--light-primary)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
+                        {numericDays.map((day, index) => (
+                            <div
+                                key={`count-${index}`}
+                                className="min-w-[8rem] w-[8rem]"
+                            >
+                                <div className="text-[var(--primary)] bg-[var(--light-primary)] text-sm p-4 text-center border-r border-[var(--separator)]">
+                                    <span
+                                        className={`${getShiftCountColor("Diurno", day)} p-2 rounded mr-2 font-bold`}
                                     >
-                                        <span
-                                            className={`${getShiftCountColor("Diurno", day)} p-2 rounded mr-2 font-bold`}
-                                        >
-                                            {countShiftsForDay("Diurno", day)}
-                                        </span>
-
-                                        <span
-                                            className={`${getShiftCountColor("Notturno", day)} p-2 rounded font-bold`}
-                                        >
-                                            {countShiftsForDay("Notturno", day)}
-                                        </span>
-                                    </div>
+                                        {countShiftsForDay("Diurno", day)}
+                                    </span>
+                                    <span
+                                        className={`${getShiftCountColor("Notturno", day)} p-2 rounded font-bold`}
+                                    >
+                                        {countShiftsForDay("Notturno", day)}
+                                    </span>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
                 </div>
 
@@ -800,11 +944,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                             <div
                                 key={`user-${userIndex}`}
                                 className={`flex ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""}`}
-                                draggable={
-                                    isEmployee &&
-                                    (currentUserRole === "Admin" ||
-                                        currentUserRole === "Shift Leader")
-                                }
+                                draggable={isEmployee && canEdit}
                                 onDragStart={(e) =>
                                     handleDragStart(e, userIndex)
                                 }
@@ -828,15 +968,6 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                                 )}
                                             {formatUsername(user.Username)}
                                         </p>
-                                        {/*<ArrowRightIcon
-                                            className={`w-6 text-[var(--black)] mr-4 cursor-pointer hover:text-[var(--gray)] transition-all duration-300 ${showNotes[user.ID] ? "rotate-[-90deg]" : "rotate-90"}`}
-                                            onClick={() =>
-                                                setShowNotes((prev) => ({
-                                                    ...prev,
-                                                    [user.ID]: !prev[user.ID],
-                                                }))
-                                            }
-                                        />*/}
                                     </div>
                                 </div>
                                 <div className="flex border-b border-[var(--separator)]">
@@ -853,7 +984,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                                 <div
                                                     className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
                                                 >
-                                                    <div className="relative ">
+                                                    <div className="relative">
                                                         <select
                                                             value={getShiftValue(
                                                                 userIndex,
@@ -867,13 +998,8 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                                                         .value,
                                                                 )
                                                             }
-                                                            disabled={
-                                                                currentUserRole !==
-                                                                    "Admin" &&
-                                                                currentUserRole !==
-                                                                    "Shift Leader"
-                                                            }
-                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none ${currentUserRole === "Admin" || currentUserRole === "Shift Leader" ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "ND" ? "focus:text-black" : ""}`}
+                                                            disabled={!canEdit}
+                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none ${canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "ND" ? "focus:text-black" : ""}`}
                                                         >
                                                             <option value="--">
                                                                 --
@@ -903,9 +1029,6 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                                         <button className="w-full flex-1 text-xs text-white p-2 px-2 rounded-md border border-[var(--primary)] bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition duration-300">
                                                             Aggiungi nota
                                                         </button>
-                                                        {/*<button className="w-full flex-1 text-xs text-[var(--primary)] p-2 px-2 rounded-md border border-[var(--primary)] hover:bg-[var(--light-primary)] transition duration-300">
-                                                            Leggi nota
-                                                        </button>*/}
                                                     </div>
                                                 </div>
                                             </div>
