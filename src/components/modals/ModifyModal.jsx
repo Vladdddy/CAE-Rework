@@ -335,19 +335,26 @@ function ModifyModal({
         setTitleError(false);
         const todayDate = new Date().toISOString().split("T")[0];
         const originalTaskDate = task.DATE ? task.DATE.split("T")[0] : "";
+        const originalStatus = task.STATUS || "Da definire";
         const now = new Date();
         const passedCompletedCutoff =
             now.getHours() > 8 || now.getHours() === 8;
-        const shouldMoveCompletedTaskToToday =
+        const isCompletingTaskThisEdit =
             !task.ISLOGBOOK &&
             selectedStatus === "Completato" &&
+            originalStatus !== "Completato";
+        const isCompletingLogbookThisEdit =
+            task.ISLOGBOOK &&
+            selectedStatus === "Completato" &&
+            originalStatus !== "Completato";
+        const shouldMoveCompletedTaskToToday =
+            isCompletingTaskThisEdit &&
             originalTaskDate &&
             originalTaskDate !== todayDate &&
             passedCompletedCutoff;
 
         const shouldMoveCompletedLogbookToToday =
-            task.ISLOGBOOK &&
-            selectedStatus === "Completato" &&
+            isCompletingLogbookThisEdit &&
             originalTaskDate &&
             originalTaskDate !== todayDate;
 
