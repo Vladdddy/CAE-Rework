@@ -18,6 +18,7 @@ function Task({
     const [selectedTask, setSelectedTask] = useState(null);
     const isUnavailableTask =
         wholeTask?.IS_UNAVAILABLE || wholeTask?.TYPE === "Unavailable";
+    const isPmPlanTask = wholeTask?.IS_PM_PLAN_TASK === true;
 
     const handleTaskClick = (taskInfo) => {
         setSelectedTask(taskInfo);
@@ -40,12 +41,14 @@ function Task({
                         className={`flex flex-row items-center gap-1 mb-2 w-full ${isUnavailableTask ? "opacity-50" : ""}`}
                     >
                         {!isLogbook === true ? (
-                            <TaskIcon className="w-4 flex-shrink-0 text-[var(--primary)]" />
+                            <TaskIcon
+                                className={`w-4 flex-shrink-0 ${isPmPlanTask ? "text-[var(--weekend-text)]" : "text-[var(--primary)]"}`}
+                            />
                         ) : (
                             <EntryIcon className="w-4 flex-shrink-0 text-[var(--orange)]" />
                         )}
                         <h1
-                            className={`text-sm font-semibold truncate ${!isLogbook ? "text-[var(--primary)]" : "text-[var(--orange)]"}`}
+                            className={`text-sm font-semibold truncate ${!isLogbook ? (isPmPlanTask ? "text-[var(--weekend-text)]" : "text-[var(--primary)]") : "text-[var(--orange)]"}`}
                         >
                             {title || "N/A"}
                         </h1>

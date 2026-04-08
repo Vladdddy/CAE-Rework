@@ -8,6 +8,16 @@ import { useUnavailableLogbooks } from "../data/provider/unavailableLogbookAPI/u
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts";
+import { useTaskSimOne } from "../data/provider/taskSimOneAPI/useTaskSimOne";
+
+const SIMULATOR_MAP = {
+    1: "109",
+    2: "FTD",
+    3: "139#1",
+    4: "139#3",
+    5: "169",
+    6: "189",
+};
 
 function Calendar({ startDate, setStartDate, onDayClick, type }) {
     const { tasks, loading } = useTasks();
@@ -17,6 +27,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
     const { logbooks } = useLogbooks();
     const { users } = useUsers();
     const { employeeShifts } = useEmployeeShifts();
+    const { taskSimOne } = useTaskSimOne();
     const today = new Date();
     const isCurrentMonth =
         startDate.getMonth() === today.getMonth() &&
@@ -97,7 +108,9 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
             return "text-[var(--black)]";
         }
 
-        const statuses = items.map(getItemStatus).filter(Boolean);
+        const statuses = items
+            .map(getItemStatus)
+            .filter((s) => Boolean(s) && s !== "Rischedulato");
 
         if (statuses.length === 0) {
             return "text-[var(--black)]";
@@ -130,12 +143,25 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
         return "text-[var(--black)]";
     };
 
+    const pmPlanTasks = (taskSimOne || [])
+        .filter((task) => {
+            const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+            return simulatorId && SIMULATOR_MAP[simulatorId];
+        })
+        .map((task) => ({
+            ...task,
+            DATE: task["Scheduled on"] ?? task.DATE,
+            TIME: "Notturno",
+            IS_PM_PLAN_TASK: true,
+        }));
+
     const mergedTasks = [
         ...(tasks || []),
         ...(unavailableTasks || []).map((task) => ({
             ...task,
             IS_UNAVAILABLE: true,
         })),
+        ...pmPlanTasks,
     ];
 
     const isTasksLoading = loading || unavailableLoading;
@@ -243,22 +269,47 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                   isSameVisibleDay(logbook, day),
                               )
                             : [];
+                        const pmTasksForDay = tasksForDay.filter(
+                            (task) => task.IS_PM_PLAN_TASK,
+                        );
+                        const nonPmTasksForDay = tasksForDay.filter(
+                            (task) => !task.IS_PM_PLAN_TASK,
+                        );
+                        const hasPmIncomplete = pmTasksForDay.some((task) => {
+                            const taskDone =
+                                task["Task done"] ?? task["Task Done"];
+                            return (
+                                taskDone !== undefined &&
+                                taskDone !== null &&
+                                !taskDone
+                            );
+                        });
                         const dayTasksCount =
-                            tasksForDay.filter(isDayTask).length;
+                            nonPmTasksForDay.filter(isDayTask).length;
                         const nightTasksCount =
-                            tasksForDay.filter(isNightTask).length;
-                        const regularTasksForDay = tasksForDay.filter(
+                            nonPmTasksForDay.filter(isNightTask).length;
+                        const regularTasksForDay = nonPmTasksForDay.filter(
                             (task) => !isUnavailableItem(task),
                         );
-                        const dayStatusTextColor =
+                        let dayStatusTextColor =
                             type === "logbooks"
                                 ? getDayStatusTextColor([
                                       ...regularTasksForDay,
                                       ...logbooksForDay,
                                   ])
                                 : getDayStatusTextColor(regularTasksForDay);
+                        if (hasPmIncomplete) {
+                            dayStatusTextColor = "text-[var(--red)]";
+                        }
                         const { dayEmployees, nightEmployees } =
                             getEmployeeShiftCounts(day);
+
+                        const hasCertification = day
+                            ? [...tasksForDay, ...logbooksForDay].some(
+                                  (item) =>
+                                      item?.SUBCATEGORY === "Certification",
+                              )
+                            : false;
 
                         return (
                             <div
@@ -269,11 +320,22 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                     ${
                                         day
                                             ? isToday
-                                                ? "bg-[var(--light-primary)] border border-[var(--primary)] cursor-pointer"
-                                                : "bg-[var(--white)] border border-[var(--light-primary)] cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200"
+                                                ? "bg-[var(--light-primary)] border cursor-pointer"
+                                                : "bg-[var(--white)] border cursor-pointer hover:bg-[var(--light-primary)] transition-all duration-200"
                                             : ""
                                     }
                                 `}
+                                style={
+                                    day
+                                        ? {
+                                              borderColor: hasCertification
+                                                  ? "var(--weekend-text)"
+                                                  : isToday
+                                                    ? "var(--primary)"
+                                                    : "var(--light-primary)",
+                                          }
+                                        : undefined
+                                }
                             >
                                 {day ? (
                                     <div className="w-full h-full flex flex-col items-center justify-between gap-1">
@@ -304,7 +366,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                         <div className="flex flex-col items-center justify-center w-full gap-1">
                                             {type === "tasks" ? (
                                                 !isTasksLoading &&
-                                                tasksForDay.length > 0 && (
+                                                nonPmTasksForDay.length > 0 && (
                                                     <>
                                                         <div className="flex items-center justify-between w-full gap-1">
                                                             <div className="p-1 text-[var(--green)] bg-[var(--light-primary)] rounded-md flex flex-col gap-2">
@@ -334,14 +396,14 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center w-full gap-1">
                                                     <div className="flex items-center justify-between w-full gap-1">
-                                                        {tasksForDay.length >
+                                                        {nonPmTasksForDay.length >
                                                             0 && (
                                                             <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]">
                                                                 <TasksIcon className="w-5" />
                                                                 <p className="text-sm">
                                                                     {isTasksLoading
                                                                         ? "..."
-                                                                        : tasksForDay.length}
+                                                                        : nonPmTasksForDay.length}
                                                                 </p>
                                                             </div>
                                                         )}

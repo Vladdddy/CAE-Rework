@@ -424,6 +424,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "RoRo",
             "Load Eval",
             "Pre-Cert",
+            "Certification",
         ],
         Comment: [],
         "Recurrent Issues": ["HW", "SW"],

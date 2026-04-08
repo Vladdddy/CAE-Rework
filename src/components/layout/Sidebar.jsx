@@ -330,6 +330,11 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                         </div>
                         <div className="flex flex-col gap-2 mt-2 p-2 max-h-80 overflow-y-auto">
                             <Update
+                                title="PM Plan Tasks 7.04.26"
+                                text="Aggiunte le PM task nella tabella dei task (quelle con il colore viola)"
+                                date="7/04/2026 - 14:29"
+                            />
+                            <Update
                                 title="Mobile Version 2.04.26"
                                 text="Rilasciata la versione mobile dell'applicazione, con un design responsive e tutte le funzionalità principali accessibili da smartphone."
                                 date="2/04/2026 - 14:30"

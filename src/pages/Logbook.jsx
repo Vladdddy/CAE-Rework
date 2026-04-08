@@ -11,12 +11,22 @@ import CreateModal from "../components/modals/CreateModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
+import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
 import { useUnavailableLogbooks } from "../components/data/provider/unavailableLogbookAPI/useUnavailableLogbooks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators";
 import { useTrainingLoads } from "../components/data/provider/trainingLoadAPI/useTrainingLoads";
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
+
+const SIMULATOR_MAP = {
+    1: "109",
+    2: "FTD",
+    3: "139#1",
+    4: "139#3",
+    5: "169",
+    6: "189",
+};
 
 function Logbook() {
     const { tasks, loading, fetchTasks } = useTasks();
@@ -25,6 +35,7 @@ function Logbook() {
         loading: unavailableLoading,
         fetchTasks: fetchUnavailableTasks,
     } = useUnavailableTasks();
+    const { taskSimOne } = useTaskSimOne();
     const {
         logbooks: unavailableLogbooks,
         loading: unavailableLogbooksLoading,
@@ -135,9 +146,35 @@ function Logbook() {
                 }),
             );
 
+            const normalizedPmTasks = (taskSimOne || [])
+                .filter((task) => {
+                    const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                    return simulatorId && SIMULATOR_MAP[simulatorId];
+                })
+                .map((task) => {
+                    const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                    const taskDone = task["Task done"] ?? task["Task Done"];
+                    const isDone =
+                        taskDone !== undefined &&
+                        taskDone !== null &&
+                        Boolean(taskDone);
+                    return {
+                        ...task,
+                        SIMULATOR: SIMULATOR_MAP[simulatorId],
+                        DATE: task["Scheduled on"] ?? task.DATE,
+                        TIME: "Notturno",
+                        TITLE: task["Task"] || "PM Task",
+                        ASSIGNED_TO:
+                            task["Task Performed By"] || task["Tech id"] || "",
+                        STATUS: isDone ? "Completato" : "Non completato",
+                        IS_PM_PLAN_TASK: true,
+                    };
+                });
+
             const allTasksForExport = [
                 ...(tasks || []),
                 ...normalizedUnavailableTasks,
+                ...normalizedPmTasks,
             ];
 
             const hasActiveFilters = false;
@@ -305,12 +342,47 @@ function Logbook() {
         });
     }, [startDate, viewDays]);
 
+    const pmPlanTasks = useMemo(() => {
+        return (taskSimOne || [])
+            .filter((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                return simulatorId && SIMULATOR_MAP[simulatorId];
+            })
+            .map((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                return {
+                    ...task,
+                    ID: task["ID_task"] ?? task.ID,
+                    TITLE: task["Task"] ?? task.TITLE,
+                    DATE: task["Scheduled on"] ?? task.DATE,
+                    STATUS:
+                        task["Task Done"] === true
+                            ? "Completato"
+                            : "Non completato",
+                    ASSIGNED_TO: task["Task Performed By"] ?? task.ASSIGNED_TO,
+                    DESCRIPTION:
+                        task["Reference Doc"] ??
+                        task["Maintenance Manual Reference"] ??
+                        task.DESCRIPTION,
+                    TYPE: "PM Plan",
+                    IS_PM_PLAN_TASK: true,
+                    SIMULATOR: SIMULATOR_MAP[simulatorId],
+                    TIME: "Notturno",
+                    Data: task["Scheduled on"] ?? task.Data,
+                };
+            });
+    }, [taskSimOne]);
+
     const mergedTasks = useMemo(() => {
         const normalizedUnavailableTasks = (unavailableTasks || []).map(
             (task) => ({ ...task, IS_UNAVAILABLE: true }),
         );
-        return [...(tasks || []), ...normalizedUnavailableTasks];
-    }, [tasks, unavailableTasks]);
+        return [
+            ...(tasks || []),
+            ...normalizedUnavailableTasks,
+            ...pmPlanTasks,
+        ];
+    }, [tasks, unavailableTasks, pmPlanTasks]);
 
     const mergedLogbooks = useMemo(() => {
         const normalizedUnavailableLogbooks = (unavailableLogbooks || []).map(

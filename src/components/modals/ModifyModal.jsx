@@ -723,6 +723,7 @@ function ModifyModal({
             "RoRo",
             "Load Eval",
             "Pre-Cert",
+            "Certification",
         ],
         Comment: [],
         "Recurrent Issues": ["HW", "SW"],

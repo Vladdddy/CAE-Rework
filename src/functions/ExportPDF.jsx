@@ -351,6 +351,7 @@ export const exportTasksToPDF = (
         } else {
             simTasks.forEach((task) => {
                 bodyH += 8; // title line
+                bodyH += 6; // assigned to line
                 if (task.DESCRIPTION) {
                     const lines = doc.splitTextToSize(
                         task.DESCRIPTION,
@@ -496,16 +497,20 @@ export const exportTasksToPDF = (
                 const taskTitle = task.TITLE || "N/A";
                 doc.text(taskTitle, cardX + 12, by);
 
-                // Assigned to inline (dark red)
-                const titleWidthPx = doc.getTextWidth(taskTitle);
+                by += 5.5;
+
+                // Assigned to on its own line below the title
                 doc.setFontSize(8.5);
                 doc.setFont(undefined, "normal");
                 doc.setTextColor(180, 0, 0);
-                const assignedText = `  (Assigned to: ${task.ASSIGNED_TO || "N/A"})`;
-                doc.text(assignedText, cardX + 12 + titleWidthPx, by);
+                doc.text(
+                    `Assigned to: ${task.ASSIGNED_TO || "N/A"}`,
+                    cardX + 14,
+                    by,
+                );
                 doc.setTextColor(0, 0, 0);
 
-                by += 6.5;
+                by += 6;
 
                 // Description
                 if (task.DESCRIPTION) {

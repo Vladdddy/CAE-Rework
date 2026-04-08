@@ -15,6 +15,16 @@ import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
+import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
+
+const SIMULATOR_MAP = {
+    1: "109",
+    2: "FTD",
+    3: "139#1",
+    4: "139#3",
+    5: "169",
+    6: "189",
+};
 
 function Tasks() {
     const { tasks, loading, fetchTasks } = useTasks();
@@ -23,6 +33,7 @@ function Tasks() {
         loading: unavailableLoading,
         fetchTasks: fetchUnavailableTasks,
     } = useUnavailableTasks();
+    const { taskSimOne } = useTaskSimOne();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -120,6 +131,37 @@ function Tasks() {
         });
     }, [startDate, viewDays]);
 
+    const pmPlanTasks = useMemo(() => {
+        return (taskSimOne || [])
+            .filter((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                return simulatorId && SIMULATOR_MAP[simulatorId];
+            })
+            .map((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                return {
+                    ...task,
+                    ID: task["ID_task"] ?? task.ID,
+                    TITLE: task["Task"] ?? task.TITLE,
+                    DATE: task["Scheduled on"] ?? task.DATE,
+                    STATUS:
+                        task["Task Done"] === true
+                            ? "Completato"
+                            : "Non completato",
+                    ASSIGNED_TO: task["Task Performed By"] ?? task.ASSIGNED_TO,
+                    DESCRIPTION:
+                        task["Reference Doc"] ??
+                        task["Maintenance Manual Reference"] ??
+                        task.DESCRIPTION,
+                    TYPE: "PM Plan",
+                    IS_PM_PLAN_TASK: true,
+                    SIMULATOR: SIMULATOR_MAP[simulatorId],
+                    TIME: "Notturno",
+                    Data: task["Scheduled on"] ?? task.Data,
+                };
+            });
+    }, [taskSimOne]);
+
     const mergedTasks = useMemo(() => {
         const normalizedUnavailableTasks = (unavailableTasks || []).map(
             (task) => ({
@@ -128,8 +170,12 @@ function Tasks() {
             }),
         );
 
-        return [...(tasks || []), ...normalizedUnavailableTasks];
-    }, [tasks, unavailableTasks]);
+        return [
+            ...(tasks || []),
+            ...normalizedUnavailableTasks,
+            ...pmPlanTasks,
+        ];
+    }, [tasks, unavailableTasks, pmPlanTasks]);
 
     const getSelectedDateString = (currentDate) => {
         return (

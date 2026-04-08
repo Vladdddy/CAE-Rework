@@ -6,6 +6,16 @@ import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useUnavailableLogbooks } from "../data/provider/unavailableLogbookAPI/useUnavailableLogbooks";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks";
+import { useTaskSimOne } from "../data/provider/taskSimOneAPI/useTaskSimOne";
+
+const SIMULATOR_MAP = {
+    1: "109",
+    2: "FTD",
+    3: "139#1",
+    4: "139#3",
+    5: "169",
+    6: "189",
+};
 
 function MobileCalendar({
     startDate,
@@ -18,6 +28,7 @@ function MobileCalendar({
         useUnavailableTasks();
     const { logbooks } = useLogbooks();
     const { logbooks: unavailableLogbooks } = useUnavailableLogbooks();
+    const { taskSimOne } = useTaskSimOne();
 
     const today = new Date();
     const isCurrentMonth =
@@ -83,7 +94,9 @@ function MobileCalendar({
             return "text-[var(--black)]";
         }
 
-        const statuses = items.map(getItemStatus).filter(Boolean);
+        const statuses = items
+            .map(getItemStatus)
+            .filter((s) => Boolean(s) && s !== "Rischedulato");
 
         if (statuses.length === 0) {
             return "text-[var(--black)]";
@@ -116,6 +129,22 @@ function MobileCalendar({
         return "text-[var(--black)]";
     };
 
+    const pmPlanTasks = useMemo(
+        () =>
+            (taskSimOne || [])
+                .filter((task) => {
+                    const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                    return simulatorId && SIMULATOR_MAP[simulatorId];
+                })
+                .map((task) => ({
+                    ...task,
+                    DATE: task["Scheduled on"] ?? task.DATE,
+                    TIME: "Notturno",
+                    IS_PM_PLAN_TASK: true,
+                })),
+        [taskSimOne],
+    );
+
     const mergedTasks = useMemo(
         () => [
             ...(tasks || []),
@@ -123,8 +152,9 @@ function MobileCalendar({
                 ...task,
                 IS_UNAVAILABLE: true,
             })),
+            ...pmPlanTasks,
         ],
-        [tasks, unavailableTasks],
+        [tasks, unavailableTasks, pmPlanTasks],
     );
 
     const mergedLogbooks = useMemo(
@@ -196,16 +226,43 @@ function MobileCalendar({
                                       isSameVisibleDay(logbook, day),
                                   )
                                 : [];
-                            const regularTasksForDay = tasksForDay.filter(
+                            const pmTasksForDay = tasksForDay.filter(
+                                (task) => task.IS_PM_PLAN_TASK,
+                            );
+                            const nonPmTasksForDay = tasksForDay.filter(
+                                (task) => !task.IS_PM_PLAN_TASK,
+                            );
+                            const hasPmIncomplete = pmTasksForDay.some(
+                                (task) => {
+                                    const taskDone =
+                                        task["Task done"] ?? task["Task Done"];
+                                    return (
+                                        taskDone !== undefined &&
+                                        taskDone !== null &&
+                                        !taskDone
+                                    );
+                                },
+                            );
+                            const regularTasksForDay = nonPmTasksForDay.filter(
                                 (task) => !isUnavailableItem(task),
                             );
-                            const dayStatusTextColor =
+                            let dayStatusTextColor =
                                 type === "logbooks"
                                     ? getDayStatusTextColor([
                                           ...regularTasksForDay,
                                           ...logbooksForDay,
                                       ])
                                     : getDayStatusTextColor(regularTasksForDay);
+                            if (hasPmIncomplete) {
+                                dayStatusTextColor = "text-[var(--red)]";
+                            }
+
+                            const hasCertification = day
+                                ? [...tasksForDay, ...logbooksForDay].some(
+                                      (item) =>
+                                          item?.SUBCATEGORY === "Certification",
+                                  )
+                                : false;
 
                             return (
                                 <button
@@ -216,10 +273,21 @@ function MobileCalendar({
                                     className={`aspect-square rounded-md border p-1.5 flex flex-col items-center justify-between transition-all duration-200 ${
                                         day
                                             ? isToday
-                                                ? "bg-[var(--light-primary)] border border-[var(--primary)] cursor-pointer"
-                                                : "bg-[var(--white)] border border-[var(--light-primary)] cursor-pointer hover:bg-[var(--light-primary)]"
+                                                ? "bg-[var(--light-primary)] cursor-pointer"
+                                                : "bg-[var(--white)] cursor-pointer hover:bg-[var(--light-primary)]"
                                             : "border-transparent"
                                     }`}
+                                    style={
+                                        day
+                                            ? {
+                                                  borderColor: hasCertification
+                                                      ? "var(--weekend-text)"
+                                                      : isToday
+                                                        ? "var(--primary)"
+                                                        : "var(--light-primary)",
+                                              }
+                                            : undefined
+                                    }
                                 >
                                     {day ? (
                                         <>
@@ -229,13 +297,13 @@ function MobileCalendar({
                                                 {day}
                                             </p>
 
-                                            {tasksForDay.length > 0 && (
+                                            {nonPmTasksForDay.length > 0 && (
                                                 <div className="flex items-center gap-1 text-[var(--primary)]">
                                                     <TasksIcon className="w-3.5" />
                                                     <p className="text-xs leading-none">
                                                         {isLoading
                                                             ? "..."
-                                                            : tasksForDay.length}
+                                                            : nonPmTasksForDay.length}
                                                     </p>
                                                 </div>
                                             )}
