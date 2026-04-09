@@ -20,6 +20,7 @@ function Shifts() {
     const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [startDate, setStartDate] = useState(new Date());
     const [impagination, setImpagination] = useState(1);
+    const [viewMonths, setViewMonths] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [postChanges, setPostChanges] = useState({});
     const [putChanges, setPutChanges] = useState({});
@@ -113,6 +114,27 @@ function Shifts() {
                         </div>
 
                         {impagination === 1 && (
+                            <div className="flex items-center w-full justify-start border border-[var(--light-primary)] rounded-md w-full md:w-fit p-1 overflow-x-auto">
+                                {[
+                                    { label: "Mese corrente", months: 1 },
+                                    { label: "3 Mesi", months: 3 },
+                                ].map(({ label, months }) => (
+                                    <div
+                                        key={months}
+                                        className={`flex items-center justify-center flex-1 gap-2 p-2 px-4 rounded-md cursor-pointer whitespace-nowrap ${
+                                            viewMonths === months
+                                                ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                                : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                        } transition-all duration-200`}
+                                        onClick={() => setViewMonths(months)}
+                                    >
+                                        <p className="text-sm">{label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {impagination === 1 && (
                             <div className="flex items-start gap-4 w-full lg:w-auto">
                                 <ShiftLegend />
                             </div>
@@ -130,6 +152,7 @@ function Shifts() {
                                             year: "numeric",
                                         },
                                     )}
+                                    numMonths={viewMonths}
                                     onChangesDetected={handleChangesDetected}
                                     currentUserRole={currentUserRole}
                                 />

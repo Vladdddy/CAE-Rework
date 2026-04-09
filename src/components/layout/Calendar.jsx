@@ -315,7 +315,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                             <div
                                 key={index}
                                 onClick={() => day && onDayClick(day)}
-                                className={`
+                                className={` ${hasCertification ? "border-2" : ""}
                                     aspect-square flex flex-col items-center justify-center rounded-md p-1
                                     ${
                                         day

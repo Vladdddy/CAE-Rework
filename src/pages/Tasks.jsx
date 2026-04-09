@@ -18,12 +18,13 @@ import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
 
 const SIMULATOR_MAP = {
-    1: "109",
+    1: "109FFS",
     2: "FTD",
     3: "139#1",
     4: "139#3",
     5: "169",
     6: "189",
+    13: "109FFS",
 };
 
 function Tasks() {

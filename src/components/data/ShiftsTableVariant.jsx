@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useUsers } from "./provider/userAPI/useUsers.js";
 import DragIcon from "../../assets/icons/drag.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
@@ -7,7 +7,12 @@ import { useEmployeeShifts } from "./provider/employeeShiftsAPI_variant/useEmplo
 import { useShiftOrder } from "./provider/shiftOrderAPI/useShiftOrder.js";
 import Popup from "../modals/Popup.jsx";
 
-function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
+function ShiftsTable({
+    selectedMonth,
+    numMonths = 1,
+    onChangesDetected,
+    currentUserRole,
+}) {
     const { users, loading } = useUsers();
     const {
         shiftOrders,
@@ -154,33 +159,20 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         };
     }, []);
 
-    const parseSelectedMonth = () => {
-        const months = {
-            gennaio: 0,
-            febbraio: 1,
-            marzo: 2,
-            aprile: 3,
-            maggio: 4,
-            giugno: 5,
-            luglio: 6,
-            agosto: 7,
-            settembre: 8,
-            ottobre: 9,
-            novembre: 10,
-            dicembre: 11,
-        };
-        const [monthName, year] = selectedMonth.split(" ");
-        const monthIndex = months[monthName.toLowerCase()];
-        return new Date(parseInt(year), monthIndex, 1);
+    const MONTH_NAMES = {
+        gennaio: 0,
+        febbraio: 1,
+        marzo: 2,
+        aprile: 3,
+        maggio: 4,
+        giugno: 5,
+        luglio: 6,
+        agosto: 7,
+        settembre: 8,
+        ottobre: 9,
+        novembre: 10,
+        dicembre: 11,
     };
-
-    const date = parseSelectedMonth();
-    const daysInMonth = new Date(
-        date.getFullYear(),
-        date.getMonth() + 1,
-        0,
-    ).getDate();
-    const numericDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
     const dayOfWeekLabels = [
         "Domenica",
@@ -193,15 +185,42 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     ];
     const dayOfWeekShort = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
-    const dayOfWeek = numericDays.map((day) => {
-        const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
-        return dayOfWeekLabels[currentDate.getDay()];
-    });
+    // Flat array of Date objects covering all months in the view
+    const allDays = useMemo(() => {
+        const [monthName, year] = selectedMonth.split(" ");
+        const startDate = new Date(
+            parseInt(year),
+            MONTH_NAMES[monthName.toLowerCase()],
+            1,
+        );
+        const result = [];
+        for (let m = 0; m < numMonths; m++) {
+            const md = new Date(
+                startDate.getFullYear(),
+                startDate.getMonth() + m,
+                1,
+            );
+            const count = new Date(
+                md.getFullYear(),
+                md.getMonth() + 1,
+                0,
+            ).getDate();
+            for (let d = 1; d <= count; d++) {
+                result.push(new Date(md.getFullYear(), md.getMonth(), d));
+            }
+        }
+        return result;
+    }, [selectedMonth, numMonths]);
 
-    const dayOfWeekShortArr = numericDays.map((day) => {
-        const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
-        return dayOfWeekShort[currentDate.getDay()];
-    });
+    // Keep `date` as the first day of the selected month (used by auto-scroll dep)
+    const date = allDays[0] ?? new Date();
+
+    const formatDateStr = (d) => {
+        const y = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${mo}-${day}`;
+    };
 
     const calculateEaster = (year) => {
         const a = year % 19;
@@ -221,11 +240,10 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         return { month, day };
     };
 
-    const isHoliday = (day) => {
-        const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
-        const month = currentDate.getMonth() + 1;
-        const dayOfMonth = currentDate.getDate();
-        const year = date.getFullYear();
+    const isHoliday = (dayDate) => {
+        const month = dayDate.getMonth() + 1;
+        const dayOfMonth = dayDate.getDate();
+        const year = dayDate.getFullYear();
         const easter = calculateEaster(year);
         const easterDate = new Date(year, easter.month - 1, easter.day);
         const easterMonday = new Date(easterDate);
@@ -252,11 +270,13 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     };
 
     const today = new Date();
-    const isCurrentMonth =
-        date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear();
-    const todayDate = today.getDate();
-    const todayIndex = isCurrentMonth ? todayDate - 1 : -1;
+    const todayIndex = allDays.findIndex(
+        (d) =>
+            d.getDate() === today.getDate() &&
+            d.getMonth() === today.getMonth() &&
+            d.getFullYear() === today.getFullYear(),
+    );
+    const isCurrentMonth = todayIndex !== -1;
 
     // Auto-scroll to today's date or start of table
     useEffect(() => {
@@ -372,10 +392,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
 
     const handleShiftChange = (userIndex, dayIndex, value) => {
         const user = orderedUsers[userIndex];
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(dayIndex + 1).padStart(2, "0");
-        const formattedDate = `${year}-${month}-${day}`;
+        const formattedDate = formatDateStr(allDays[dayIndex]);
         const key = `${user.ID}-${formattedDate}`;
 
         const matchingShift = employeeShifts.find(
@@ -480,10 +497,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         const user = orderedUsers[userIndex];
         if (!user) return "--";
 
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(dayIndex + 1).padStart(2, "0");
-        const formattedDate = `${year}-${month}-${day}`;
+        const formattedDate = formatDateStr(allDays[dayIndex]);
         const key = `${user.ID}-${formattedDate}`;
 
         if (key in shiftValues) {
@@ -500,11 +514,8 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         return matchingShift ? matchingShift.SHIFT_TYPE : "--";
     };
 
-    const countShiftsForDay = (time, day) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const dayStr = String(day).padStart(2, "0");
-        const formattedDate = `${year}-${month}-${dayStr}`;
+    const countShiftsForDay = (time, dayDate) => {
+        const formattedDate = formatDateStr(dayDate);
         const shiftTypes = time === "Diurno" ? ["D"] : ["N"];
         const shiftsMap = {};
 
@@ -539,8 +550,8 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
         return `${prefix}-${count}`;
     };
 
-    const getShiftCountColor = (time, day) => {
-        const result = countShiftsForDay(time, day);
+    const getShiftCountColor = (time, dayDate) => {
+        const result = countShiftsForDay(time, dayDate);
         const count = parseInt(result.split("-")[1]);
         if (count <= 1) return "text-white bg-[var(--red)]";
         else if (count === 2) return "text-white bg-[var(--orange)]";
@@ -551,11 +562,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     const isCellModified = (userIndex, dayIndex) => {
         const user = orderedUsers[userIndex];
         if (!user) return false;
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(dayIndex + 1).padStart(2, "0");
-        const formattedDate = `${year}-${month}-${day}`;
-        const key = `${user.ID}-${formattedDate}`;
+        const key = `${user.ID}-${formatDateStr(allDays[dayIndex])}`;
         return (
             Object.hasOwn(postChanges, key) || Object.hasOwn(putChanges, key)
         );
@@ -564,12 +571,8 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
     const isUserRowModified = (userIndex) => {
         const user = orderedUsers[userIndex];
         if (!user) return false;
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        for (let dayIndex = 0; dayIndex < daysInMonth; dayIndex++) {
-            const day = String(dayIndex + 1).padStart(2, "0");
-            const formattedDate = `${year}-${month}-${day}`;
-            const key = `${user.ID}-${formattedDate}`;
+        for (const dayDate of allDays) {
+            const key = `${user.ID}-${formatDateStr(dayDate)}`;
             if (
                 Object.hasOwn(postChanges, key) ||
                 Object.hasOwn(putChanges, key)
@@ -604,12 +607,14 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                 width: "max-content",
                             }}
                         >
-                            {numericDays.map((day, index) => {
+                            {allDays.map((dayDate, index) => {
+                                const dow = dayOfWeekLabels[dayDate.getDay()];
                                 const isWeekend =
-                                    dayOfWeek[index] === "Sabato" ||
-                                    dayOfWeek[index] === "Domenica";
-                                const isHolidayDay = isHoliday(day);
+                                    dow === "Sabato" || dow === "Domenica";
+                                const isHolidayDay = isHoliday(dayDate);
                                 const isToday = index === todayIndex;
+                                const isMonthStart =
+                                    dayDate.getDate() === 1 && index > 0;
 
                                 let cellBg = "bg-[var(--light-primary)]";
                                 if (isToday)
@@ -620,7 +625,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                 return (
                                     <div
                                         key={`counter-day-${index}`}
-                                        className={`flex flex-col items-center border-r border-[var(--separator)] ${cellBg}`}
+                                        className={`flex flex-col items-center border-r border-[var(--separator)] ${cellBg} ${isMonthStart ? "border-l-2 border-l-[var(--primary)]" : ""}`}
                                         style={{
                                             minWidth: "4.5rem",
                                             width: "4.5rem",
@@ -631,29 +636,41 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                         <div
                                             className={`w-full text-center py-1 border-b border-[var(--separator)] ${isToday ? "text-[var(--weekend-text)]" : isHolidayDay ? "text-[var(--holiday-text)]" : "text-[var(--gray)]"}`}
                                         >
+                                            {isMonthStart && (
+                                                <p className="text-[9px] font-bold leading-tight uppercase text-[var(--primary)]">
+                                                    {dayDate.toLocaleString(
+                                                        "it-IT",
+                                                        { month: "short" },
+                                                    )}
+                                                </p>
+                                            )}
                                             <p className="text-[10px] font-medium leading-tight">
-                                                {dayOfWeekShortArr[index]}
+                                                {
+                                                    dayOfWeekShort[
+                                                        dayDate.getDay()
+                                                    ]
+                                                }
                                             </p>
                                             <p className="text-sm font-bold leading-tight">
-                                                {day}
+                                                {dayDate.getDate()}
                                             </p>
                                         </div>
                                         {/* Badges */}
                                         <div className="flex flex-col items-center gap-1 py-2">
                                             <span
-                                                className={`${getShiftCountColor("Diurno", day)} text-xs font-bold px-2 py-0.5 rounded leading-none`}
+                                                className={`${getShiftCountColor("Diurno", dayDate)} text-xs font-bold px-2 py-0.5 rounded leading-none`}
                                             >
                                                 {countShiftsForDay(
                                                     "Diurno",
-                                                    day,
+                                                    dayDate,
                                                 )}
                                             </span>
                                             <span
-                                                className={`${getShiftCountColor("Notturno", day)} text-xs font-bold px-2 py-0.5 rounded leading-none`}
+                                                className={`${getShiftCountColor("Notturno", dayDate)} text-xs font-bold px-2 py-0.5 rounded leading-none`}
                                             >
                                                 {countShiftsForDay(
                                                     "Notturno",
-                                                    day,
+                                                    dayDate,
                                                 )}
                                             </span>
                                         </div>
@@ -712,17 +729,25 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                             width: "max-content",
                                         }}
                                     >
-                                        {numericDays.map((day, index) => {
+                                        {allDays.map((dayDate, index) => {
+                                            const dow =
+                                                dayOfWeekLabels[
+                                                    dayDate.getDay()
+                                                ];
                                             const isWeekend =
-                                                dayOfWeek[index] === "Sabato" ||
-                                                dayOfWeek[index] === "Domenica";
-                                            const isHolidayDay = isHoliday(day);
+                                                dow === "Sabato" ||
+                                                dow === "Domenica";
+                                            const isHolidayDay =
+                                                isHoliday(dayDate);
                                             const isToday =
                                                 index === todayIndex;
                                             const modified = isCellModified(
                                                 userIndex,
                                                 index,
                                             );
+                                            const isMonthStart =
+                                                dayDate.getDate() === 1 &&
+                                                index > 0;
 
                                             let cellBg = "";
                                             if (modified)
@@ -741,7 +766,7 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                             return (
                                                 <div
                                                     key={`mobile-user-${userIndex}-day-${index}`}
-                                                    className={`flex flex-col items-center border-r border-[var(--separator)] ${cellBg}`}
+                                                    className={`flex flex-col items-center border-r border-[var(--separator)] ${cellBg} ${isMonthStart ? "border-l-2 border-l-[var(--primary)]" : ""}`}
                                                     style={{
                                                         minWidth: "4.5rem",
                                                         width: "4.5rem",
@@ -752,15 +777,25 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                                     <div
                                                         className={`w-full text-center py-1 border-b border-[var(--separator)] ${isToday ? "text-[var(--weekend-text)]" : isHolidayDay ? "text-[var(--holiday-text)]" : "text-[var(--gray)]"}`}
                                                     >
+                                                        {isMonthStart && (
+                                                            <p className="text-[9px] font-bold leading-tight uppercase text-[var(--primary)]">
+                                                                {dayDate.toLocaleString(
+                                                                    "it-IT",
+                                                                    {
+                                                                        month: "short",
+                                                                    },
+                                                                )}
+                                                            </p>
+                                                        )}
                                                         <p className="text-[10px] font-medium leading-tight">
                                                             {
-                                                                dayOfWeekShortArr[
-                                                                    index
+                                                                dayOfWeekShort[
+                                                                    dayDate.getDay()
                                                                 ]
                                                             }
                                                         </p>
                                                         <p className="text-sm font-bold leading-tight">
-                                                            {day}
+                                                            {dayDate.getDate()}
                                                         </p>
                                                     </div>
 
@@ -848,19 +883,22 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                         </div>
                     </div>
                     <div className="flex border-b border-[var(--separator)]">
-                        {dayOfWeek.map((day, index) => {
+                        {allDays.map((dayDate, index) => {
+                            const dow = dayOfWeekLabels[dayDate.getDay()];
                             const isWeekend =
-                                day === "Sabato" || day === "Domenica";
-                            const isHolidayDay = isHoliday(index + 1);
+                                dow === "Sabato" || dow === "Domenica";
+                            const isHolidayDay = isHoliday(dayDate);
+                            const isMonthStart =
+                                dayDate.getDate() === 1 && index > 0;
                             return (
                                 <div
                                     key={`dow-${index}`}
-                                    className="min-w-[8rem] w-[8rem]"
+                                    className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)]" : ""}`}
                                 >
                                     <p
                                         className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
-                                        {day}
+                                        {dow}
                                     </p>
                                 </div>
                             );
@@ -878,11 +916,13 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                         </div>
                     </div>
                     <div className="flex border-b border-[var(--separator)]">
-                        {numericDays.map((day, index) => {
+                        {allDays.map((dayDate, index) => {
+                            const dow = dayOfWeekLabels[dayDate.getDay()];
                             const isWeekend =
-                                dayOfWeek[index] === "Sabato" ||
-                                dayOfWeek[index] === "Domenica";
-                            const isHolidayDay = isHoliday(day);
+                                dow === "Sabato" || dow === "Domenica";
+                            const isHolidayDay = isHoliday(dayDate);
+                            const isMonthStart =
+                                dayDate.getDate() === 1 && index > 0;
                             return (
                                 <div
                                     key={`day-${index}`}
@@ -891,12 +931,20 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                             ? todayColumnRef
                                             : null
                                     }
-                                    className="min-w-[8rem] w-[8rem]"
+                                    className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)]" : ""}`}
                                 >
                                     <p
                                         className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
-                                        {day}
+                                        {isMonthStart && (
+                                            <span className="block text-[10px] font-bold uppercase text-[var(--primary)] leading-none mb-0.5">
+                                                {dayDate.toLocaleString(
+                                                    "it-IT",
+                                                    { month: "short" },
+                                                )}
+                                            </span>
+                                        )}
+                                        {dayDate.getDate()}
                                     </p>
                                 </div>
                             );
@@ -914,25 +962,35 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                         </div>
                     </div>
                     <div className="flex border-b border-[var(--separator)]">
-                        {numericDays.map((day, index) => (
-                            <div
-                                key={`count-${index}`}
-                                className="min-w-[8rem] w-[8rem]"
-                            >
-                                <div className="text-[var(--primary)] bg-[var(--light-primary)] text-sm p-4 text-center border-r border-[var(--separator)]">
-                                    <span
-                                        className={`${getShiftCountColor("Diurno", day)} p-2 rounded mr-2 font-bold`}
-                                    >
-                                        {countShiftsForDay("Diurno", day)}
-                                    </span>
-                                    <span
-                                        className={`${getShiftCountColor("Notturno", day)} p-2 rounded font-bold`}
-                                    >
-                                        {countShiftsForDay("Notturno", day)}
-                                    </span>
+                        {allDays.map((dayDate, index) => {
+                            const isMonthStart =
+                                dayDate.getDate() === 1 && index > 0;
+                            return (
+                                <div
+                                    key={`count-${index}`}
+                                    className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)]" : ""}`}
+                                >
+                                    <div className="text-[var(--primary)] bg-[var(--light-primary)] text-sm p-4 text-center border-r border-[var(--separator)]">
+                                        <span
+                                            className={`${getShiftCountColor("Diurno", dayDate)} p-2 rounded mr-2 font-bold`}
+                                        >
+                                            {countShiftsForDay(
+                                                "Diurno",
+                                                dayDate,
+                                            )}
+                                        </span>
+                                        <span
+                                            className={`${getShiftCountColor("Notturno", dayDate)} p-2 rounded font-bold`}
+                                        >
+                                            {countShiftsForDay(
+                                                "Notturno",
+                                                dayDate,
+                                            )}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -971,15 +1029,20 @@ function ShiftsTable({ selectedMonth, onChangesDetected, currentUserRole }) {
                                     </div>
                                 </div>
                                 <div className="flex border-b border-[var(--separator)]">
-                                    {numericDays.map((day, index) => {
+                                    {allDays.map((dayDate, index) => {
+                                        const dow =
+                                            dayOfWeekLabels[dayDate.getDay()];
                                         const isWeekend =
-                                            dayOfWeek[index] === "Sabato" ||
-                                            dayOfWeek[index] === "Domenica";
-                                        const isHolidayDay = isHoliday(day);
+                                            dow === "Sabato" ||
+                                            dow === "Domenica";
+                                        const isHolidayDay = isHoliday(dayDate);
+                                        const isMonthStart =
+                                            dayDate.getDate() === 1 &&
+                                            index > 0;
                                         return (
                                             <div
                                                 key={`user-${userIndex}-day-${index}`}
-                                                className="min-w-[8rem] w-[8rem]"
+                                                className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)]" : ""}`}
                                             >
                                                 <div
                                                     className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}

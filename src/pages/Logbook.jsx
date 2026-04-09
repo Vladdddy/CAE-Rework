@@ -20,12 +20,13 @@ import { useTrainingLoads } from "../components/data/provider/trainingLoadAPI/us
 import { exportTasksToPDF } from "../functions/ExportPDF.jsx";
 
 const SIMULATOR_MAP = {
-    1: "109",
+    1: "109FFS",
     2: "FTD",
     3: "139#1",
     4: "139#3",
     5: "169",
     6: "189",
+    13: "109FFS",
 };
 
 function Logbook() {
