@@ -330,6 +330,11 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                         </div>
                         <div className="flex flex-col gap-2 mt-2 p-2 max-h-80 overflow-y-auto">
                             <Update
+                                title="Unique Dashboard 13.04.26"
+                                text="Implementata una dashboard unica che integra tutte le applicazioni della CAE."
+                                date="13/04/2026 - 11:47"
+                            />
+                            <Update
                                 title="PM Plan Tasks 7.04.26"
                                 text="Aggiunte le PM task nella tabella dei task (quelle con il colore viola)"
                                 date="7/04/2026 - 14:29"

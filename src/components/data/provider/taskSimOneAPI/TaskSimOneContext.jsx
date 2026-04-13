@@ -45,6 +45,29 @@ export const TaskSimOneProvider = ({ children }) => {
         }
     };
 
+    const updateTaskSimOne = async (id, assignedTo) => {
+        try {
+            const response = await fetch(`${API_URL}/taskSimOne/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ assignedTo }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update taskSimOne task");
+            }
+
+            await fetchTaskSimOne(true);
+            setError(null);
+            return { success: true };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
     return (
         <TaskSimOneContext.Provider
             value={{
@@ -52,6 +75,7 @@ export const TaskSimOneProvider = ({ children }) => {
                 loading,
                 error,
                 fetchTaskSimOne,
+                updateTaskSimOne,
             }}
         >
             {children}

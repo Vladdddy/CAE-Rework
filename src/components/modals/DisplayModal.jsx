@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CloseIcon from "../../assets/icons/close.tsx";
 import TaskIcon from "../../assets/icons/tasks.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
@@ -12,6 +12,9 @@ import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
 import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
 import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks.js";
 import { useUnavailableLogbooks } from "../data/provider/unavailableLogbookAPI/useUnavailableLogbooks.js";
+import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts.js";
+import { useTaskSimOne } from "../data/provider/taskSimOneAPI/useTaskSimOne.js";
+import { usePMTechComments } from "../data/provider/PMTechCommentsAPI/usePMTechComments.js";
 import ModifyModal from "./ModifyModal.jsx";
 import Splitter from "../../functions/SplitAssignedTo.jsx";
 import ConvertIcon from "../../assets/icons/convert.tsx";
@@ -32,6 +35,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [noteDescription, setNoteDescription] = useState("");
     const [doNotMoveTaskOnNote, setDoNotMoveTaskOnNote] = useState(false);
     const [editingNoteId, setEditingNoteId] = useState(null);
+    const [editingCommentId, setEditingCommentId] = useState(null);
     const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
     const [thumbSourceIndexByImageId, setThumbSourceIndexByImageId] = useState(
         {},
@@ -45,6 +49,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         addLogbook: addUnavailableLogbook,
         fetchLogbooks: fetchUnavailableLogbooks,
     } = useUnavailableLogbooks();
+    const { updateTaskSimOne } = useTaskSimOne();
     const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
     const { notes, fetchNotes, createNote, editNote, deleteNote } = useNotes();
     const {
@@ -76,6 +81,22 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     } = useNoteLogbooks();
     const { users, currentUserId } = useUsers();
     const { currentUserRole } = useUsers();
+    const {
+        techComments,
+        addTechComment,
+        updateTechComment,
+        deleteTechComment,
+    } = usePMTechComments();
+    const { employeeShifts } = useEmployeeShifts();
+    const [hasPmAssigneeBeenEdited, setHasPmAssigneeBeenEdited] =
+        useState(false);
+    const [selectedAssignees, setSelectedAssignees] = useState(
+        taskInfo.ASSIGNED_TO
+            ? typeof taskInfo.ASSIGNED_TO === "string"
+                ? taskInfo.ASSIGNED_TO.split(", ").filter((name) => name.trim())
+                : taskInfo.ASSIGNED_TO
+            : [],
+    );
     const isUnavailableTask =
         !taskInfo.ISLOGBOOK &&
         (taskInfo?.TYPE === "Unavailable" || taskInfo?.IS_UNAVAILABLE);
@@ -109,6 +130,109 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const canManageAttachments =
         !isUnavailableEntity &&
         (currentUserRole === "Admin" || currentUserRole === "Shift Leader");
+
+    const taskDate = taskInfo.DATE
+        ? (typeof taskInfo.DATE === "string"
+              ? taskInfo.DATE
+              : new Date(taskInfo.DATE).toISOString()
+          ).split("T")[0]
+        : null;
+
+    const filteredUsers = useMemo(() => {
+        const dayShifts = ["O", "OP", "D"];
+        const nightShifts = ["ON", "N", "OP"];
+
+        return users.filter((user) => {
+            const userShift = employeeShifts.find(
+                (shift) =>
+                    shift.EMPLOYEE_ID === user.ID &&
+                    shift.SELECTED_DATE &&
+                    shift.SELECTED_DATE.split("T")[0] === taskDate,
+            );
+
+            if (!userShift) return false;
+
+            const shiftType = userShift.SHIFT_TYPE;
+
+            if (taskInfo.TIME === "Diurno")
+                return dayShifts.includes(shiftType);
+            if (taskInfo.TIME === "Notturno")
+                return nightShifts.includes(shiftType);
+
+            return true;
+        });
+    }, [users, employeeShifts, taskDate, taskInfo.TIME]);
+
+    const originalPmAssignedIds = useMemo(() => {
+        const rawAssignedTo = taskInfo?.AssignedTo;
+
+        if (typeof rawAssignedTo === "number") {
+            return [rawAssignedTo];
+        }
+
+        if (typeof rawAssignedTo === "string") {
+            return rawAssignedTo
+                .split(",")
+                .map((value) => Number(value.trim()))
+                .filter((value) => Number.isInteger(value));
+        }
+
+        return [];
+    }, [taskInfo.AssignedTo]);
+
+    const selectedPmAssignedIds = useMemo(() => {
+        return selectedAssignees
+            .map((username) => {
+                const selectedUser = users.find(
+                    (user) =>
+                        user?.Username === username ||
+                        user?.username === username,
+                );
+
+                return selectedUser?.ID ?? selectedUser?.id;
+            })
+            .filter((value) => Number.isInteger(value));
+    }, [selectedAssignees, users]);
+
+    const hasPmAssigneeChanges = useMemo(() => {
+        if (!isPmPlanTask || !hasPmAssigneeBeenEdited) {
+            return false;
+        }
+
+        const uniqueOriginal = [...new Set(originalPmAssignedIds)].sort(
+            (a, b) => a - b,
+        );
+        const uniqueSelected = [...new Set(selectedPmAssignedIds)].sort(
+            (a, b) => a - b,
+        );
+
+        if (uniqueOriginal.length !== uniqueSelected.length) {
+            return true;
+        }
+
+        return uniqueOriginal.some(
+            (value, index) => value !== uniqueSelected[index],
+        );
+    }, [
+        isPmPlanTask,
+        hasPmAssigneeBeenEdited,
+        originalPmAssignedIds,
+        selectedPmAssignedIds,
+    ]);
+
+    const handleCheckboxChange = (name) => {
+        if (isPmPlanTask) {
+            setHasPmAssigneeBeenEdited(true);
+            setSelectedAssignees((prev) => (prev.includes(name) ? [] : [name]));
+            return;
+        }
+
+        setSelectedAssignees((prev) =>
+            prev.includes(name)
+                ? prev.filter((item) => item !== name)
+                : [...prev, name],
+        );
+    };
 
     const toDateInputValue = (dateLike) => {
         if (!dateLike) {
@@ -156,6 +280,67 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             baseLogbook.ORIGINAL_LOGBOOK_ID || baseLogbook.ID || null,
         ...overrides,
     });
+
+    const handleSaveAssignees = async () => {
+        if (isPmPlanTask) {
+            const selectedUsername = selectedAssignees[0] || null;
+            const selectedUser = users.find((user) => {
+                return (
+                    user?.Username === selectedUsername ||
+                    user?.username === selectedUsername
+                );
+            });
+
+            const assignedTo = selectedUser?.ID ?? selectedUser?.id ?? null;
+            const result = await updateTaskSimOne(taskInfo.ID, assignedTo);
+
+            if (result.success) {
+                if (onSuccess)
+                    onSuccess(
+                        true,
+                        "Assegnatario PM Plan aggiornato con successo",
+                    );
+                onClose();
+            } else if (onSuccess) {
+                onSuccess(
+                    false,
+                    result.error ||
+                        "Errore durante l'aggiornamento dell'assegnatario PM Plan",
+                );
+            }
+
+            return;
+        }
+
+        const payload = taskInfo.ISLOGBOOK
+            ? buildLogbookPayload(taskInfo, {
+                  assigned_to: selectedAssignees.join(", ") || null,
+              })
+            : buildTaskPayload(taskInfo, {
+                  assigned_to: selectedAssignees.join(", ") || null,
+              });
+
+        const result = taskInfo.ISLOGBOOK
+            ? await updateLogbook(taskInfo.ID, payload)
+            : await updateTask(taskInfo.ID, payload);
+
+        if (result.success) {
+            if (taskInfo.ISLOGBOOK) {
+                await fetchLogbooks();
+            } else {
+                await fetchTasks();
+            }
+            if (onSuccess)
+                onSuccess(true, "Assegnatari aggiornati con successo");
+            onClose();
+        } else if (onSuccess) {
+            onSuccess(
+                false,
+                result.error ||
+                    "Errore durante l'aggiornamento degli assegnatari",
+            );
+        }
+    };
 
     const moveEntityToTodayAndCreateUnavailable = async (
         newStatus,
@@ -683,6 +868,42 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             return;
         }
 
+        // Handle PM Plan task comments separately
+        if (isPmPlanTask) {
+            const techName = getUsernameById(currentUserId);
+            if (editingCommentId) {
+                const result = await updateTechComment(
+                    editingCommentId,
+                    noteDescription,
+                    techName,
+                );
+                if (result.success) {
+                    setNoteDescription("");
+                    setEditingCommentId(null);
+                    if (onSuccess)
+                        onSuccess(true, "Commento modificato con successo");
+                } else {
+                    if (onSuccess)
+                        onSuccess(false, "Errore nella modifica del commento");
+                }
+            } else {
+                const result = await addTechComment(
+                    taskInfo.ID,
+                    noteDescription,
+                    techName,
+                );
+                if (result.success) {
+                    setNoteDescription("");
+                    if (onSuccess)
+                        onSuccess(true, "Commento salvato con successo");
+                } else {
+                    if (onSuccess)
+                        onSuccess(false, "Errore nel salvataggio del commento");
+                }
+            }
+            return;
+        }
+
         const isLogbook = taskInfo.ISLOGBOOK;
 
         // If editing, update the existing note
@@ -776,6 +997,30 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         setNoteDescription("");
         setEditingNoteId(null);
         setDoNotMoveTaskOnNote(false);
+    };
+
+    const handleEditComment = (comment) => {
+        setNoteDescription(comment.TechComment);
+        setEditingCommentId(comment.ID);
+    };
+
+    const handleCancelEditComment = () => {
+        setNoteDescription("");
+        setEditingCommentId(null);
+    };
+
+    const handleDeleteComment = async (comment) => {
+        const result = await deleteTechComment(comment.ID);
+        if (result.success) {
+            if (editingCommentId === comment.ID) {
+                setNoteDescription("");
+                setEditingCommentId(null);
+            }
+            if (onSuccess) onSuccess(true, "Commento eliminato con successo");
+        } else {
+            if (onSuccess)
+                onSuccess(false, "Errore nell'eliminazione del commento");
+        }
     };
 
     const handleDeleteNote = async (note) => {
@@ -1023,6 +1268,21 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     <p className="text-sm">Note aggiunte</p>
                                 </div>
                             )}
+
+                            {isPmPlanTask && (
+                                <div
+                                    className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
+                                        activeTab === "comment"
+                                            ? "bg-[var(--light-primary)] text-[var(--primary)]"
+                                            : "text-[var(--black)] hover:bg-[var(--light-primary)]"
+                                    }`}
+                                    onClick={() => {
+                                        setActiveTab("comment");
+                                    }}
+                                >
+                                    <p className="text-sm">Commenti</p>
+                                </div>
+                            )}
                         </div>
 
                         {!isUnavailableEntity &&
@@ -1264,238 +1524,394 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-1">
-                                    <h3 className="text-sm text-[var(--gray)]">
-                                        Allegati
-                                    </h3>
+                                {!isPmPlanTask ? (
+                                    <div className="flex flex-col gap-1">
+                                        <h3 className="text-sm text-[var(--gray)]">
+                                            Allegati
+                                        </h3>
 
-                                    {/* Existing Attachments Display */}
-                                    {attachmentImages.length === 0 ? (
-                                        <h4 className="text-sm text-center text-[var(--gray)] italic">
-                                            Nessun allegato disponibile.
-                                        </h4>
-                                    ) : (
-                                        <div className="flex flex-col gap-2">
-                                            {attachmentImages.map((image) => {
-                                                const imageId =
-                                                    image.ID ?? image.id;
-                                                const previewSources =
-                                                    getAttachmentPreviewSourcesByType(
-                                                        image,
-                                                    );
-                                                const thumbState =
-                                                    thumbSourceIndexByImageId[
-                                                        imageId
-                                                    ];
-                                                const hasNoPreview =
-                                                    thumbState === -1;
-                                                const currentThumbIndex =
-                                                    thumbState ?? 0;
-                                                const previewUrl = hasNoPreview
-                                                    ? ""
-                                                    : previewSources[
-                                                          currentThumbIndex
-                                                      ] ||
-                                                      getAttachmentPreviewUrlByType(
-                                                          image,
-                                                      );
-                                                const isImage =
-                                                    isImageFileByType(image);
+                                        {/* Existing Attachments Display */}
+                                        {attachmentImages.length === 0 ? (
+                                            <h4 className="text-sm text-center text-[var(--gray)] italic">
+                                                Nessun allegato disponibile.
+                                            </h4>
+                                        ) : (
+                                            <div className="flex flex-col gap-2">
+                                                {attachmentImages.map(
+                                                    (image) => {
+                                                        const imageId =
+                                                            image.ID ??
+                                                            image.id;
+                                                        const previewSources =
+                                                            getAttachmentPreviewSourcesByType(
+                                                                image,
+                                                            );
+                                                        const thumbState =
+                                                            thumbSourceIndexByImageId[
+                                                                imageId
+                                                            ];
+                                                        const hasNoPreview =
+                                                            thumbState === -1;
+                                                        const currentThumbIndex =
+                                                            thumbState ?? 0;
+                                                        const previewUrl =
+                                                            hasNoPreview
+                                                                ? ""
+                                                                : previewSources[
+                                                                      currentThumbIndex
+                                                                  ] ||
+                                                                  getAttachmentPreviewUrlByType(
+                                                                      image,
+                                                                  );
+                                                        const isImage =
+                                                            isImageFileByType(
+                                                                image,
+                                                            );
 
-                                                return (
-                                                    <div
-                                                        key={imageId}
-                                                        className="flex items-center justify-between gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2"
-                                                    >
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                if (
-                                                                    isPdfFile(
-                                                                        image,
-                                                                    )
-                                                                ) {
-                                                                    openPdfInNewTab(
-                                                                        image,
-                                                                    );
-                                                                } else if (
-                                                                    isDocumentFile(
-                                                                        image,
-                                                                    )
-                                                                ) {
-                                                                    openDocumentInNewTab(
-                                                                        image,
-                                                                    );
-                                                                } else {
-                                                                    openImagePreview(
-                                                                        image,
-                                                                        imageId,
-                                                                    );
-                                                                }
-                                                            }}
-                                                            className={`min-w-0 flex items-center gap-3 text-left ${
-                                                                (isImage ||
-                                                                    isPdfFile(
-                                                                        image,
-                                                                    ) ||
-                                                                    isDocumentFile(
-                                                                        image,
-                                                                    )) &&
-                                                                previewUrl
-                                                                    ? "cursor-pointer"
-                                                                    : "cursor-default"
-                                                            }`}
-                                                        >
-                                                            {isImage &&
-                                                            previewUrl ? (
-                                                                <img
-                                                                    src={
-                                                                        previewUrl
-                                                                    }
-                                                                    onError={() => {
+                                                        return (
+                                                            <div
+                                                                key={imageId}
+                                                                className="flex items-center justify-between gap-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md p-2"
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
                                                                         if (
-                                                                            currentThumbIndex <
-                                                                            previewSources.length -
-                                                                                1
-                                                                        ) {
-                                                                            setThumbSourceIndexByImageId(
-                                                                                (
-                                                                                    prev,
-                                                                                ) => ({
-                                                                                    ...prev,
-                                                                                    [imageId]:
-                                                                                        currentThumbIndex +
-                                                                                        1,
-                                                                                }),
-                                                                            );
-                                                                            return;
-                                                                        }
-
-                                                                        setThumbSourceIndexByImageId(
-                                                                            (
-                                                                                prev,
-                                                                            ) => ({
-                                                                                ...prev,
-                                                                                [imageId]:
-                                                                                    -1,
-                                                                            }),
-                                                                        );
-                                                                    }}
-                                                                    alt={getAttachmentLabelByType(
-                                                                        image,
-                                                                    )}
-                                                                    className="w-14 h-14 rounded-md object-cover border border-[var(--light-primary)] bg-[var(--light-primary)]"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-14 h-14 rounded-md border border-[var(--light-primary)] bg-[var(--light-primary)] flex items-center justify-center text-xs text-[var(--gray)]">
-                                                                    File
-                                                                </div>
-                                                            )}
-
-                                                            <div className="min-w-0 hover:text-[var(--primary)] transition-all duration-200">
-                                                                <p className="text-sm text-[var(--black)] truncate">
-                                                                    {getAttachmentLabelByType(
-                                                                        image,
-                                                                    )}
-                                                                </p>
-                                                                {(isImage ||
-                                                                    isPdfFile(
-                                                                        image,
-                                                                    ) ||
-                                                                    isDocumentFile(
-                                                                        image,
-                                                                    )) &&
-                                                                    previewUrl && (
-                                                                        <p className="text-xs text-[var(--primary)] truncate">
-                                                                            {isPdfFile(
+                                                                            isPdfFile(
                                                                                 image,
                                                                             )
-                                                                                ? "Clicca per aprire PDF"
-                                                                                : isDocumentFile(
+                                                                        ) {
+                                                                            openPdfInNewTab(
+                                                                                image,
+                                                                            );
+                                                                        } else if (
+                                                                            isDocumentFile(
+                                                                                image,
+                                                                            )
+                                                                        ) {
+                                                                            openDocumentInNewTab(
+                                                                                image,
+                                                                            );
+                                                                        } else {
+                                                                            openImagePreview(
+                                                                                image,
+                                                                                imageId,
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                    className={`min-w-0 flex items-center gap-3 text-left ${
+                                                                        (isImage ||
+                                                                            isPdfFile(
+                                                                                image,
+                                                                            ) ||
+                                                                            isDocumentFile(
+                                                                                image,
+                                                                            )) &&
+                                                                        previewUrl
+                                                                            ? "cursor-pointer"
+                                                                            : "cursor-default"
+                                                                    }`}
+                                                                >
+                                                                    {isImage &&
+                                                                    previewUrl ? (
+                                                                        <img
+                                                                            src={
+                                                                                previewUrl
+                                                                            }
+                                                                            onError={() => {
+                                                                                if (
+                                                                                    currentThumbIndex <
+                                                                                    previewSources.length -
+                                                                                        1
+                                                                                ) {
+                                                                                    setThumbSourceIndexByImageId(
+                                                                                        (
+                                                                                            prev,
+                                                                                        ) => ({
+                                                                                            ...prev,
+                                                                                            [imageId]:
+                                                                                                currentThumbIndex +
+                                                                                                1,
+                                                                                        }),
+                                                                                    );
+                                                                                    return;
+                                                                                }
+
+                                                                                setThumbSourceIndexByImageId(
+                                                                                    (
+                                                                                        prev,
+                                                                                    ) => ({
+                                                                                        ...prev,
+                                                                                        [imageId]:
+                                                                                            -1,
+                                                                                    }),
+                                                                                );
+                                                                            }}
+                                                                            alt={getAttachmentLabelByType(
+                                                                                image,
+                                                                            )}
+                                                                            className="w-14 h-14 rounded-md object-cover border border-[var(--light-primary)] bg-[var(--light-primary)]"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="w-14 h-14 rounded-md border border-[var(--light-primary)] bg-[var(--light-primary)] flex items-center justify-center text-xs text-[var(--gray)]">
+                                                                            File
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="min-w-0 hover:text-[var(--primary)] transition-all duration-200">
+                                                                        <p className="text-sm text-[var(--black)] truncate">
+                                                                            {getAttachmentLabelByType(
+                                                                                image,
+                                                                            )}
+                                                                        </p>
+                                                                        {(isImage ||
+                                                                            isPdfFile(
+                                                                                image,
+                                                                            ) ||
+                                                                            isDocumentFile(
+                                                                                image,
+                                                                            )) &&
+                                                                            previewUrl && (
+                                                                                <p className="text-xs text-[var(--primary)] truncate">
+                                                                                    {isPdfFile(
                                                                                         image,
                                                                                     )
-                                                                                  ? "Clicca per aprire documento"
-                                                                                  : "Clicca per aprire anteprima"}
-                                                                        </p>
-                                                                    )}
-                                                            </div>
-                                                        </button>
+                                                                                        ? "Clicca per aprire PDF"
+                                                                                        : isDocumentFile(
+                                                                                                image,
+                                                                                            )
+                                                                                          ? "Clicca per aprire documento"
+                                                                                          : "Clicca per aprire anteprima"}
+                                                                                </p>
+                                                                            )}
+                                                                    </div>
+                                                                </button>
 
-                                                        {canManageAttachments && (
+                                                                {canManageAttachments && (
+                                                                    <button
+                                                                        className="btn delete !px-3 !py-2"
+                                                                        onClick={() =>
+                                                                            handleDeleteAttachment(
+                                                                                imageId,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Elimina
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    },
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* File Upload Input - appears under existing attachments */}
+                                        {canManageAttachments &&
+                                            !isPmPlanTask && (
+                                                <div className="flex flex-col gap-2 mt-4">
+                                                    <input
+                                                        type="file"
+                                                        name="attachments"
+                                                        id="attachments"
+                                                        multiple
+                                                        onChange={
+                                                            handleFilesChange
+                                                        }
+                                                        disabled={
+                                                            !isAttachmentUploadEnabled
+                                                        }
+                                                        className="border border-[var(--light-primary)] rounded-md p-2 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] hover:border-[var(--separator)] transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-md file:bg-[var(--primary)] file:text-[#ffffff] file:cursor-pointer hover:file:bg-[var(--primary-hover)]"
+                                                    />
+
+                                                    {!isAttachmentUploadEnabled && (
+                                                        <p className="text-sm text-[var(--gray)] italic">
+                                                            Gli allegati sono
+                                                            disponibili solo per
+                                                            task ordinarie.
+                                                        </p>
+                                                    )}
+
+                                                    {selectedFiles.length >
+                                                        0 && (
+                                                        <>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {selectedFiles.map(
+                                                                    (file) => (
+                                                                        <div
+                                                                            key={`${file.name}-${file.lastModified}`}
+                                                                            className="px-3 py-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md text-sm text-[var(--black)]"
+                                                                        >
+                                                                            {
+                                                                                file.name
+                                                                            }
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+
                                                             <button
-                                                                className="btn delete !px-3 !py-2"
-                                                                onClick={() =>
-                                                                    handleDeleteAttachment(
-                                                                        imageId,
-                                                                    )
+                                                                className="btn primary"
+                                                                onClick={
+                                                                    uploadAttachments
                                                                 }
                                                             >
-                                                                Elimina
+                                                                Carica Allegati
                                                             </button>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
+                                                        </>
+                                                    )}
 
-                                    {/* File Upload Input - appears under existing attachments */}
-                                    {canManageAttachments && !isPmPlanTask && (
-                                        <div className="flex flex-col gap-2 mt-4">
-                                            <input
-                                                type="file"
-                                                name="attachments"
-                                                id="attachments"
-                                                multiple
-                                                onChange={handleFilesChange}
-                                                disabled={
-                                                    !isAttachmentUploadEnabled
+                                                    {attachmentError && (
+                                                        <p className="text-[var(--red)] text-sm">
+                                                            {attachmentError}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-1">
+                                        <h3 className="text-sm text-[var(--gray)]">
+                                            Assegnatario
+                                        </h3>
+
+                                        <div className="flex flex-wrap items-center gap-2 mb-4 mt-2">
+                                            {(() => {
+                                                const rawAssignedTo =
+                                                    taskInfo?.AssignedTo;
+
+                                                const assignedIds =
+                                                    typeof rawAssignedTo ===
+                                                    "number"
+                                                        ? [rawAssignedTo]
+                                                        : typeof rawAssignedTo ===
+                                                            "string"
+                                                          ? rawAssignedTo
+                                                                .split(",")
+                                                                .map((value) =>
+                                                                    Number(
+                                                                        value.trim(),
+                                                                    ),
+                                                                )
+                                                                .filter(
+                                                                    (value) =>
+                                                                        Number.isInteger(
+                                                                            value,
+                                                                        ),
+                                                                )
+                                                          : [];
+
+                                                const assignedNames =
+                                                    assignedIds
+                                                        .map((id) => {
+                                                            const username =
+                                                                getUsernameById(
+                                                                    id,
+                                                                );
+                                                            return username ===
+                                                                "N/A"
+                                                                ? `ID ${id}`
+                                                                : username;
+                                                        })
+                                                        .filter(Boolean);
+
+                                                if (
+                                                    assignedNames.length === 0
+                                                ) {
+                                                    return (
+                                                        <p className="text-sm text-[var(--gray)] italic">
+                                                            Nessun assegnatario
+                                                        </p>
+                                                    );
                                                 }
-                                                className="border border-[var(--light-primary)] rounded-md p-2 text-[var(--black)] cursor-pointer hover:text-[var(--gray)] hover:border-[var(--separator)] transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-md file:bg-[var(--primary)] file:text-[#ffffff] file:cursor-pointer hover:file:bg-[var(--primary-hover)]"
-                                            />
 
-                                            {!isAttachmentUploadEnabled && (
-                                                <p className="text-sm text-[var(--gray)] italic">
-                                                    Gli allegati sono
-                                                    disponibili solo per task
-                                                    ordinarie.
-                                                </p>
-                                            )}
-
-                                            {selectedFiles.length > 0 && (
-                                                <>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {selectedFiles.map(
-                                                            (file) => (
-                                                                <div
-                                                                    key={`${file.name}-${file.lastModified}`}
-                                                                    className="px-3 py-2 bg-[var(--white)] border border-[var(--light-primary)] rounded-md text-sm text-[var(--black)]"
-                                                                >
-                                                                    {file.name}
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-
-                                                    <button
-                                                        className="btn primary"
-                                                        onClick={
-                                                            uploadAttachments
-                                                        }
-                                                    >
-                                                        Carica Allegati
-                                                    </button>
-                                                </>
-                                            )}
-
-                                            {attachmentError && (
-                                                <p className="text-[var(--red)] text-sm">
-                                                    {attachmentError}
-                                                </p>
-                                            )}
+                                                return assignedNames.map(
+                                                    (name) => (
+                                                        <p
+                                                            key={name}
+                                                            className="text-sm text-[var(--primary)] py-2 px-4 bg-[var(--light-primary)] rounded-md"
+                                                        >
+                                                            {name}
+                                                        </p>
+                                                    ),
+                                                );
+                                            })()}
                                         </div>
-                                    )}
-                                </div>
+
+                                        {currentUserRole === "Admin" ||
+                                        currentUserRole === "Shift Leader" ? (
+                                            <div className="grid grid-cols-3 gap-2 border border-[var(--light-primary)] rounded-md p-2">
+                                                {filteredUsers.map((user) => (
+                                                    <div
+                                                        key={user.Username}
+                                                        onClick={() =>
+                                                            handleCheckboxChange(
+                                                                user.Username,
+                                                            )
+                                                        }
+                                                        className={`flex items-center cursor-pointer gap-2 rounded-md p-2 flex-1 border border-transparent hover:bg-[var(--light-primary)] ${
+                                                            selectedAssignees.includes(
+                                                                user.Username,
+                                                            )
+                                                                ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                                                : "text-[var(--black)]"
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            name=""
+                                                            id={user.Username}
+                                                            checked={selectedAssignees.includes(
+                                                                user.Username,
+                                                            )}
+                                                            onChange={() =>
+                                                                handleCheckboxChange(
+                                                                    user.Username,
+                                                                )
+                                                            }
+                                                            className="hidden"
+                                                        />
+                                                        <UserIcon className="w-6 shrink-0" />
+                                                        <label
+                                                            className="cursor-pointer truncate"
+                                                            htmlFor={
+                                                                user.Username
+                                                            }
+                                                        >
+                                                            {user.Username.split(
+                                                                ".",
+                                                            )[0]
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                                user.Username.split(
+                                                                    ".",
+                                                                )[0].slice(1)}
+                                                            {user.Username.split(
+                                                                ".",
+                                                            )[1] && (
+                                                                <>
+                                                                    {" "}
+                                                                    {user.Username.split(
+                                                                        ".",
+                                                                    )[1]
+                                                                        .charAt(
+                                                                            0,
+                                                                        )
+                                                                        .toUpperCase() +
+                                                                        user.Username.split(
+                                                                            ".",
+                                                                        )[1].slice(
+                                                                            1,
+                                                                        )}
+                                                                </>
+                                                            )}
+                                                        </label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex items-center justify-between border-t border-[var(--light-primary)] pt-4 mt-4 gap-1">
@@ -1574,6 +1990,18 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     >
                                         Chiudi
                                     </button>
+                                    {isPmPlanTask &&
+                                        (currentUserRole === "Admin" ||
+                                            currentUserRole ===
+                                                "Shift Leader") &&
+                                        hasPmAssigneeChanges && (
+                                            <button
+                                                className="btn flex items-center gap-1"
+                                                onClick={handleSaveAssignees}
+                                            >
+                                                <p>Salva</p>
+                                            </button>
+                                        )}
                                     {!isUnavailableEntity &&
                                         !isPmPlanTask &&
                                         (currentUserRole === "Admin" ||
@@ -1802,6 +2230,120 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         {editingNoteId
                                             ? "Modifica nota"
                                             : "Salva nota"}
+                                    </p>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {isPmPlanTask && activeTab === "comment" && (
+                        <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-8 max-h-[calc(40vh-4rem)] overflow-y-auto pr-1">
+                                {techComments.filter(
+                                    (c) => c.RecordID === taskInfo.ID,
+                                ).length > 0 ? (
+                                    [...techComments]
+                                        .filter(
+                                            (c) => c.RecordID === taskInfo.ID,
+                                        )
+                                        .sort(
+                                            (a, b) =>
+                                                new Date(b.CommentDate) -
+                                                new Date(a.CommentDate),
+                                        )
+                                        .map((comment) => (
+                                            <div
+                                                key={comment.ID}
+                                                className="flex justify-between gap-4"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {comment.TechName ===
+                                                        getUsernameById(
+                                                            currentUserId,
+                                                        ) && (
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <EditIcon
+                                                                className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
+                                                                onClick={() =>
+                                                                    handleEditComment(
+                                                                        comment,
+                                                                    )
+                                                                }
+                                                            />
+                                                            <DeleteIcon
+                                                                className="w-6 text-[var(--red)] hover:text-[var(--gray)] cursor-pointer transition-all duration-200"
+                                                                onClick={() =>
+                                                                    handleDeleteComment(
+                                                                        comment,
+                                                                    )
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <h3 className="text-sm text-[var(--gray)] truncate w-20">
+                                                        {comment.TechName}:
+                                                    </h3>
+                                                </div>
+                                                <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
+                                                    <div className="break-words whitespace-pre-wrap">
+                                                        {comment.TechComment}
+                                                    </div>
+                                                    <span className="flex justify-end text-xs text-[var(--black)] mt-2">
+                                                        {formatDateTime(
+                                                            comment.CommentDate,
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))
+                                ) : (
+                                    <p className="text-center text-sm text-[var(--gray)] italic">
+                                        Nessun commento disponibile
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col gap-2 border-t border-[var(--light-primary)] pt-4">
+                                <h3 className="text-sm text-[var(--gray)]">
+                                    {editingCommentId
+                                        ? "Modifica commento"
+                                        : "Aggiungi commento"}
+                                </h3>
+                                <textarea
+                                    className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                                    placeholder="Inserisci il testo del commento qui..."
+                                    value={noteDescription}
+                                    onChange={(e) =>
+                                        setNoteDescription(e.target.value)
+                                    }
+                                ></textarea>
+                            </div>
+
+                            <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
+                                {editingCommentId ? (
+                                    <button
+                                        className="btn gray-btn"
+                                        onClick={handleCancelEditComment}
+                                    >
+                                        Annulla
+                                    </button>
+                                ) : (
+                                    <button
+                                        className="btn gray-btn"
+                                        onClick={onClose}
+                                    >
+                                        Chiudi
+                                    </button>
+                                )}
+
+                                <button
+                                    className="btn"
+                                    onClick={handleSaveNote}
+                                    disabled={!noteDescription.trim()}
+                                >
+                                    <p>
+                                        {editingCommentId
+                                            ? "Modifica commento"
+                                            : "Salva commento"}
                                     </p>
                                 </button>
                             </div>

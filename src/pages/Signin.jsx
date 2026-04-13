@@ -40,7 +40,7 @@ function Signin() {
         if (result.success) {
             result.data.user.firstAccess
                 ? navigate("/change-password")
-                : navigate("/dashboard");
+                : navigate("/home");
         } else {
             setInvalidCredentials(true);
         }
