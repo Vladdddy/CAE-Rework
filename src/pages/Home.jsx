@@ -84,9 +84,9 @@ function Home() {
                     <div className="flex flex-col gap-2">
                         <div
                             onClick={() => navigate("/dashboard")}
-                            className="bg-[var(--light-primary)] rounded-2xl p-4 w-20 h-20 flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
+                            className="bg-[var(--light-primary)] rounded-3xl p-4 w-32 h-32 flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
                         >
-                            <img className="w-10" src={Logo} alt="Logo" />
+                            <img className="w-16" src={Logo} alt="Logo" />
                         </div>
                         <p className="text-sm font-medium text-[var(--black)] text-center">
                             TechOne
@@ -98,10 +98,10 @@ function Home() {
                             onClick={() =>
                                 navigate("https://172.254.60.218:3000/totem/")
                             }
-                            className="rounded-2xl flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
+                            className="rounded-3xl flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
                         >
                             <img
-                                className="w-20 h-20 rounded-2xl"
+                                className="w-32 h-32 rounded-3xl"
                                 src={Rotorsim}
                                 alt="Logo"
                             />
@@ -116,15 +116,15 @@ function Home() {
                             onClick={() =>
                                 navigate("https://172.254.60.218:3000/mobile")
                             }
-                            className="rounded-2xl flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
+                            className="rounded-3xl flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
                         >
                             <img
-                                className="w-20 h-20 rounded-2xl"
+                                className="w-32 h-32 rounded-3xl"
                                 src={Cae}
                                 alt="Logo"
                             />
                         </div>
-                        <p className="text-sm font-medium text-[var(--black)] text-center max-w-20 text-center">
+                        <p className="text-sm font-medium text-[var(--black)] text-center max-w-32 text-center">
                             SimOne Mobile
                         </p>
                     </div>
@@ -136,9 +136,9 @@ function Home() {
                                     "http://172.254.60.111:1880/ui/#!/0?socketid=jGqLQlTym8Ea__NwAACl%23%2F7",
                                 )
                             }
-                            className="bg-[var(--light-primary)] rounded-2xl p-4 w-20 h-20 flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
+                            className="bg-[var(--light-primary)] rounded-3xl p-4 w-32 h-32 flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
                         >
-                            <DashboardIcon className="w-10 text-[var(--primary)]" />
+                            <DashboardIcon className="w-16 text-[var(--primary)]" />
                         </div>
                         <p className="text-sm font-medium text-[var(--black)] text-center">
                             Dashboard
