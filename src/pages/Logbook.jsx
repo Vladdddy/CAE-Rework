@@ -12,6 +12,7 @@ import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
+import { usePMTechComments } from "../components/data/provider/PMTechCommentsAPI/usePMTechComments";
 import { useUnavailableLogbooks } from "../components/data/provider/unavailableLogbookAPI/useUnavailableLogbooks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
@@ -37,6 +38,7 @@ function Logbook() {
         fetchTasks: fetchUnavailableTasks,
     } = useUnavailableTasks();
     const { taskSimOne } = useTaskSimOne();
+    const { techComments } = usePMTechComments();
     const {
         logbooks: unavailableLogbooks,
         loading: unavailableLogbooksLoading,
@@ -161,6 +163,7 @@ function Logbook() {
                         Boolean(taskDone);
                     return {
                         ...task,
+                        ID: task["ID_task"] ?? task.ID,
                         SIMULATOR: SIMULATOR_MAP[simulatorId],
                         DATE: task["Scheduled on"] ?? task.DATE,
                         TIME: "Notturno",
@@ -292,6 +295,41 @@ function Logbook() {
                     }
                 }),
             );
+
+            // Add PM tech comments to notesMap for PM Plan tasks, then filter
+            // out PM tasks that have no comments at all.
+            itemsToExport.forEach((item) => {
+                if (!item.IS_PM_PLAN_TASK) return;
+                const pmComments = (techComments || []).filter(
+                    (c) => c.RecordID === item.ID,
+                );
+                if (pmComments.length > 0) {
+                    const normalized = pmComments.map((c) => ({
+                        DESCRIPTION: c.TechComment,
+                        AUTHOR_OVERRIDE: c.TechName,
+                        TYPE: "pm_comment",
+                    }));
+                    notesMap[item.ID] = [
+                        ...(notesMap[item.ID] || []),
+                        ...normalized,
+                    ];
+                }
+            });
+
+            itemsToExport = itemsToExport.filter((item) => {
+                if (!item.IS_PM_PLAN_TASK) return true;
+                if (
+                    (item.TITLE || "")
+                        .trim()
+                        .toLowerCase()
+                        .startsWith("morning readiness")
+                )
+                    return true;
+                const notes = (notesMap[item.ID] || []).filter(
+                    (n) => n.TYPE !== "automatico",
+                );
+                return notes.length > 0;
+            });
 
             let pdfTitle;
             if (exportType === "activity" || exportType === "activities") {
@@ -651,6 +689,7 @@ function Logbook() {
                     onClose={handleCloseModal}
                     onSuccess={handleSuccess}
                     type="logbook"
+                    initialDate={startDate.toISOString().split("T")[0]}
                 />
             )}
 

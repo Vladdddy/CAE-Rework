@@ -46,7 +46,7 @@ function ShiftsPattern({ onClose, onPatternApply }) {
         "T",
         "P",
         "CG",
-        "ND",
+        "FND",
     ];
 
     const defaultPatterns = {
@@ -71,6 +71,19 @@ function ShiftsPattern({ onClose, onPatternApply }) {
 
     const getShiftValue = (shiftIndex) => {
         return customShiftInputs[shiftIndex] || "--";
+    };
+
+    const allShiftOptions = ["--", ...shiftMeanings];
+
+    const handleShiftKeyDown = (shiftIndex, currentValue, e) => {
+        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        const idx = allShiftOptions.indexOf(currentValue);
+        const next =
+            e.key === "ArrowDown"
+                ? Math.min(idx + 1, allShiftOptions.length - 1)
+                : Math.max(idx - 1, 0);
+        handleShiftChange(shiftIndex, allShiftOptions[next]);
     };
 
     const handleShiftChange = (shiftIndex, value) => {
@@ -768,7 +781,14 @@ function ShiftsPattern({ onClose, onPatternApply }) {
                                                         e.target.value,
                                                     )
                                                 }
-                                                className={`px-8 py-2 font-bold text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(shiftIndex))} ${getShiftValue(shiftIndex) === "R" ? "focus:text-black" : ""} ${getShiftValue(shiftIndex) === "ND" ? "focus:text-black" : ""}`}
+                                                onKeyDown={(e) =>
+                                                    handleShiftKeyDown(
+                                                        shiftIndex,
+                                                        getShiftValue(shiftIndex),
+                                                        e,
+                                                    )
+                                                }
+                                                className={`px-8 py-2 font-bold text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer ${GetColorForShift(getShiftValue(shiftIndex))} ${getShiftValue(shiftIndex) === "R" ? "focus:text-black" : ""} ${getShiftValue(shiftIndex) === "FND" ? "focus:text-black" : ""}`}
                                             >
                                                 <option value="--">--</option>
                                                 {shiftMeanings.map((value) => (

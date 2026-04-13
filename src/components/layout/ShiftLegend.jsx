@@ -25,7 +25,7 @@ function ShiftLegend() {
         T: "Trasferta",
         P: "Paternità",
         CG: "Corso Giorno",
-        ND: "Non Disponibile",
+        FND: "Ferie Non Disponibile",
     };
 
     const handleMouseDown = (e) => {

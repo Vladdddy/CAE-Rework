@@ -35,6 +35,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [noteDescription, setNoteDescription] = useState("");
     const [doNotMoveTaskOnNote, setDoNotMoveTaskOnNote] = useState(false);
     const [editingNoteId, setEditingNoteId] = useState(null);
+    const [noteFilter, setNoteFilter] = useState("all");
     const [editingCommentId, setEditingCommentId] = useState(null);
     const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
     const [thumbSourceIndexByImageId, setThumbSourceIndexByImageId] = useState(
@@ -359,8 +360,15 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             Boolean(originalDate) && originalDate !== todayDate;
         const shouldMoveTask =
             shouldMoveByDate && (!applyCompletedCutoff || passedCutoffTime);
-        const updatedTurno =
+        const baseTurno =
             shouldMoveTask && passedCutoffTime ? "Diurno" : taskInfo.TIME;
+        const hour = now.getHours();
+        const updatedTurno =
+            baseTurno === "Notturno" && hour < 20
+                ? "Diurno"
+                : baseTurno === "Diurno" && hour >= 20
+                  ? "Notturno"
+                  : baseTurno;
 
         const updatedEntityData = taskInfo.ISLOGBOOK
             ? buildLogbookPayload(taskInfo, {
@@ -817,9 +825,19 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             return;
         }
 
+        const completionHour = new Date().getHours();
+        const adjustedTime =
+            newStatus === "Completato"
+                ? taskInfo.TIME === "Notturno" && completionHour < 20
+                    ? "Diurno"
+                    : taskInfo.TIME === "Diurno" && completionHour >= 20
+                      ? "Notturno"
+                      : taskInfo.TIME
+                : taskInfo.TIME;
         const updatedTaskData = buildTaskPayload(taskInfo, {
             status: newStatus,
             date: toDateInputValue(taskInfo.DATE),
+            time: adjustedTime,
         });
 
         const result = isLogbook
@@ -1258,6 +1276,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                     }`}
                                     onClick={() => {
                                         setActiveTab("note");
+                                        setNoteFilter("all");
                                         if (taskInfo.ISLOGBOOK) {
                                             fetchNoteLogbooks(taskInfo.ID);
                                         } else {
@@ -2034,129 +2053,169 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
                     {!isUnavailableEntity && activeTab === "note" && (
                         <div className="flex flex-col gap-4">
+                            <div className="flex justify-end">
+                                <div className="relative">
+                                    <select
+                                        value={noteFilter}
+                                        onChange={(e) =>
+                                            setNoteFilter(e.target.value)
+                                        }
+                                        className="text-sm p-2 pr-8 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-none focus:border-[var(--separator)] appearance-none cursor-pointer transition-all duration-200"
+                                    >
+                                        <option value="all">
+                                            Mostra tutto
+                                        </option>
+                                        <option value="user">
+                                            Solo note create
+                                        </option>
+                                        <option value="system">
+                                            Solo di sistema
+                                        </option>
+                                    </select>
+                                    <ArrowRightIcon className="absolute right-2 top-1/2 -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
+                                </div>
+                            </div>
                             <div className="flex flex-col gap-8 max-h-[calc(40vh-4rem)] overflow-y-auto pr-1">
                                 {notes &&
                                 !taskInfo.ISLOGBOOK &&
                                 notes.length > 0 ? (
-                                    [...notes].reverse().map((note) => (
-                                        <div
-                                            key={note.ID}
-                                            className={`flex flex-col lg:flex-row justify-between gap-4`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                {note.CREATEDBY ===
-                                                    currentUserId &&
-                                                    note.TYPE !==
-                                                        "automatico" && (
-                                                        <div className="flex flex-col items-center gap-2">
-                                                            <EditIcon
-                                                                className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
-                                                                onClick={() =>
-                                                                    handleEditNote(
-                                                                        note,
-                                                                    )
-                                                                }
-                                                            />
-                                                            <DeleteIcon
-                                                                className="w-6 text-[var(--red)] hover:text-[var(--gray)] cursor-pointer transition-all duration-200"
-                                                                onClick={() =>
-                                                                    handleDeleteNote(
-                                                                        note,
-                                                                    )
-                                                                }
-                                                            />
-                                                        </div>
-                                                    )}
-
-                                                <h3 className="text-sm text-[var(--gray)] truncate w-20">
-                                                    {getUsernameById(
-                                                        note.CREATEDBY,
-                                                    )}
-                                                    :
-                                                </h3>
-                                            </div>
+                                    [...notes]
+                                        .reverse()
+                                        .filter((note) =>
+                                            noteFilter === "all"
+                                                ? true
+                                                : noteFilter === "system"
+                                                  ? note.TYPE === "automatico"
+                                                  : note.TYPE !== "automatico",
+                                        )
+                                        .map((note) => (
                                             <div
-                                                className={`flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden}`}
+                                                key={note.ID}
+                                                className={`flex flex-col lg:flex-row justify-between gap-4`}
                                             >
-                                                <div
-                                                    className={`break-words whitespace-pre-wrap ${note.TYPE === "automatico" && "text-[var(--black)]"}`}
-                                                >
-                                                    {note.TYPE ===
-                                                        "automatico" && (
-                                                        <p className="text-[var(--primary)] italic mb-1">
-                                                            [Sistema]
-                                                        </p>
-                                                    )}
-                                                    {note.DESCRIPTION}
+                                                <div className="flex items-center gap-2">
+                                                    {note.CREATEDBY ===
+                                                        currentUserId &&
+                                                        note.TYPE !==
+                                                            "automatico" && (
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <EditIcon
+                                                                    className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
+                                                                    onClick={() =>
+                                                                        handleEditNote(
+                                                                            note,
+                                                                        )
+                                                                    }
+                                                                />
+                                                                <DeleteIcon
+                                                                    className="w-6 text-[var(--red)] hover:text-[var(--gray)] cursor-pointer transition-all duration-200"
+                                                                    onClick={() =>
+                                                                        handleDeleteNote(
+                                                                            note,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                    <h3 className="text-sm text-[var(--gray)] truncate w-20">
+                                                        {getUsernameById(
+                                                            note.CREATEDBY,
+                                                        )}
+                                                        :
+                                                    </h3>
                                                 </div>
-                                                <span className="flex justify-end text-xs text-[var(--black)] mt-2">
-                                                    {formatDateTime(
-                                                        note.CREATEDDATE,
-                                                    )}
-                                                </span>
+                                                <div
+                                                    className={`flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden}`}
+                                                >
+                                                    <div
+                                                        className={`break-words whitespace-pre-wrap ${note.TYPE === "automatico" && "text-[var(--black)]"}`}
+                                                    >
+                                                        {note.TYPE ===
+                                                            "automatico" && (
+                                                            <p className="text-[var(--primary)] italic mb-1">
+                                                                [Sistema]
+                                                            </p>
+                                                        )}
+                                                        {note.DESCRIPTION}
+                                                    </div>
+                                                    <span className="flex justify-end text-xs text-[var(--black)] mt-2">
+                                                        {formatDateTime(
+                                                            note.CREATEDDATE,
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        ))
                                 ) : noteLogbooks &&
                                   taskInfo.ISLOGBOOK &&
                                   noteLogbooks.length > 0 ? (
-                                    [...noteLogbooks].reverse().map((note) => (
-                                        <div
-                                            key={note.ID}
-                                            className="flex justify-between gap-4"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                {note.CREATEDBY ===
-                                                    currentUserId &&
-                                                    note.TYPE !==
-                                                        "automatico" && (
-                                                        <div className="flex flex-col items-center gap-2">
-                                                            <EditIcon
-                                                                className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
-                                                                onClick={() =>
-                                                                    handleEditNote(
-                                                                        note,
-                                                                    )
-                                                                }
-                                                            />
-                                                            <DeleteIcon
-                                                                className="w-6 text-[var(--red)] hover:text-[var(--gray)] cursor-pointer transition-all duration-200"
-                                                                onClick={() =>
-                                                                    handleDeleteNote(
-                                                                        note,
-                                                                    )
-                                                                }
-                                                            />
-                                                        </div>
-                                                    )}
+                                    [...noteLogbooks]
+                                        .reverse()
+                                        .filter((note) =>
+                                            noteFilter === "all"
+                                                ? true
+                                                : noteFilter === "system"
+                                                  ? note.TYPE === "automatico"
+                                                  : note.TYPE !== "automatico",
+                                        )
+                                        .map((note) => (
+                                            <div
+                                                key={note.ID}
+                                                className="flex justify-between gap-4"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {note.CREATEDBY ===
+                                                        currentUserId &&
+                                                        note.TYPE !==
+                                                            "automatico" && (
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <EditIcon
+                                                                    className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
+                                                                    onClick={() =>
+                                                                        handleEditNote(
+                                                                            note,
+                                                                        )
+                                                                    }
+                                                                />
+                                                                <DeleteIcon
+                                                                    className="w-6 text-[var(--red)] hover:text-[var(--gray)] cursor-pointer transition-all duration-200"
+                                                                    onClick={() =>
+                                                                        handleDeleteNote(
+                                                                            note,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        )}
 
-                                                <h3 className="text-sm text-[var(--gray)] truncate w-20">
-                                                    {getUsernameById(
-                                                        note.CREATEDBY,
-                                                    )}
-                                                    :
-                                                </h3>
-                                            </div>
-                                            <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
-                                                <div
-                                                    className={`break-words whitespace-pre-wrap ${note.TYPE === "automatico" && "text-[var(--black)]"}`}
-                                                >
-                                                    {note.TYPE ===
-                                                        "automatico" && (
-                                                        <p className="text-[var(--primary)] italic mb-1">
-                                                            [Sistema]
-                                                        </p>
-                                                    )}
-                                                    {note.DESCRIPTION}
+                                                    <h3 className="text-sm text-[var(--gray)] truncate w-20">
+                                                        {getUsernameById(
+                                                            note.CREATEDBY,
+                                                        )}
+                                                        :
+                                                    </h3>
                                                 </div>
-                                                <span className="flex justify-end text-xs text-[var(--black)] mt-2">
-                                                    {formatDateTime(
-                                                        note.CREATEDDATE,
-                                                    )}
-                                                </span>
+                                                <div className="flex-1 task-description text-sm text-[var(--gray)] bg-[var(--white)] p-2 border border-[var(--light-primary)] rounded-md overflow-hidden">
+                                                    <div
+                                                        className={`break-words whitespace-pre-wrap ${note.TYPE === "automatico" && "text-[var(--black)]"}`}
+                                                    >
+                                                        {note.TYPE ===
+                                                            "automatico" && (
+                                                            <p className="text-[var(--primary)] italic mb-1">
+                                                                [Sistema]
+                                                            </p>
+                                                        )}
+                                                        {note.DESCRIPTION}
+                                                    </div>
+                                                    <span className="flex justify-end text-xs text-[var(--black)] mt-2">
+                                                        {formatDateTime(
+                                                            note.CREATEDDATE,
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        ))
                                 ) : (
                                     <p className="text-center text-sm text-[var(--gray)] italic">
                                         Nessuna nota disponibile

@@ -540,10 +540,9 @@ export const exportTasksToPDF = (
                     by += 4.5;
 
                     taskNotes.forEach((note) => {
-                        const authorName = getUsernameById(
-                            note.CREATEDBY,
-                            users,
-                        );
+                        const authorName =
+                            note.AUTHOR_OVERRIDE ||
+                            getUsernameById(note.CREATEDBY, users);
                         doc.setFontSize(8);
                         doc.setFont(undefined, "bold");
                         doc.setTextColor(0, 80, 180);

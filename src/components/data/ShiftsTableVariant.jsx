@@ -32,6 +32,7 @@ function ShiftsTable({
     const todayColumnRef = useRef(null);
     const [popup, setPopup] = useState({ show: false, type: "", message: "" });
     // Track if we're on mobile — initialize synchronously to avoid layout flash
+    const [selectedUserIndex, setSelectedUserIndex] = useState(null);
     const [isMobile, setIsMobile] = useState(
         () => typeof window !== "undefined" && window.innerWidth < 768,
     );
@@ -60,7 +61,7 @@ function ShiftsTable({
         "T",
         "P",
         "CG",
-        "ND",
+        "FND",
     ];
 
     // Detect mobile viewport
@@ -388,6 +389,19 @@ function ShiftsTable({
     const handleDragEnd = () => {
         setDraggedIndex(null);
         setDragOverIndex(null);
+    };
+
+    const allShiftOptions = ["--", ...shiftMeanings];
+
+    const handleShiftKeyDown = (userIndex, dayIndex, currentValue, e) => {
+        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        const idx = allShiftOptions.indexOf(currentValue);
+        const next =
+            e.key === "ArrowDown"
+                ? Math.min(idx + 1, allShiftOptions.length - 1)
+                : Math.max(idx - 1, 0);
+        handleShiftChange(userIndex, dayIndex, allShiftOptions[next]);
     };
 
     const handleShiftChange = (userIndex, dayIndex, value) => {
@@ -814,6 +828,14 @@ function ShiftsTable({
                                                                         .value,
                                                                 )
                                                             }
+                                                            onKeyDown={(e) =>
+                                                                handleShiftKeyDown(
+                                                                    userIndex,
+                                                                    index,
+                                                                    getShiftValue(userIndex, index),
+                                                                    e,
+                                                                )
+                                                            }
                                                             disabled={!canEdit}
                                                             className={`
                                                                 text-base font-bold text-center rounded border border-[var(--light-primary)]
@@ -1001,7 +1023,7 @@ function ShiftsTable({
                         return (
                             <div
                                 key={`user-${userIndex}`}
-                                className={`flex ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""}`}
+                                className={`flex relative ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""} ${selectedUserIndex === userIndex ? "ring-2 ring-inset ring-[var(--primary)] z-10" : ""}`}
                                 draggable={isEmployee && canEdit}
                                 onDragStart={(e) =>
                                     handleDragStart(e, userIndex)
@@ -1015,7 +1037,14 @@ function ShiftsTable({
                                 }}
                             >
                                 <div
-                                    className={`flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)] ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""}`}
+                                    className={`flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)] cursor-pointer ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""} ${selectedUserIndex === userIndex ? "!bg-[var(--light-primary)]" : ""}`}
+                                    onClick={() =>
+                                        setSelectedUserIndex(
+                                            selectedUserIndex === userIndex
+                                                ? null
+                                                : userIndex,
+                                        )
+                                    }
                                 >
                                     <div className="flex justify-between min-w-[240px] w-[240px]">
                                         <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
@@ -1061,8 +1090,16 @@ function ShiftsTable({
                                                                         .value,
                                                                 )
                                                             }
+                                                            onKeyDown={(e) =>
+                                                                handleShiftKeyDown(
+                                                                    userIndex,
+                                                                    index,
+                                                                    getShiftValue(userIndex, index),
+                                                                    e,
+                                                                )
+                                                            }
                                                             disabled={!canEdit}
-                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none ${canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "ND" ? "focus:text-black" : ""}`}
+                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none ${canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "FND" ? "focus:text-black" : ""}`}
                                                         >
                                                             <option value="--">
                                                                 --

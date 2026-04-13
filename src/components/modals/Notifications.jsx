@@ -1,33 +1,61 @@
 import { useState, useEffect, useRef } from "react";
-import BellIcon from "../../assets/icons/bell.tsx";
+import BellIcon from "../../assets/icons/chat.tsx";
 import CloseIcon from "../../assets/icons/close.tsx";
 import LongArrowIcon from "../../assets/icons/long-arrow.tsx";
 import SendIcon from "../../assets/icons/send.tsx";
 import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import { useEmployeeMessages } from "../data/provider/employeeMessageAPI/useEmployeeMessages";
-import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
+import { useGroupChat } from "../data/provider/groupChatAPI/useGroupChat";
 import ArrowLeftIcon from "../../assets/icons/arrow-left.tsx";
+import DeleteIcon from "../../assets/icons/delete.tsx";
+
+// view: "list" | "create-group" | "chat" | "group-chat"
 
 function Notifications({ onClose }) {
-    const [emptyText, setEmptyText] = useState("");
-    const [selectedReceiver, setSelectedReceiver] = useState("");
-    const [selectedSender, setSelectedSender] = useState("");
+    const [view, setView] = useState("list");
+
+    // 1-on-1 chat
+    const [selectedReceiver, setSelectedReceiver] = useState(null);
     const [chatMessages, setChatMessages] = useState([]);
     const [usersWithUnreadMessages, setUsersWithUnreadMessages] = useState([]);
+
+    // Group chat
+    const [groups, setGroups] = useState([]);
+    const [selectedGroup, setSelectedGroup] = useState(null);
+    const [groupMessages, setGroupMessages] = useState([]);
+    const [groupsWithUnread, setGroupsWithUnread] = useState([]);
+
+    // Create group
+    const [newGroupName, setNewGroupName] = useState("");
+    const [selectedMemberIds, setSelectedMemberIds] = useState([]);
+
+    // Shared
+    const [emptyText, setEmptyText] = useState("");
     const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
     const messagesEndRef = useRef(null);
-    const previousSelectionRef = useRef({ receiver: "", sender: "" });
-    const { currentUserRole, users, currentUserId, currentUsername } =
-        useUsers();
+    const previousReceiverRef = useRef(null);
+    const previousGroupRef = useRef(null);
+
+    const { users, currentUserId, currentUserRole } = useUsers();
     const { fetchUserMessages, sendMessage, markAsRead, fetchUnreadCount } =
         useEmployeeMessages();
+    const {
+        createGroup,
+        fetchUserGroups,
+        fetchGroupMessages,
+        sendGroupMessage,
+        markGroupAsRead,
+        fetchGroupUnreadCount,
+        deleteGroup,
+    } = useGroupChat();
 
-    const isAdmin = currentUserRole === "Admin";
-    const isEmployee =
-        currentUserRole === "Employee" || currentUserRole === "Shift Leader";
+    const canCreateGroup =
+        currentUserRole === "Admin" || currentUserRole === "Shift Leader";
 
-    // Scroll to bottom when shouldScrollToBottom flag is set
+    const otherUsers = users.filter((u) => u.ID !== currentUserId);
+
+    // ─── Scroll ────────────────────────────────────────────────────────────────
     useEffect(() => {
         if (shouldScrollToBottom && messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({
@@ -35,352 +63,194 @@ function Notifications({ onClose }) {
                 block: "nearest",
                 inline: "nearest",
             });
-            // Reset the flag after a small delay to avoid cascading renders
             setTimeout(() => setShouldScrollToBottom(false), 100);
         }
     }, [shouldScrollToBottom]);
 
-    // Fetch unread messages to highlight users in dropdowns
-    useEffect(() => {
-        const fetchUnreadSenders = async () => {
-            if (isEmployee && currentUserId) {
-                // For Employee/Shift Leader: get users who sent unread messages to current user
-                const result = await fetchUserMessages(currentUserId);
-                if (result.success) {
-                    const unreadSenderIds = result.data
-                        .filter(
-                            (msg) =>
-                                msg.RECEIVER_ID === currentUserId &&
-                                !msg.IS_READ,
-                        )
-                        .map((msg) => msg.SENDER_ID);
-                    const uniqueSenderIds = [...new Set(unreadSenderIds)];
-                    const unreadUsernames = users
-                        .filter((u) => uniqueSenderIds.includes(u.ID))
-                        .map((u) => u.Username);
-                    setUsersWithUnreadMessages(unreadUsernames);
-                }
-            } else if (isAdmin && selectedReceiver) {
-                // For Admin: get users who sent unread messages to selected receiver
-                const receiverUser = users.find(
-                    (u) => u.Username === selectedReceiver,
-                );
-                if (!receiverUser) return;
+    // ─── Helpers ───────────────────────────────────────────────────────────────
+    const refreshUnreadSenders = async () => {
+        if (!currentUserId) return;
+        const result = await fetchUserMessages(currentUserId);
+        if (result.success) {
+            const unreadSenderIds = result.data
+                .filter(
+                    (msg) => msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
+                )
+                .map((msg) => msg.SENDER_ID);
+            setUsersWithUnreadMessages([...new Set(unreadSenderIds)]);
+        }
+    };
 
-                const result = await fetchUserMessages(receiverUser.ID);
-                if (result.success) {
-                    const unreadSenderIds = result.data
-                        .filter(
-                            (msg) =>
-                                msg.RECEIVER_ID === receiverUser.ID &&
-                                !msg.IS_READ,
-                        )
-                        .map((msg) => msg.SENDER_ID);
-                    const uniqueSenderIds = [...new Set(unreadSenderIds)];
-                    const unreadUsernames = users
-                        .filter((u) => uniqueSenderIds.includes(u.ID))
-                        .map((u) => u.Username);
-                    setUsersWithUnreadMessages(unreadUsernames);
+    const refreshGroupUnreads = async (groupList) => {
+        if (!currentUserId || !groupList?.length) return;
+        const unreadGroupIds = [];
+        for (const g of groupList) {
+            const res = await fetchGroupUnreadCount(g.ID, currentUserId);
+            if (res.success && res.count > 0) unreadGroupIds.push(g.ID);
+        }
+        setGroupsWithUnread(unreadGroupIds);
+    };
+
+    const loadGroups = async () => {
+        if (!currentUserId) return;
+        const res = await fetchUserGroups(currentUserId);
+        if (res.success) {
+            setGroups(res.data);
+            await refreshGroupUnreads(res.data);
+        }
+    };
+
+    // ─── Initial load ──────────────────────────────────────────────────────────
+    useEffect(() => {
+        refreshUnreadSenders();
+        loadGroups();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUserId]);
+
+    // ─── Load 1-on-1 messages when receiver changes ────────────────────────────
+    useEffect(() => {
+        if (view !== "chat" || !selectedReceiver || !currentUserId) return;
+
+        const load = async () => {
+            const isNew =
+                previousReceiverRef.current?.ID !== selectedReceiver.ID;
+            const result = await fetchUserMessages(currentUserId);
+            if (!result.success) return;
+
+            const filtered = result.data
+                .filter(
+                    (msg) =>
+                        (msg.SENDER_ID === currentUserId &&
+                            msg.RECEIVER_ID === selectedReceiver.ID) ||
+                        (msg.RECEIVER_ID === currentUserId &&
+                            msg.SENDER_ID === selectedReceiver.ID),
+                )
+                .sort((a, b) => new Date(a.DATE_SENT) - new Date(b.DATE_SENT));
+
+            setChatMessages(filtered);
+            if (isNew) {
+                setShouldScrollToBottom(true);
+                previousReceiverRef.current = selectedReceiver;
+            }
+
+            const unread = filtered.filter(
+                (msg) => msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
+            );
+            for (const msg of unread) await markAsRead(msg.ID);
+            if (unread.length > 0) {
+                await fetchUnreadCount(currentUserId);
+                await refreshUnreadSenders();
+            }
+        };
+
+        load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedReceiver, currentUserId, view]);
+
+    // ─── Load group messages when group changes ────────────────────────────────
+    useEffect(() => {
+        if (view !== "group-chat" || !selectedGroup || !currentUserId) return;
+
+        const load = async () => {
+            const isNew = previousGroupRef.current?.ID !== selectedGroup.ID;
+            const result = await fetchGroupMessages(selectedGroup.ID);
+            if (!result.success) return;
+
+            setGroupMessages(result.data);
+            if (isNew) {
+                setShouldScrollToBottom(true);
+                previousGroupRef.current = selectedGroup;
+            }
+
+            await markGroupAsRead(selectedGroup.ID, currentUserId);
+            await refreshGroupUnreads(groups);
+        };
+
+        load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedGroup, currentUserId, view]);
+
+    // ─── Polling ───────────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (view !== "chat" || !selectedReceiver || !currentUserId) return;
+
+        const poll = async () => {
+            const result = await fetchUserMessages(currentUserId);
+            if (!result.success) return;
+            const filtered = result.data
+                .filter(
+                    (msg) =>
+                        (msg.SENDER_ID === currentUserId &&
+                            msg.RECEIVER_ID === selectedReceiver.ID) ||
+                        (msg.RECEIVER_ID === currentUserId &&
+                            msg.SENDER_ID === selectedReceiver.ID),
+                )
+                .sort((a, b) => new Date(a.DATE_SENT) - new Date(b.DATE_SENT));
+
+            if (JSON.stringify(filtered) !== JSON.stringify(chatMessages)) {
+                setChatMessages(filtered);
+                const unread = filtered.filter(
+                    (msg) => msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
+                );
+                if (unread.length > 0) {
+                    for (const msg of unread) await markAsRead(msg.ID);
+                    await fetchUnreadCount(currentUserId);
+                    await refreshUnreadSenders();
                 }
             }
         };
 
-        fetchUnreadSenders();
-    }, [
-        currentUserId,
-        isEmployee,
-        isAdmin,
-        selectedReceiver,
-        users,
-        fetchUserMessages,
-    ]);
-
-    // Fetch messages when users are selected
-    useEffect(() => {
-        const loadMessages = async () => {
-            // Check if selection has changed
-            const selectionChanged =
-                previousSelectionRef.current.receiver !== selectedReceiver ||
-                previousSelectionRef.current.sender !== selectedSender;
-
-            if (isEmployee && selectedReceiver) {
-                // For Employee/Shift Leader: fetch chat between current user and selected user
-                const receiverUser = users.find(
-                    (u) => u.Username === selectedReceiver,
-                );
-                if (!receiverUser || !currentUserId) return;
-
-                const result = await fetchUserMessages(currentUserId);
-                if (result.success) {
-                    // Filter messages to only show between current user and selected user
-                    const filtered = result.data
-                        .filter(
-                            (msg) =>
-                                (msg.SENDER_ID === currentUserId &&
-                                    msg.RECEIVER_ID === receiverUser.ID) ||
-                                (msg.RECEIVER_ID === currentUserId &&
-                                    msg.SENDER_ID === receiverUser.ID),
-                        )
-                        .sort(
-                            (a, b) =>
-                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
-                        );
-                    setChatMessages(filtered);
-
-                    // Only scroll to bottom if this is a new chat selection
-                    if (selectionChanged) {
-                        setShouldScrollToBottom(true);
-                        previousSelectionRef.current = {
-                            receiver: selectedReceiver,
-                            sender: "",
-                        };
-                    }
-
-                    // Mark unread messages as read (where current user is receiver)
-                    const unreadMessages = filtered.filter(
-                        (msg) =>
-                            msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
-                    );
-                    for (const msg of unreadMessages) {
-                        await markAsRead(msg.ID);
-                    }
-
-                    // Refresh unread count and update dropdown indicators
-                    if (unreadMessages.length > 0) {
-                        await fetchUnreadCount(currentUserId);
-
-                        // Refresh unread senders list
-                        const result = await fetchUserMessages(currentUserId);
-                        if (result.success) {
-                            const unreadSenderIds = result.data
-                                .filter(
-                                    (msg) =>
-                                        msg.RECEIVER_ID === currentUserId &&
-                                        !msg.IS_READ,
-                                )
-                                .map((msg) => msg.SENDER_ID);
-                            const uniqueSenderIds = [
-                                ...new Set(unreadSenderIds),
-                            ];
-                            const unreadUsernames = users
-                                .filter((u) => uniqueSenderIds.includes(u.ID))
-                                .map((u) => u.Username);
-                            setUsersWithUnreadMessages(unreadUsernames);
-                        }
-                    }
-                }
-            } else if (isAdmin && selectedReceiver && selectedSender) {
-                // For Admin: fetch chat between selected sender and receiver
-                const receiverUser = users.find(
-                    (u) => u.Username === selectedReceiver,
-                );
-                const senderUser = users.find(
-                    (u) => u.Username === selectedSender,
-                );
-                if (!receiverUser || !senderUser) return;
-
-                const result = await fetchUserMessages(receiverUser.ID);
-                if (result.success) {
-                    // Filter messages to only show between selected sender and receiver
-                    const filtered = result.data
-                        .filter(
-                            (msg) =>
-                                (msg.SENDER_ID === senderUser.ID &&
-                                    msg.RECEIVER_ID === receiverUser.ID) ||
-                                (msg.RECEIVER_ID === senderUser.ID &&
-                                    msg.SENDER_ID === receiverUser.ID),
-                        )
-                        .sort(
-                            (a, b) =>
-                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
-                        );
-                    setChatMessages(filtered);
-
-                    // Only scroll to bottom if this is a new chat selection
-                    if (selectionChanged) {
-                        setShouldScrollToBottom(true);
-                        previousSelectionRef.current = {
-                            receiver: selectedReceiver,
-                            sender: selectedSender,
-                        };
-                    }
-                }
-            }
-        };
-
-        loadMessages();
-    }, [
-        selectedReceiver,
-        selectedSender,
-        currentUserId,
-        isAdmin,
-        isEmployee,
-        fetchUserMessages,
-        users,
-        markAsRead,
-        fetchUnreadCount,
-    ]);
-
-    // Auto-refresh messages when chat is open (every 5 seconds)
-    useEffect(() => {
-        const showChat = isEmployee
-            ? selectedReceiver
-            : selectedReceiver && selectedSender;
-
-        if (!showChat) return;
-
-        const pollMessages = async () => {
-            if (isEmployee && selectedReceiver) {
-                const receiverUser = users.find(
-                    (u) => u.Username === selectedReceiver,
-                );
-                if (!receiverUser || !currentUserId) return;
-
-                const result = await fetchUserMessages(currentUserId);
-                if (result.success) {
-                    const filtered = result.data
-                        .filter(
-                            (msg) =>
-                                (msg.SENDER_ID === currentUserId &&
-                                    msg.RECEIVER_ID === receiverUser.ID) ||
-                                (msg.RECEIVER_ID === currentUserId &&
-                                    msg.SENDER_ID === receiverUser.ID),
-                        )
-                        .sort(
-                            (a, b) =>
-                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
-                        );
-
-                    // Only update if messages have changed
-                    if (
-                        JSON.stringify(filtered) !==
-                        JSON.stringify(chatMessages)
-                    ) {
-                        setChatMessages(filtered);
-
-                        // Mark any new unread messages as read
-                        const unreadMessages = filtered.filter(
-                            (msg) =>
-                                msg.RECEIVER_ID === currentUserId &&
-                                !msg.IS_READ,
-                        );
-                        if (unreadMessages.length > 0) {
-                            for (const msg of unreadMessages) {
-                                await markAsRead(msg.ID);
-                            }
-                            await fetchUnreadCount(currentUserId);
-
-                            // Refresh unread senders list
-                            const result =
-                                await fetchUserMessages(currentUserId);
-                            if (result.success) {
-                                const unreadSenderIds = result.data
-                                    .filter(
-                                        (msg) =>
-                                            msg.RECEIVER_ID === currentUserId &&
-                                            !msg.IS_READ,
-                                    )
-                                    .map((msg) => msg.SENDER_ID);
-                                const uniqueSenderIds = [
-                                    ...new Set(unreadSenderIds),
-                                ];
-                                const unreadUsernames = users
-                                    .filter((u) =>
-                                        uniqueSenderIds.includes(u.ID),
-                                    )
-                                    .map((u) => u.Username);
-                                setUsersWithUnreadMessages(unreadUsernames);
-                            }
-                        }
-                    }
-                }
-            } else if (isAdmin && selectedReceiver && selectedSender) {
-                const receiverUser = users.find(
-                    (u) => u.Username === selectedReceiver,
-                );
-                const senderUser = users.find(
-                    (u) => u.Username === selectedSender,
-                );
-                if (!receiverUser || !senderUser) return;
-
-                const result = await fetchUserMessages(receiverUser.ID);
-                if (result.success) {
-                    const filtered = result.data
-                        .filter(
-                            (msg) =>
-                                (msg.SENDER_ID === senderUser.ID &&
-                                    msg.RECEIVER_ID === receiverUser.ID) ||
-                                (msg.RECEIVER_ID === senderUser.ID &&
-                                    msg.SENDER_ID === receiverUser.ID),
-                        )
-                        .sort(
-                            (a, b) =>
-                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
-                        );
-
-                    // Only update if messages have changed
-                    if (
-                        JSON.stringify(filtered) !==
-                        JSON.stringify(chatMessages)
-                    ) {
-                        setChatMessages(filtered);
-                    }
-                }
-            }
-        };
-
-        // Poll immediately, then every 5 seconds
-        const interval = setInterval(pollMessages, 5000);
-
+        const interval = setInterval(poll, 5000);
         return () => clearInterval(interval);
-    }, [
-        selectedReceiver,
-        selectedSender,
-        currentUserId,
-        isEmployee,
-        isAdmin,
-        users,
-        chatMessages,
-        fetchUserMessages,
-        markAsRead,
-        fetchUnreadCount,
-    ]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedReceiver, currentUserId, chatMessages, view]);
 
+    useEffect(() => {
+        if (view !== "group-chat" || !selectedGroup || !currentUserId) return;
+
+        const poll = async () => {
+            const result = await fetchGroupMessages(selectedGroup.ID);
+            if (!result.success) return;
+            if (JSON.stringify(result.data) !== JSON.stringify(groupMessages)) {
+                setGroupMessages(result.data);
+                await markGroupAsRead(selectedGroup.ID, currentUserId);
+                await refreshGroupUnreads(groups);
+            }
+        };
+
+        const interval = setInterval(poll, 5000);
+        return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedGroup, currentUserId, groupMessages, view]);
+
+    // ─── Formatters ────────────────────────────────────────────────────────────
     const formatUsername = (username) => {
+        if (!username) return "";
         const parts = username.split(".");
         let formatted = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-        if (parts[1]) {
+        if (parts[1])
             formatted +=
                 " " + parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
-        }
         return formatted;
     };
 
     const formatDate = (dateString) => {
         if (!dateString) return "";
-
         const value = String(dateString).trim();
-        const timestampMatch = value.match(
+        const match = value.match(
             /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:?\d{2})?$/,
         );
-
-        // Always use literal timestamp components so displayed time matches DB hour exactly.
-        if (timestampMatch) {
-            const [, year, month, day, hour, minute] = timestampMatch;
+        if (match) {
+            const [, year, month, day, hour, minute] = match;
             const weekday = new Date(
                 Number(year),
                 Number(month) - 1,
                 Number(day),
             ).toLocaleDateString("it-IT", { weekday: "long" });
-
             return `${weekday} ${day}/${month}/${year}, ${hour}:${minute}`;
         }
-
         const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-            return value;
-        }
-
+        if (Number.isNaN(date.getTime())) return value;
         return date.toLocaleString("it-IT", {
             weekday: "long",
             day: "2-digit",
@@ -393,9 +263,7 @@ function Notifications({ onClose }) {
     };
 
     const renderMessageContent = (messageContent) => {
-        if (typeof messageContent !== "string") {
-            return <p>{messageContent}</p>;
-        }
+        if (typeof messageContent !== "string") return <p>{messageContent}</p>;
 
         const shiftChangeMatch = messageContent.match(
             /^(.*?)(Turno precedente:\s*([A-Z]{1,3}|--)\s*->\s*Turno nuovo:\s*([A-Z]{1,3}|--))(.*)$/i,
@@ -418,11 +286,8 @@ function Notifications({ onClose }) {
 
         const shiftBadge = (shift) => {
             let shiftColors = GetColorForShift(shift);
-
-            if (shift === "R" || shift === "ND") {
+            if (shift === "R" || shift === "FND")
                 shiftColors = shiftColors.replace(/text-[^\s]+/g, "text-black");
-            }
-
             return (
                 <span
                     className={`inline-flex items-center rounded-md px-2 py-1 text-sm font-semibold ${shiftColors}`}
@@ -439,7 +304,6 @@ function Notifications({ onClose }) {
                         {before}
                     </p>
                 )}
-
                 <div className="flex flex-wrap items-center gap-2 rounded-md bg-[var(--light-primary)] p-2">
                     <span className="text-sm text-[var(--gray)]">
                         Turno precedente:
@@ -451,7 +315,6 @@ function Notifications({ onClose }) {
                     </span>
                     {shiftBadge(newShift)}
                 </div>
-
                 {after && (
                     <p className="whitespace-pre-wrap break-words text-sm">
                         {after}
@@ -461,50 +324,38 @@ function Notifications({ onClose }) {
         );
     };
 
+    // ─── Handlers ──────────────────────────────────────────────────────────────
     const handleBack = () => {
-        setSelectedReceiver("");
-        setSelectedSender("");
+        setSelectedReceiver(null);
+        setSelectedGroup(null);
         setChatMessages([]);
+        setGroupMessages([]);
         setEmptyText("");
-        previousSelectionRef.current = { receiver: "", sender: "" };
+        previousReceiverRef.current = null;
+        previousGroupRef.current = null;
+        setView("list");
     };
 
     const handleSendMessage = async () => {
         if (!emptyText.trim()) return;
 
-        let senderId, receiverId;
-
-        if (isEmployee) {
-            // Employee/Shift Leader sends to selected user
-            senderId = currentUserId;
-            const receiver = users.find((u) => u.Username === selectedReceiver);
-            receiverId = receiver?.ID;
-        } else if (isAdmin && currentUsername === selectedReceiver) {
-            // Admin sending as themselves (selected in "Visualizza la chat di")
-            senderId = currentUserId;
-            const receiver = users.find((u) => u.Username === selectedSender);
-            receiverId = receiver?.ID;
-        }
-
-        if (!senderId || !receiverId) return;
-
-        const result = await sendMessage(senderId, receiverId, emptyText);
-        if (result.success) {
-            setEmptyText("");
-            // Reload messages
-            if (isEmployee && selectedReceiver) {
-                const receiverUser = users.find(
-                    (u) => u.Username === selectedReceiver,
-                );
+        if (view === "chat" && selectedReceiver) {
+            const result = await sendMessage(
+                currentUserId,
+                selectedReceiver.ID,
+                emptyText,
+            );
+            if (result.success) {
+                setEmptyText("");
                 const res = await fetchUserMessages(currentUserId);
                 if (res.success) {
                     const filtered = res.data
                         .filter(
                             (msg) =>
                                 (msg.SENDER_ID === currentUserId &&
-                                    msg.RECEIVER_ID === receiverUser.ID) ||
+                                    msg.RECEIVER_ID === selectedReceiver.ID) ||
                                 (msg.RECEIVER_ID === currentUserId &&
-                                    msg.SENDER_ID === receiverUser.ID),
+                                    msg.SENDER_ID === selectedReceiver.ID),
                         )
                         .sort(
                             (a, b) =>
@@ -512,98 +363,77 @@ function Notifications({ onClose }) {
                         );
                     setChatMessages(filtered);
                     setShouldScrollToBottom(true);
-
-                    // Mark unread messages as read
-                    const unreadMessages = filtered.filter(
+                    const unread = filtered.filter(
                         (msg) =>
                             msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
                     );
-                    for (const msg of unreadMessages) {
-                        await markAsRead(msg.ID);
-                    }
-
-                    // Refresh unread count
-                    if (unreadMessages.length > 0) {
+                    for (const msg of unread) await markAsRead(msg.ID);
+                    if (unread.length > 0) {
                         await fetchUnreadCount(currentUserId);
+                        await refreshUnreadSenders();
                     }
                 }
-            } else if (
-                isAdmin &&
-                currentUsername === selectedReceiver &&
-                selectedSender
-            ) {
-                // Admin sending as themselves - reload their chat with the other user
-                const otherUser = users.find(
-                    (u) => u.Username === selectedSender,
-                );
-                const res = await fetchUserMessages(currentUserId);
+            }
+        } else if (view === "group-chat" && selectedGroup) {
+            const result = await sendGroupMessage(
+                selectedGroup.ID,
+                currentUserId,
+                emptyText,
+            );
+            if (result.success) {
+                setEmptyText("");
+                const res = await fetchGroupMessages(selectedGroup.ID);
                 if (res.success) {
-                    const filtered = res.data
-                        .filter(
-                            (msg) =>
-                                (msg.SENDER_ID === currentUserId &&
-                                    msg.RECEIVER_ID === otherUser.ID) ||
-                                (msg.RECEIVER_ID === currentUserId &&
-                                    msg.SENDER_ID === otherUser.ID),
-                        )
-                        .sort(
-                            (a, b) =>
-                                new Date(a.DATE_SENT) - new Date(b.DATE_SENT),
-                        );
-                    setChatMessages(filtered);
+                    setGroupMessages(res.data);
                     setShouldScrollToBottom(true);
-
-                    // Mark unread messages as read
-                    const unreadMessages = filtered.filter(
-                        (msg) =>
-                            msg.RECEIVER_ID === currentUserId && !msg.IS_READ,
-                    );
-                    for (const msg of unreadMessages) {
-                        await markAsRead(msg.ID);
-                    }
-
-                    // Refresh unread count and update dropdown indicators
-                    if (unreadMessages.length > 0) {
-                        await fetchUnreadCount(currentUserId);
-
-                        // Refresh unread senders list
-                        const result = await fetchUserMessages(currentUserId);
-                        if (result.success) {
-                            const unreadSenderIds = result.data
-                                .filter(
-                                    (msg) =>
-                                        msg.RECEIVER_ID === currentUserId &&
-                                        !msg.IS_READ,
-                                )
-                                .map((msg) => msg.SENDER_ID);
-                            const uniqueSenderIds = [
-                                ...new Set(unreadSenderIds),
-                            ];
-                            const unreadUsernames = users
-                                .filter((u) => uniqueSenderIds.includes(u.ID))
-                                .map((u) => u.Username);
-                            setUsersWithUnreadMessages(unreadUsernames);
-                        }
-                    }
                 }
             }
         }
     };
 
-    const showChat = isEmployee
-        ? selectedReceiver
-        : selectedReceiver && selectedSender;
+    const handleCreateGroup = async () => {
+        if (!newGroupName.trim() || selectedMemberIds.length === 0) return;
+        const result = await createGroup(
+            newGroupName.trim(),
+            currentUserId,
+            selectedMemberIds,
+        );
+        if (result.success) {
+            setNewGroupName("");
+            setSelectedMemberIds([]);
+            setView("list");
+            await loadGroups();
+        }
+    };
+
+    const toggleMember = (userId) => {
+        setSelectedMemberIds((prev) =>
+            prev.includes(userId)
+                ? prev.filter((id) => id !== userId)
+                : [...prev, userId],
+        );
+    };
+
+    // ─── Render ────────────────────────────────────────────────────────────────
+    const chatTitle =
+        view === "chat"
+            ? formatUsername(selectedReceiver?.Username ?? "")
+            : view === "group-chat"
+              ? (selectedGroup?.NAME ?? "")
+              : "";
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm cursor-default flex items-center justify-center z-50">
             <div
-                className="bg-[var(--bento-bg)] rounded-xl p-4 max-w-lg w-full mx-4 shadow-xl border border-[var(--light-primary)]"
+                className="bg-[var(--bento-bg)] rounded-xl p-4 max-w-lg w-full mx-4 shadow-xl border border-[var(--light-primary)] flex flex-col"
+                style={{ maxHeight: "80vh" }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4">
+                {/* Header */}
+                <div className="flex justify-between items-center border-b border-[var(--light-primary)] pb-4 mb-4 flex-shrink-0">
                     <div className="flex flex-row items-center gap-2 text-[var(--black)]">
                         <BellIcon className="w-6" />
-                        <h1 className="text-xl">Notifiche</h1>
+                        <h1 className="text-xl">Chat</h1>
                     </div>
                     <button
                         onClick={onClose}
@@ -612,196 +442,292 @@ function Notifications({ onClose }) {
                         <CloseIcon className="w-6" />
                     </button>
                 </div>
-                <div className="flex flex-col gap-8 max-h-[calc(60vh-4rem)] overflow-y-auto pr-1">
-                    {/* Employee/Shift Leader: Show single dropdown */}
-                    {isEmployee && !selectedReceiver && (
-                        <div className="flex flex-col gap-1 w-full">
-                            <h3 className="text-sm text-[var(--gray)]">
-                                Visualizza la chat con
-                            </h3>
-                            <div className="relative">
-                                <select
-                                    name=""
-                                    id=""
-                                    value={selectedReceiver}
-                                    onChange={(e) => {
-                                        setSelectedReceiver(e.target.value);
-                                    }}
-                                    className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
+
+                {/* ── LIST VIEW ─────────────────────────────────────────────── */}
+                {view === "list" && (
+                    <>
+                        {canCreateGroup && (
+                            <div className="flex justify-end mb-4 flex-shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setView("create-group")}
+                                    className="btn flex items-center gap-2 text-sm"
                                 >
-                                    <option value="">...</option>
-                                    {users
-                                        .filter(
-                                            (user) => user.ID !== currentUserId,
-                                        )
-                                        .map((user, index) => (
-                                            <option
-                                                key={index}
-                                                value={user.Username}
-                                                style={{
-                                                    color: usersWithUnreadMessages.includes(
-                                                        user.Username,
-                                                    )
-                                                        ? "red"
-                                                        : "inherit",
+                                    Crea gruppo
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="flex flex-col gap-2 overflow-y-auto pr-1 flex-1 min-h-0">
+                            {/* Groups section */}
+                            {groups.length > 0 && (
+                                <>
+                                    <p className="text-xs text-[var(--gray)] uppercase tracking-wide mb-1">
+                                        Gruppi
+                                    </p>
+                                    {groups.map((group) => {
+                                        const hasUnread =
+                                            groupsWithUnread.includes(group.ID);
+                                        return (
+                                            <div
+                                                key={group.ID}
+                                                className="group/row flex items-center gap-2 w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:border-[var(--primary)] transition-all duration-200 cursor-pointer"
+                                                onClick={() => {
+                                                    setSelectedGroup(group);
+                                                    setView("group-chat");
                                                 }}
                                             >
-                                                {formatUsername(user.Username)}
-                                            </option>
-                                        ))}
-                                </select>
-                                <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                            </div>
-                        </div>
-                    )}
+                                                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                                                    <span className="text-[var(--black)] text-sm font-medium">
+                                                        {group.NAME}
+                                                    </span>
+                                                    <span className="text-xs text-[var(--gray)] truncate">
+                                                        {group.MEMBERS?.map(
+                                                            (m) =>
+                                                                formatUsername(
+                                                                    m.Username,
+                                                                ),
+                                                        ).join(", ")}
+                                                    </span>
+                                                </div>
 
-                    {/* Admin: Show two dropdowns */}
-                    {isAdmin && !showChat && (
-                        <>
-                            <div className="flex flex-col gap-1 w-full">
-                                <h3 className="text-sm text-[var(--gray)]">
-                                    Visualizza la chat di
-                                </h3>
-                                <div className="relative">
-                                    <select
-                                        name=""
-                                        id=""
-                                        value={selectedReceiver}
-                                        onChange={(e) => {
-                                            setSelectedReceiver(e.target.value);
-                                        }}
-                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                    >
-                                        <option value="">...</option>
-                                        {users.map((user, index) => (
-                                            <option
-                                                key={index}
-                                                value={user.Username}
-                                            >
-                                                {formatUsername(user.Username)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-1 w-full">
-                                <h3 className="text-sm text-[var(--gray)]">
-                                    Con
-                                </h3>
-                                <div className="relative">
-                                    <select
-                                        name=""
-                                        id=""
-                                        value={selectedSender}
-                                        onChange={(e) => {
-                                            setSelectedSender(e.target.value);
-                                        }}
-                                        className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
-                                    >
-                                        <option value="">...</option>
-                                        {users
-                                            .filter(
-                                                (user) =>
-                                                    user.Username !==
-                                                    selectedReceiver,
-                                            )
-                                            .map((user, index) => (
-                                                <option
-                                                    key={index}
-                                                    value={user.Username}
-                                                    style={{
-                                                        color: usersWithUnreadMessages.includes(
-                                                            user.Username,
-                                                        )
-                                                            ? "red"
-                                                            : "inherit",
+                                                {hasUnread && (
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-[var(--red)] flex-shrink-0" />
+                                                )}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        await deleteGroup(
+                                                            group.ID,
+                                                        );
+                                                        await loadGroups();
                                                     }}
+                                                    className="opacity-0 group-hover/row:opacity-100 flex-shrink-0 p-1 rounded text-[var(--red)] transition-all duration-150"
                                                 >
-                                                    {formatUsername(
-                                                        user.Username,
-                                                    )}
-                                                </option>
-                                            ))}
-                                    </select>
-                                    <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
-                                </div>
-                            </div>
-                        </>
-                    )}
+                                                    <DeleteIcon className="w-6" />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
 
-                    {/* Display messages */}
-                    {showChat &&
-                        chatMessages.map((msg, index) => {
-                            const isSentByCurrentUser = isEmployee
-                                ? msg.SENDER_ID === currentUserId
-                                : false;
-                            const isSentByReceiver = isAdmin
-                                ? msg.SENDER_ID ===
-                                  users.find(
-                                      (u) => u.Username === selectedReceiver,
-                                  )?.ID
-                                : false;
+                                    <div className="border-t border-[var(--light-primary)] my-2" />
+                                    <p className="text-xs text-[var(--gray)] uppercase tracking-wide mb-1">
+                                        Chat dirette
+                                    </p>
+                                </>
+                            )}
 
-                            const shouldAlignRight = isEmployee
-                                ? isSentByCurrentUser
-                                : isSentByReceiver;
-
-                            return (
-                                <div
-                                    key={index}
-                                    className={`flex flex-col gap-2 w-3/4 ${shouldAlignRight ? "self-end items-end" : ""}`}
-                                >
-                                    <h1 className="text-md text-[var(--gray)]">
-                                        {shouldAlignRight
-                                            ? isEmployee
-                                                ? "Tu:"
-                                                : `${formatUsername(selectedReceiver)}:`
-                                            : isEmployee
-                                              ? `${formatUsername(selectedReceiver)}:`
-                                              : `${formatUsername(selectedSender)}:`}
-                                    </h1>
-                                    <div className="text-md text-[var(--black)] w-full border border-[var(--light-primary)] rounded-md p-2">
-                                        {renderMessageContent(
-                                            msg.MESSAGE_CONTENT,
+                            {/* Individual users */}
+                            {otherUsers.length === 0 && (
+                                <p className="text-[var(--gray)] text-sm text-center py-4">
+                                    Nessun utente disponibile
+                                </p>
+                            )}
+                            {otherUsers.map((user) => {
+                                const hasUnread =
+                                    usersWithUnreadMessages.includes(user.ID);
+                                return (
+                                    <button
+                                        key={user.ID}
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedReceiver(user);
+                                            setView("chat");
+                                        }}
+                                        className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:border-[var(--primary)] transition-all duration-200 cursor-pointer text-left"
+                                    >
+                                        <span className="text-[var(--black)] text-sm font-medium">
+                                            {formatUsername(user.Username)}
+                                        </span>
+                                        {hasUnread && (
+                                            <span className="w-2.5 h-2.5 rounded-full bg-[var(--red)] flex-shrink-0" />
                                         )}
-                                        <p
-                                            className={`text-xs text-[var(--gray)] mt-1 ${shouldAlignRight ? "text-right" : "text-left"}`}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
+
+                {/* ── CREATE GROUP VIEW ─────────────────────────────────────── */}
+                {view === "create-group" && (
+                    <div className="flex flex-col flex-1 min-h-0">
+                        <div className="flex flex-col gap-3 overflow-y-auto pr-1 flex-1 min-h-0">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs text-[var(--gray)]">
+                                    Nome del gruppo
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newGroupName}
+                                    onChange={(e) =>
+                                        setNewGroupName(e.target.value)
+                                    }
+                                    placeholder="Es. Team Mattina"
+                                    className="p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-[var(--gray)] transition-all duration-200"
+                                />
+                            </div>
+
+                            <p className="text-xs text-[var(--gray)] uppercase tracking-wide">
+                                Seleziona membri
+                            </p>
+
+                            {otherUsers.map((user) => {
+                                const checked = selectedMemberIds.includes(
+                                    user.ID,
+                                );
+                                return (
+                                    <button
+                                        key={user.ID}
+                                        type="button"
+                                        onClick={() => toggleMember(user.ID)}
+                                        className={`flex items-center justify-between w-full p-3 rounded-md border transition-all duration-200 cursor-pointer text-left ${
+                                            checked
+                                                ? "border-[var(--primary)] bg-[var(--light-primary)]"
+                                                : "border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)]"
+                                        }`}
+                                    >
+                                        <span className="text-[var(--black)] text-sm font-medium">
+                                            {formatUsername(user.Username)}
+                                        </span>
+                                        <span
+                                            className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                                checked
+                                                    ? "border-[var(--primary)] bg-[var(--primary)]"
+                                                    : "border-[var(--gray)]"
+                                            }`}
                                         >
-                                            {formatDate(msg.DATE_SENT)}
+                                            {checked && (
+                                                <svg
+                                                    className="w-2.5 h-2.5 text-white"
+                                                    fill="none"
+                                                    viewBox="0 0 10 8"
+                                                >
+                                                    <path
+                                                        d="M1 4l3 3 5-6"
+                                                        stroke="currentColor"
+                                                        strokeWidth="1.5"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                            )}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Fixed bottom actions */}
+                        <div className="flex gap-2 pt-4 mt-4 border-t border-[var(--light-primary)] flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setNewGroupName("");
+                                    setSelectedMemberIds([]);
+                                    setView("list");
+                                }}
+                                className="flex-1 p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:bg-[var(--light-primary)] text-[var(--black)] text-sm transition-all duration-200"
+                            >
+                                Annulla
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCreateGroup}
+                                disabled={
+                                    !newGroupName.trim() ||
+                                    selectedMemberIds.length === 0
+                                }
+                                className={`flex-1 btn text-sm ${
+                                    !newGroupName.trim() ||
+                                    selectedMemberIds.length === 0
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                }`}
+                            >
+                                Crea
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── CHAT VIEW (1-on-1 & group) ────────────────────────────── */}
+                {(view === "chat" || view === "group-chat") && (
+                    <>
+                        <div className="flex flex-col gap-8 overflow-y-auto pr-1 flex-1 min-h-0">
+                            {(view === "chat"
+                                ? chatMessages
+                                : groupMessages
+                            ).map((msg, index) => {
+                                const isMine = msg.SENDER_ID === currentUserId;
+                                const senderName =
+                                    view === "group-chat"
+                                        ? formatUsername(
+                                              msg.SenderUsername ?? "",
+                                          )
+                                        : isMine
+                                          ? "Tu"
+                                          : formatUsername(
+                                                selectedReceiver?.Username ??
+                                                    "",
+                                            );
+
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`flex flex-col gap-2 w-3/4 ${isMine ? "self-end items-end" : ""}`}
+                                    >
+                                        <h1 className="text-md text-[var(--gray)]">
+                                            {isMine ? "Tu:" : `${senderName}:`}
+                                        </h1>
+                                        <div className="text-md text-[var(--black)] w-full border border-[var(--light-primary)] rounded-md p-2">
+                                            {renderMessageContent(
+                                                msg.MESSAGE_CONTENT,
+                                            )}
+                                            <p
+                                                className={`text-xs text-[var(--gray)] mt-1 ${isMine ? "text-right" : "text-left"}`}
+                                            >
+                                                {formatDate(msg.DATE_SENT)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            {view === "chat" && chatMessages.length === 0 && (
+                                <div className="flex items-center justify-center py-8">
+                                    <p className="text-[var(--gray)]">
+                                        Nessun messaggio in questa chat
+                                    </p>
+                                </div>
+                            )}
+                            {view === "group-chat" &&
+                                groupMessages.length === 0 && (
+                                    <div className="flex items-center justify-center py-8">
+                                        <p className="text-[var(--gray)]">
+                                            Nessun messaggio in questo gruppo
                                         </p>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                )}
 
-                    {/* Show message if no messages exist */}
-                    {showChat && chatMessages.length === 0 && (
-                        <div className="flex items-center justify-center py-8">
-                            <p className="text-[var(--gray)]">
-                                Nessun messaggio in questa chat
-                            </p>
+                            <div ref={messagesEndRef} />
                         </div>
-                    )}
-                    {/* Invisible element at the bottom for scrolling */}
-                    <div ref={messagesEndRef} />
-                </div>
-                {showChat &&
-                    (isEmployee ||
-                        (isAdmin && currentUsername === selectedReceiver)) && (
-                        <div className="flex gap-2 pt-4 mt-4">
+
+                        {/* Send input */}
+                        <div className="flex gap-2 pt-4 mt-4 flex-shrink-0">
                             <input
                                 type="text"
-                                className="w-full h-[44px] p-3 border border-[var(--light-primary)] overflow-y-none rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                                className="w-full h-[44px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                                 placeholder="Scrivi qui..."
                                 value={emptyText}
                                 onChange={(e) => setEmptyText(e.target.value)}
                                 onKeyDown={(e) => {
-                                    if (e.key === "Enter" && emptyText) {
+                                    if (e.key === "Enter" && emptyText)
                                         handleSendMessage();
-                                    }
                                 }}
-                            ></input>
+                            />
                             <button
                                 onClick={handleSendMessage}
                                 className={`btn flex gap-2 items-center h-[44px] ${emptyText ? "opacity-100 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
@@ -811,22 +737,20 @@ function Notifications({ onClose }) {
                                 Invia
                             </button>
                         </div>
-                    )}
-                {showChat && (
-                    <div className="flex items-center gap-4 pt-4 mt-4 border-t border-[var(--light-primary)]">
-                        <div
-                            onClick={handleBack}
-                            className="flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition rounded-md p-2 cursor-pointer"
-                        >
-                            <ArrowLeftIcon className="w-6" />
-                        </div>
 
-                        <h1 className="text-lg text-[var(--black)]">
-                            {isEmployee
-                                ? formatUsername(selectedReceiver)
-                                : `${formatUsername(selectedReceiver)} - ${formatUsername(selectedSender)}`}
-                        </h1>
-                    </div>
+                        {/* Back + title */}
+                        <div className="flex items-center gap-4 pt-4 mt-4 border-t border-[var(--light-primary)] flex-shrink-0">
+                            <div
+                                onClick={handleBack}
+                                className="flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition rounded-md p-2 cursor-pointer"
+                            >
+                                <ArrowLeftIcon className="w-6" />
+                            </div>
+                            <h1 className="text-lg text-[var(--black)]">
+                                {chatTitle}
+                            </h1>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

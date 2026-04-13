@@ -284,10 +284,20 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                 !taskDone
                             );
                         });
-                        const dayTasksCount =
-                            nonPmTasksForDay.filter(isDayTask).length;
-                        const nightTasksCount =
-                            nonPmTasksForDay.filter(isNightTask).length;
+                        const isComment = (item) =>
+                            (item?.CATEGORY || "").toLowerCase() === "comment";
+                        const dayTasksCount = nonPmTasksForDay.filter(
+                            (t) => isDayTask(t) && !isComment(t),
+                        ).length;
+                        const nightTasksCount = nonPmTasksForDay.filter(
+                            (t) => isNightTask(t) && !isComment(t),
+                        ).length;
+                        const nonCommentNonPmTasks = nonPmTasksForDay.filter(
+                            (t) => !isComment(t),
+                        );
+                        const nonCommentLogbooks = logbooksForDay.filter(
+                            (l) => !isComment(l),
+                        );
                         const regularTasksForDay = nonPmTasksForDay.filter(
                             (task) => !isUnavailableItem(task),
                         );
@@ -366,7 +376,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                         <div className="flex flex-col items-center justify-center w-full gap-1">
                                             {type === "tasks" ? (
                                                 !isTasksLoading &&
-                                                nonPmTasksForDay.length > 0 && (
+                                                nonCommentNonPmTasks.length > 0 && (
                                                     <>
                                                         <div className="flex items-center justify-between w-full gap-1">
                                                             <div className="p-1 text-[var(--green)] bg-[var(--light-primary)] rounded-md flex flex-col gap-2">
@@ -396,27 +406,27 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center w-full gap-1">
                                                     <div className="flex items-center justify-between w-full gap-1">
-                                                        {nonPmTasksForDay.length >
+                                                        {nonCommentNonPmTasks.length >
                                                             0 && (
                                                             <div className="flex items-center gap-1 rounded-md p-1 text-[var(--primary)] bg-[var(--light-primary)]">
                                                                 <TasksIcon className="w-5" />
                                                                 <p className="text-sm">
                                                                     {isTasksLoading
                                                                         ? "..."
-                                                                        : nonPmTasksForDay.length}
+                                                                        : nonCommentNonPmTasks.length}
                                                                 </p>
                                                             </div>
                                                         )}
 
                                                         {type === "logbooks" &&
-                                                            logbooksForDay.length >
+                                                            nonCommentLogbooks.length >
                                                                 0 && (
                                                                 <div className="flex items-center gap-1 rounded-md p-1 text-[var(--orange)] bg-[var(--orange-light)]">
                                                                     <LogbookIcon className="w-5" />
                                                                     <p className="text-sm">
                                                                         {isTasksLoading
                                                                             ? "..."
-                                                                            : logbooksForDay.length}
+                                                                            : nonCommentLogbooks.length}
                                                                     </p>
                                                                 </div>
                                                             )}

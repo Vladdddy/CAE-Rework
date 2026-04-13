@@ -330,6 +330,11 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                         </div>
                         <div className="flex flex-col gap-2 mt-2 p-2 max-h-80 overflow-y-auto">
                             <Update
+                                title="Group Chat 13.04.26"
+                                text="Implementata una chat di gruppo per facilitare la comunicazione tra i membri del team."
+                                date="13/04/2026 - 16:19"
+                            />
+                            <Update
                                 title="Unique Dashboard 13.04.26"
                                 text="Implementata una dashboard unica che integra tutte le applicazioni della CAE."
                                 date="13/04/2026 - 11:47"

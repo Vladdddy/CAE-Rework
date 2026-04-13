@@ -246,6 +246,13 @@ function MobileCalendar({
                             const regularTasksForDay = nonPmTasksForDay.filter(
                                 (task) => !isUnavailableItem(task),
                             );
+                            const isComment = (item) =>
+                                (item?.CATEGORY || "").toLowerCase() === "comment";
+                            const nonCommentNonPmTasks =
+                                nonPmTasksForDay.filter((t) => !isComment(t));
+                            const nonCommentLogbooks = logbooksForDay.filter(
+                                (l) => !isComment(l),
+                            );
                             let dayStatusTextColor =
                                 type === "logbooks"
                                     ? getDayStatusTextColor([
@@ -297,24 +304,24 @@ function MobileCalendar({
                                                 {day}
                                             </p>
 
-                                            {nonPmTasksForDay.length > 0 && (
+                                            {nonCommentNonPmTasks.length > 0 && (
                                                 <div className="flex items-center gap-1 text-[var(--primary)]">
                                                     <TasksIcon className="w-3.5" />
                                                     <p className="text-xs leading-none">
                                                         {isLoading
                                                             ? "..."
-                                                            : nonPmTasksForDay.length}
+                                                            : nonCommentNonPmTasks.length}
                                                     </p>
                                                 </div>
                                             )}
 
                                             {type === "logbooks" &&
-                                                logbooksForDay.length > 0 && (
+                                                nonCommentLogbooks.length > 0 && (
                                                     <div className="flex items-center gap-1 text-[var(--orange)]">
                                                         <LogbookIcon className="w-3.5" />
                                                         <p className="text-xs leading-none">
                                                             {
-                                                                logbooksForDay.length
+                                                                nonCommentLogbooks.length
                                                             }
                                                         </p>
                                                     </div>

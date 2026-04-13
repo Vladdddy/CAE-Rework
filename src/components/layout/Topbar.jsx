@@ -3,7 +3,7 @@ import SidebarIcon from "../../assets/icons/sidebar.tsx";
 import SearchIcon from "../../assets/icons/search.tsx";
 import CurrentTime from "../../functions/CurrentTime.jsx";
 import AddIcon from "../../assets/icons/add.tsx";
-import BellIcon from "../../assets/icons/bell.tsx";
+import BellIcon from "../../assets/icons/chat.tsx";
 import CreateModal from "../modals/CreateModal.jsx";
 import DayIcon from "../../assets/icons/day.tsx";
 import NightIcon from "../../assets/icons/night.tsx";

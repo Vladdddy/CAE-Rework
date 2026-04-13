@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { TaskSimOneContext } from "./taskSimOneContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -7,6 +7,8 @@ export const TaskSimOneProvider = ({ children }) => {
     const [taskSimOne, setTaskSimOne] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentMonthTasks, setCurrentMonthTasks] = useState([]);
+    const [currentMonthLoading, setCurrentMonthLoading] = useState(false);
 
     useEffect(() => {
         fetchTaskSimOne();
@@ -45,6 +47,23 @@ export const TaskSimOneProvider = ({ children }) => {
         }
     };
 
+    const fetchCurrentMonthTasks = useCallback(async () => {
+        try {
+            setCurrentMonthLoading(true);
+            const response = await fetch(`${API_URL}/taskSimOne/current-month`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch current month PM tasks");
+            }
+            const data = await response.json();
+            setCurrentMonthTasks(data);
+            setError(null);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setCurrentMonthLoading(false);
+        }
+    }, []);
+
     const updateTaskSimOne = async (id, assignedTo) => {
         try {
             const response = await fetch(`${API_URL}/taskSimOne/${id}`, {
@@ -76,6 +95,9 @@ export const TaskSimOneProvider = ({ children }) => {
                 error,
                 fetchTaskSimOne,
                 updateTaskSimOne,
+                currentMonthTasks,
+                currentMonthLoading,
+                fetchCurrentMonthTasks,
             }}
         >
             {children}

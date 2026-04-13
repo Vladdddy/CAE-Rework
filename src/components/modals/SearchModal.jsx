@@ -5,6 +5,7 @@ import ArrowIcon from "../../assets/icons/arrow-left.tsx";
 import Task from "../data/Task.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks";
+import { useTaskSimOne } from "../data/provider/taskSimOneAPI/useTaskSimOne";
 import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
 import CloseIcon from "../../assets/icons/close.tsx";
@@ -12,9 +13,24 @@ import { useUsers } from "../../components/data/provider/userAPI/useUsers";
 import { useNotes } from "../data/provider/noteAPI/useNotes";
 import { useNoteLogbooks } from "../data/provider/noteLogbookAPI/useNoteLogbooks";
 
+const SIMULATOR_MAP = {
+    1: "109FFS",
+    2: "FTD",
+    3: "139#1",
+    4: "139#3",
+    5: "169",
+    6: "189",
+    13: "109FFS",
+};
+
 function SearchModal({ onClose, onDeleteSuccess }) {
     const { tasks, loading, fetchTasks } = useTasks();
     const { logbooks, loading: logbooksLoading, fetchLogbooks } = useLogbooks();
+    const {
+        currentMonthTasks,
+        currentMonthLoading: pmLoading,
+        fetchCurrentMonthTasks,
+    } = useTaskSimOne();
     const { notes, fetchAllNotes } = useNotes();
     const { noteLogbooks, fetchAllNoteLogbooks } = useNoteLogbooks();
     const [searchQuery, setSearchQuery] = useState("");
@@ -35,7 +51,8 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         inputRef.current?.focus();
         fetchAllNotes();
         fetchAllNoteLogbooks();
-    }, [fetchAllNotes, fetchAllNoteLogbooks]);
+        fetchCurrentMonthTasks();
+    }, [fetchAllNotes, fetchAllNoteLogbooks, fetchCurrentMonthTasks]);
 
     useEffect(() => {
         if (selectedFrom && selectedTo) {
@@ -146,7 +163,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
             });
         }
 
-        return filtered;
+        return filtered.sort((a, b) => new Date(b.DATE) - new Date(a.DATE));
     }, [
         tasks,
         searchQuery,
@@ -242,7 +259,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
             });
         }
 
-        return filtered;
+        return filtered.sort((a, b) => new Date(b.DATE) - new Date(a.DATE));
     }, [
         logbooks,
         searchQuery,
@@ -255,6 +272,93 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         selectedTo,
         dateError,
         noteLogbooks,
+    ]);
+
+    const normalizedPmTasks = useMemo(() => {
+        return (currentMonthTasks || [])
+            .filter((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                return simulatorId && SIMULATOR_MAP[simulatorId];
+            })
+            .map((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                const taskDone = task["Task done"] ?? task["Task Done"];
+                const isDone =
+                    taskDone !== undefined &&
+                    taskDone !== null &&
+                    Boolean(taskDone);
+                return {
+                    ...task,
+                    ID: task["ID_task"] ?? task.ID,
+                    TITLE: task["Task"] || "PM Task",
+                    DATE: task["Scheduled on"] ?? task.DATE,
+                    ASSIGNED_TO:
+                        task["Task Performed By"] || task["Tech id"] || "",
+                    STATUS: isDone ? "Completato" : "Non completato",
+                    SIMULATOR: SIMULATOR_MAP[simulatorId],
+                    TIME: "Notturno",
+                    IS_PM_PLAN_TASK: true,
+                };
+            });
+    }, [currentMonthTasks]);
+
+    const filteredPmTasks = useMemo(() => {
+        let filtered = normalizedPmTasks;
+
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(
+                (task) =>
+                    task.TITLE?.toLowerCase().includes(query) ||
+                    task.ASSIGNED_TO?.toLowerCase().includes(query) ||
+                    task.STATUS?.toLowerCase().includes(query) ||
+                    task.SIMULATOR?.toLowerCase().includes(query),
+            );
+        }
+
+        if (selectedStatus) {
+            filtered = filtered.filter(
+                (task) => task.STATUS === selectedStatus,
+            );
+        }
+
+        if (selectedSimulator) {
+            filtered = filtered.filter(
+                (task) => task.SIMULATOR === selectedSimulator,
+            );
+        }
+
+        if (selectedAssignees) {
+            filtered = filtered.filter((task) =>
+                task.ASSIGNED_TO?.toLowerCase().includes(
+                    selectedAssignees.toLowerCase(),
+                ),
+            );
+        }
+
+        if (selectedFrom && !dateError) {
+            const fromDate = new Date(selectedFrom);
+            filtered = filtered.filter(
+                (task) => new Date(task.DATE) >= fromDate,
+            );
+        }
+
+        if (selectedTo && !dateError) {
+            const toDate = new Date(selectedTo);
+            toDate.setHours(23, 59, 59, 999);
+            filtered = filtered.filter((task) => new Date(task.DATE) <= toDate);
+        }
+
+        return filtered.sort((a, b) => new Date(b.DATE) - new Date(a.DATE));
+    }, [
+        normalizedPmTasks,
+        searchQuery,
+        selectedStatus,
+        selectedSimulator,
+        selectedAssignees,
+        selectedFrom,
+        selectedTo,
+        dateError,
     ]);
 
     const showFiltersFunction = () => {
@@ -652,6 +756,43 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                                         wholeTask={logbook}
                                         onDeleteSuccess={handleDeleteSuccess}
                                         isLogbook={true}
+                                    />
+                                ))
+                            )}
+                        </div>
+
+                        <div
+                            className={`flex flex-col gap-1 ${showFilters ? "max-h-[32vh] sm:max-h-[35vh] md:max-h-[calc(80vh-22rem)]" : "max-h-[40vh] sm:max-h-[45vh] md:max-h-[calc(100vh-20rem)]"} overflow-y-auto pr-1 flex-1 w-full`}
+                        >
+                            <div className="sticky top-0 flex items-center justify-start gap-2 border-b border-[var(--light-primary)] pb-2 mb-4 bg-[var(--bento-bg)]">
+                                <h1 className="text-md text-[var(--gray)]">
+                                    Risultato
+                                </h1>
+                                <p className="text-xs bg-[var(--weekend-cells)] text-[var(--weekend-text)] rounded-md px-2 py-1">
+                                    {filteredPmTasks.length} PM Plan (mensili)
+                                </p>
+                            </div>
+
+                            {pmLoading ? (
+                                <div className="text-center text-sm text-[var(--gray)] py-4">
+                                    Caricamento...
+                                </div>
+                            ) : filteredPmTasks.length === 0 ? (
+                                <div className="text-center text-sm text-[var(--gray)] py-4">
+                                    Nessun task PM Plan trovato
+                                </div>
+                            ) : (
+                                filteredPmTasks.map((task) => (
+                                    <Task
+                                        key={task.ID}
+                                        title={task.TITLE}
+                                        date={formatDate(task.DATE)}
+                                        assignedTo={task.ASSIGNED_TO}
+                                        status={task.STATUS}
+                                        type="dashboard"
+                                        wholeTask={task}
+                                        onDeleteSuccess={handleDeleteSuccess}
+                                        isLogbook={false}
                                     />
                                 ))
                             )}
