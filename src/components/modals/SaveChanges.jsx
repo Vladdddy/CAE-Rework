@@ -14,7 +14,7 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
         employeeShifts,
     } = useEmployeeShifts();
     const { sendMessage } = useEmployeeMessages();
-    const { currentUserId, currentUsername } = useUsers();
+    const { currentUserId, currentUsername, users } = useUsers();
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState(null);
 
@@ -160,9 +160,34 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
                     deleteEmployeeShift(change.ID || change.id),
                 );
 
+                // CC every other Shift Leader when an Employee's shift changes
+                const otherShiftLeaders = users.filter(
+                    (u) =>
+                        u.Role === "Shift Leader" &&
+                        String(u.ID) !== String(currentUserId),
+                );
+                const ccNotifications = manualUpdateNotifications.flatMap(
+                    (notification) => {
+                        const receiverRole = users.find(
+                            (u) =>
+                                String(u.ID) ===
+                                String(notification.receiverId),
+                        )?.Role;
+                        if (receiverRole !== "Employee") return [];
+                        return otherShiftLeaders.map((sl) => ({
+                            receiverId: sl.ID,
+                            messageContent: notification.messageContent,
+                        }));
+                    },
+                );
+
+                const allNotifications = [
+                    ...manualUpdateNotifications,
+                    ...ccNotifications,
+                ];
                 const notificationPromises =
-                    currentUserId && manualUpdateNotifications.length > 0
-                        ? manualUpdateNotifications.map((notification) =>
+                    currentUserId && allNotifications.length > 0
+                        ? allNotifications.map((notification) =>
                               sendMessage(
                                   currentUserId,
                                   notification.receiverId,

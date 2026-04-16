@@ -363,10 +363,11 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         const baseTurno =
             shouldMoveTask && passedCutoffTime ? "Diurno" : taskInfo.TIME;
         const hour = now.getHours();
+        const isNightTime = hour >= 20 || hour < 8; //remove this if it doesn't work
         const updatedTurno =
-            baseTurno === "Notturno" && hour < 20
+            baseTurno === "Notturno" && !isNightTime
                 ? "Diurno"
-                : baseTurno === "Diurno" && hour >= 20
+                : baseTurno === "Diurno" && isNightTime
                   ? "Notturno"
                   : baseTurno;
 
