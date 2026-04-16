@@ -568,13 +568,13 @@ function Notifications({ onClose }) {
                                 </>
                             )}
 
-                            {/* Individual users */}
-                            {otherUsers.length === 0 && (
+                            {/* Individual users — hidden for View role */}
+                            {currentUserRole !== "View" && otherUsers.length === 0 && (
                                 <p className="text-[var(--gray)] text-sm text-center py-4">
                                     Nessun utente disponibile
                                 </p>
                             )}
-                            {otherUsers.map((user) => {
+                            {currentUserRole !== "View" && otherUsers.map((user) => {
                                 const hasUnread =
                                     usersWithUnreadMessages.includes(user.ID);
                                 return (
@@ -765,27 +765,29 @@ function Notifications({ onClose }) {
                         </div>
 
                         {/* Send input */}
-                        <div className="flex gap-2 pt-4 mt-4 flex-shrink-0">
-                            <input
-                                type="text"
-                                className="w-full h-[44px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                placeholder="Scrivi qui..."
-                                value={emptyText}
-                                onChange={(e) => setEmptyText(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter" && emptyText)
-                                        handleSendMessage();
-                                }}
-                            />
-                            <button
-                                onClick={handleSendMessage}
-                                className={`btn flex gap-2 items-center h-[44px] ${emptyText ? "opacity-100 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
-                                disabled={!emptyText}
-                            >
-                                <SendIcon className="w-6" />
-                                Invia
-                            </button>
-                        </div>
+                        {currentUserRole !== "View" && (
+                            <div className="flex gap-2 pt-4 mt-4 flex-shrink-0">
+                                <input
+                                    type="text"
+                                    className="w-full h-[44px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                                    placeholder="Scrivi qui..."
+                                    value={emptyText}
+                                    onChange={(e) => setEmptyText(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" && emptyText)
+                                            handleSendMessage();
+                                    }}
+                                />
+                                <button
+                                    onClick={handleSendMessage}
+                                    className={`btn flex gap-2 items-center h-[44px] ${emptyText ? "opacity-100 cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
+                                    disabled={!emptyText}
+                                >
+                                    <SendIcon className="w-6" />
+                                    Invia
+                                </button>
+                            </div>
+                        )}
 
                         {/* Back + title */}
                         <div className="flex items-center gap-4 pt-4 mt-4 border-t border-[var(--light-primary)] flex-shrink-0">

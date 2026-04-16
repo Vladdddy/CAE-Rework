@@ -1949,6 +1949,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
                                 {!isUnavailableEntity &&
                                     !isPmPlanTask &&
+                                    currentUserRole !== "View" &&
                                     (currentUserRole === "Admin" ||
                                         currentUserRole === "Shift Leader" ||
                                         (taskInfo.ASSIGNED_TO &&
@@ -2024,6 +2025,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         )}
                                     {!isUnavailableEntity &&
                                         !isPmPlanTask &&
+                                        currentUserRole !== "View" &&
                                         (currentUserRole === "Admin" ||
                                             currentUserRole ===
                                                 "Shift Leader" ||
@@ -2098,7 +2100,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                     {note.CREATEDBY ===
                                                         currentUserId &&
                                                         note.TYPE !==
-                                                            "automatico" && (
+                                                            "automatico" &&
+                                                        currentUserRole !== "View" && (
                                                             <div className="flex flex-col items-center gap-2">
                                                                 <EditIcon
                                                                     className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
@@ -2169,7 +2172,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                     {note.CREATEDBY ===
                                                         currentUserId &&
                                                         note.TYPE !==
-                                                            "automatico" && (
+                                                            "automatico" &&
+                                                        currentUserRole !== "View" && (
                                                             <div className="flex flex-col items-center gap-2">
                                                                 <EditIcon
                                                                     className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
@@ -2224,75 +2228,88 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 )}
                             </div>
 
-                            <div className="flex flex-col gap-2 border-t border-[var(--light-primary)] pt-4">
-                                <h3 className="text-sm text-[var(--gray)]">
-                                    {editingNoteId
-                                        ? "Modifica Nota"
-                                        : "Aggiungi Nota"}
-                                </h3>
-                                <textarea
-                                    className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                    placeholder="Inserisci il testo della nota qui..."
-                                    value={noteDescription}
-                                    onChange={(e) =>
-                                        setNoteDescription(e.target.value)
-                                    }
-                                ></textarea>
-                                {!editingNoteId && !isUnavailableEntity && (
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <input
-                                            id="do-not-move-task-on-note"
-                                            type="checkbox"
-                                            checked={doNotMoveTaskOnNote}
+                            {currentUserRole !== "View" ? (
+                                <>
+                                    <div className="flex flex-col gap-2 border-t border-[var(--light-primary)] pt-4">
+                                        <h3 className="text-sm text-[var(--gray)]">
+                                            {editingNoteId
+                                                ? "Modifica Nota"
+                                                : "Aggiungi Nota"}
+                                        </h3>
+                                        <textarea
+                                            className="w-full min-h-[100px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] resize-y focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
+                                            placeholder="Inserisci il testo della nota qui..."
+                                            value={noteDescription}
                                             onChange={(e) =>
-                                                setDoNotMoveTaskOnNote(
-                                                    e.target.checked,
-                                                )
+                                                setNoteDescription(e.target.value)
                                             }
-                                            className="h-4 w-4 rounded border border-[var(--light-primary)] bg-[var(--white)] accent-[var(--primary)] cursor-pointer focus:ring-none focus:ring-[var(--primary)] focus:ring-offset-0"
-                                        />
-                                        <label
-                                            htmlFor="do-not-move-task-on-note"
-                                            className="text-sm text-[var(--black)] cursor-pointer select-none"
-                                        >
-                                            Non spostare la{" "}
-                                            {taskInfo.ISLOGBOOK
-                                                ? "entry"
-                                                : "task"}
-                                        </label>
+                                        ></textarea>
+                                        {!editingNoteId && !isUnavailableEntity && (
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <input
+                                                    id="do-not-move-task-on-note"
+                                                    type="checkbox"
+                                                    checked={doNotMoveTaskOnNote}
+                                                    onChange={(e) =>
+                                                        setDoNotMoveTaskOnNote(
+                                                            e.target.checked,
+                                                        )
+                                                    }
+                                                    className="h-4 w-4 rounded border border-[var(--light-primary)] bg-[var(--white)] accent-[var(--primary)] cursor-pointer focus:ring-none focus:ring-[var(--primary)] focus:ring-offset-0"
+                                                />
+                                                <label
+                                                    htmlFor="do-not-move-task-on-note"
+                                                    className="text-sm text-[var(--black)] cursor-pointer select-none"
+                                                >
+                                                    Non spostare la{" "}
+                                                    {taskInfo.ISLOGBOOK
+                                                        ? "entry"
+                                                        : "task"}
+                                                </label>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
 
-                            <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
-                                {editingNoteId ? (
-                                    <button
-                                        className="btn gray-btn"
-                                        onClick={handleCancelEdit}
-                                    >
-                                        Annulla
-                                    </button>
-                                ) : (
+                                    <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
+                                        {editingNoteId ? (
+                                            <button
+                                                className="btn gray-btn"
+                                                onClick={handleCancelEdit}
+                                            >
+                                                Annulla
+                                            </button>
+                                        ) : (
+                                            <button
+                                                className="btn gray-btn"
+                                                onClick={onClose}
+                                            >
+                                                Chiudi
+                                            </button>
+                                        )}
+
+                                        <button
+                                            className="btn"
+                                            onClick={handleSaveNote}
+                                            disabled={!noteDescription.trim()}
+                                        >
+                                            <p>
+                                                {editingNoteId
+                                                    ? "Modifica nota"
+                                                    : "Salva nota"}
+                                            </p>
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">
                                     <button
                                         className="btn gray-btn"
                                         onClick={onClose}
                                     >
                                         Chiudi
                                     </button>
-                                )}
-
-                                <button
-                                    className="btn"
-                                    onClick={handleSaveNote}
-                                    disabled={!noteDescription.trim()}
-                                >
-                                    <p>
-                                        {editingNoteId
-                                            ? "Modifica nota"
-                                            : "Salva nota"}
-                                    </p>
-                                </button>
-                            </div>
+                                </div>
+                            )}
                         </div>
                     )}
                     {isPmPlanTask && activeTab === "comment" && (

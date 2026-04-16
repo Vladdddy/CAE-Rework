@@ -75,12 +75,13 @@ function ShiftsTable({
     // Apply shift order from database
     useEffect(() => {
         if (shiftOrdersLoading) return;
-        if (users.length === 0) {
+        const visibleUsers = users.filter((u) => u.Role !== "View");
+        if (visibleUsers.length === 0) {
             setOrderedUsers([]);
             return;
         }
         if (shiftOrders.length === 0) {
-            setOrderedUsers(users);
+            setOrderedUsers(visibleUsers);
             return;
         }
 
@@ -89,7 +90,7 @@ function ShiftsTable({
             positionMap[order.POSITIONED_USER_ID] = order.POSITION;
         });
 
-        const sorted = [...users].sort((a, b) => {
+        const sorted = [...visibleUsers].sort((a, b) => {
             const posA = positionMap[a.ID] || 9999;
             const posB = positionMap[b.ID] || 9999;
             return posA - posB;
@@ -1049,8 +1050,8 @@ function ShiftsTable({
                                     <div className="flex justify-between min-w-[240px] w-[240px]">
                                         <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
                                             {isEmployee &&
-                                                currentUserRole !==
-                                                    "Employee" && (
+                                                (currentUserRole === "Admin" ||
+                                                    currentUserRole === "Shift Leader") && (
                                                     <DragIcon className="w-6 text-[var(--black)]" />
                                                 )}
                                             {formatUsername(user.Username)}

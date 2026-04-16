@@ -115,6 +115,7 @@ function Register() {
                                     Shift Leader
                                 </option>
                                 <option value="Admin">Admin</option>
+                                <option value="View">View</option>
                             </select>
                             <ArrowRightIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 w-4 text-[var(--gray)] pointer-events-none" />
                         </div>

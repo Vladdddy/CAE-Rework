@@ -60,7 +60,7 @@ function Logbook() {
     const [showCalendar, setShowCalendar] = useState(true);
     // eslint-disable-next-line no-unused-vars
     const [selectedDay, setSelectedDay] = useState(null);
-    const { users } = useUsers();
+    const { users, currentUserRole } = useUsers();
     const [viewDays, setViewDays] = useState(1);
     const [showExportReportMenu, setShowExportReportMenu] = useState(false);
     const [showExportActivityMenu, setShowExportActivityMenu] = useState(false);
@@ -596,13 +596,15 @@ function Logbook() {
                                     {/* Action bar: add button + view toggle */}
                                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
                                         {/* Left: add entry button */}
-                                        <button
-                                            className="btn tertiary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
-                                            onClick={handleTaskClick}
-                                        >
-                                            <LogbookIcon className="w-5 shrink-0" />
-                                            <p>Aggiungi entry</p>
-                                        </button>
+                                        {currentUserRole !== "View" && (
+                                            <button
+                                                className="btn tertiary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
+                                                onClick={handleTaskClick}
+                                            >
+                                                <LogbookIcon className="w-5 shrink-0" />
+                                                <p>Aggiungi entry</p>
+                                            </button>
+                                        )}
 
                                         {/* Right: view toggle */}
                                         <div className="overflow-x-auto pb-0.5">

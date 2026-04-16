@@ -99,7 +99,7 @@ function Shifts() {
                                 </div>
                             </div>
 
-                            {currentUserRole !== "Employee" && (
+                            {(currentUserRole === "Admin" || currentUserRole === "Shift Leader") && (
                                 <div
                                     className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)] w-fit my-4 md:my-0"
                                     onClick={() => setPatternsModalOpen(true)}

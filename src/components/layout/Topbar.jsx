@@ -14,6 +14,8 @@ import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import { useEmployeeMessages } from "../data/provider/employeeMessageAPI/useEmployeeMessages";
 import { useGroupChat } from "../data/provider/groupChatAPI/useGroupChat";
+import BackIcon from "../../assets/icons/arrow-left.tsx";
+import { useNavigate } from "react-router-dom";
 
 function Topbar({ isSidebarOpen, setSidebarStatus, setMobileSidebarOpen }) {
     const { fetchTasks } = useTasks();
@@ -31,6 +33,7 @@ function Topbar({ isSidebarOpen, setSidebarStatus, setMobileSidebarOpen }) {
         return savedMode === "true";
     });
     const { currentUserRole, currentUserId } = useUsers();
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (isDarkMode) {
@@ -90,6 +93,13 @@ function Topbar({ isSidebarOpen, setSidebarStatus, setMobileSidebarOpen }) {
         <>
             <div className="bg-[var(--bento-bg)] text-[var(--black)] w-full h-auto p-3 md:p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-[var(--light-primary)]">
                 <div className="flex items-center justify-start gap-4 min-w-0">
+                    <div className="flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition rounded-md p-2 cursor-pointer">
+                        <BackIcon
+                            className="w-6 cursor-pointer icon"
+                            onClick={() => navigate("/home")}
+                        />
+                    </div>
+
                     <SidebarIcon
                         className="w-6 cursor-pointer icon"
                         onClick={handleSidebarToggle}
