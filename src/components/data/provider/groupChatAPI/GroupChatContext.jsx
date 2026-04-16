@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { GroupChatContext } from "./groupChatContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export const GroupChatProvider = ({ children }) => {
+    const [groupUnreadCount, setGroupUnreadCount] = useState(0);
     // Create a new group. memberIds should include all members (creator is added server-side too).
     const createGroup = async (name, createdBy, memberIds) => {
         try {
@@ -78,6 +80,53 @@ export const GroupChatProvider = ({ children }) => {
         }
     };
 
+    // Fetch total unread group messages across all groups for a user
+    const fetchGroupUnreadTotal = async (userId) => {
+        try {
+            const response = await fetch(
+                `${API_URL}/groupChat/unread/total/${userId}`,
+            );
+            if (!response.ok) throw new Error("Failed to fetch group unread total");
+            const data = await response.json();
+            setGroupUnreadCount(data.totalUnread);
+            return { success: true, count: data.totalUnread };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    // Add a user to a group
+    const addGroupMember = async (groupId, userId) => {
+        try {
+            const response = await fetch(
+                `${API_URL}/groupChat/${groupId}/members`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId }),
+                },
+            );
+            if (!response.ok) throw new Error("Failed to add group member");
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    // Remove a user from a group
+    const removeGroupMember = async (groupId, userId) => {
+        try {
+            const response = await fetch(
+                `${API_URL}/groupChat/${groupId}/members/${userId}`,
+                { method: "DELETE" },
+            );
+            if (!response.ok) throw new Error("Failed to remove group member");
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    };
+
     // Delete a group
     const deleteGroup = async (groupId) => {
         try {
@@ -99,7 +148,7 @@ export const GroupChatProvider = ({ children }) => {
             );
             if (!response.ok) throw new Error("Failed to fetch group unread count");
             const data = await response.json();
-            return { success: true, count: data.unreadCount };
+            return { success: true, count: data.unreadCount, latestMessage: data.latestMessage ?? null };
         } catch (err) {
             return { success: false, error: err.message };
         }
@@ -115,6 +164,10 @@ export const GroupChatProvider = ({ children }) => {
                 markGroupAsRead,
                 fetchGroupUnreadCount,
                 deleteGroup,
+                addGroupMember,
+                removeGroupMember,
+                groupUnreadCount,
+                fetchGroupUnreadTotal,
             }}
         >
             {children}

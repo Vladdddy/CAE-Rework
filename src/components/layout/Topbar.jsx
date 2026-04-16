@@ -13,10 +13,13 @@ import Notifications from "../modals/Notifications.jsx";
 import { useTasks } from "../data/provider/taskAPI/useTasks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import { useEmployeeMessages } from "../data/provider/employeeMessageAPI/useEmployeeMessages";
+import { useGroupChat } from "../data/provider/groupChatAPI/useGroupChat";
 
 function Topbar({ isSidebarOpen, setSidebarStatus, setMobileSidebarOpen }) {
     const { fetchTasks } = useTasks();
     const { fetchUnreadCount, unreadCount } = useEmployeeMessages();
+    const { fetchGroupUnreadTotal, groupUnreadCount } = useGroupChat();
+    const totalUnread = unreadCount + groupUnreadCount;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
@@ -40,12 +43,14 @@ function Topbar({ isSidebarOpen, setSidebarStatus, setMobileSidebarOpen }) {
     useEffect(() => {
         if (currentUserId) {
             fetchUnreadCount(currentUserId);
+            fetchGroupUnreadTotal(currentUserId);
             const interval = setInterval(() => {
                 fetchUnreadCount(currentUserId);
+                fetchGroupUnreadTotal(currentUserId);
             }, 30000);
             return () => clearInterval(interval);
         }
-    }, [currentUserId, fetchUnreadCount]);
+    }, [currentUserId, fetchUnreadCount, fetchGroupUnreadTotal]);
 
     const handleTaskClick = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
@@ -121,13 +126,13 @@ function Topbar({ isSidebarOpen, setSidebarStatus, setMobileSidebarOpen }) {
                             onClick={() => setNotificationsModal(true)}
                         >
                             <BellIcon className="w-6 cursor-pointer icon" />
-                            {unreadCount > 0 && (
+                            {totalUnread > 0 && (
                                 <span className="red-circle w-2 h-2 rounded-full bg-red-500 absolute top-0 right-0"></span>
                             )}
                         </div>
-                        {unreadCount > 0 && (
+                        {totalUnread > 0 && (
                             <p className="hidden lg:block ml-2 text-xs text-white bg-red-500 rounded-full px-4 py-2">
-                                Hai {unreadCount} notifiche
+                                Hai {totalUnread} notifiche
                             </p>
                         )}
                     </div>

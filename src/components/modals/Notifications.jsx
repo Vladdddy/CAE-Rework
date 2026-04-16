@@ -10,7 +10,7 @@ import { useGroupChat } from "../data/provider/groupChatAPI/useGroupChat";
 import ArrowLeftIcon from "../../assets/icons/arrow-left.tsx";
 import DeleteIcon from "../../assets/icons/delete.tsx";
 
-// view: "list" | "create-group" | "chat" | "group-chat"
+// view: "list" | "create-group" | "chat" | "group-chat" | "manage-members"
 
 function Notifications({ onClose }) {
     const [view, setView] = useState("list");
@@ -25,6 +25,7 @@ function Notifications({ onClose }) {
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [groupMessages, setGroupMessages] = useState([]);
     const [groupsWithUnread, setGroupsWithUnread] = useState([]);
+    const [groupLatestUnread, setGroupLatestUnread] = useState({});
 
     // Create group
     const [newGroupName, setNewGroupName] = useState("");
@@ -48,6 +49,9 @@ function Notifications({ onClose }) {
         markGroupAsRead,
         fetchGroupUnreadCount,
         deleteGroup,
+        addGroupMember,
+        removeGroupMember,
+        fetchGroupUnreadTotal,
     } = useGroupChat();
 
     const canCreateGroup =
@@ -84,11 +88,16 @@ function Notifications({ onClose }) {
     const refreshGroupUnreads = async (groupList) => {
         if (!currentUserId || !groupList?.length) return;
         const unreadGroupIds = [];
+        const latestMap = {};
         for (const g of groupList) {
             const res = await fetchGroupUnreadCount(g.ID, currentUserId);
-            if (res.success && res.count > 0) unreadGroupIds.push(g.ID);
+            if (res.success && res.count > 0) {
+                unreadGroupIds.push(g.ID);
+                if (res.latestMessage) latestMap[g.ID] = res.latestMessage;
+            }
         }
         setGroupsWithUnread(unreadGroupIds);
+        setGroupLatestUnread(latestMap);
     };
 
     const loadGroups = async () => {
@@ -164,6 +173,7 @@ function Notifications({ onClose }) {
 
             await markGroupAsRead(selectedGroup.ID, currentUserId);
             await refreshGroupUnreads(groups);
+            await fetchGroupUnreadTotal(currentUserId);
         };
 
         load();
@@ -215,6 +225,7 @@ function Notifications({ onClose }) {
                 setGroupMessages(result.data);
                 await markGroupAsRead(selectedGroup.ID, currentUserId);
                 await refreshGroupUnreads(groups);
+                await fetchGroupUnreadTotal(currentUserId);
             }
         };
 
@@ -326,6 +337,10 @@ function Notifications({ onClose }) {
 
     // ─── Handlers ──────────────────────────────────────────────────────────────
     const handleBack = () => {
+        if (view === "manage-members") {
+            setView("group-chat");
+            return;
+        }
         setSelectedReceiver(null);
         setSelectedGroup(null);
         setChatMessages([]);
@@ -406,6 +421,31 @@ function Notifications({ onClose }) {
         }
     };
 
+    const reloadGroupsAndSync = async () => {
+        if (!currentUserId) return;
+        const res = await fetchUserGroups(currentUserId);
+        if (res.success) {
+            setGroups(res.data);
+            await refreshGroupUnreads(res.data);
+            if (selectedGroup) {
+                const updated = res.data.find((g) => g.ID === selectedGroup.ID);
+                if (updated) setSelectedGroup(updated);
+            }
+        }
+    };
+
+    const handleAddMember = async (userId) => {
+        if (!selectedGroup) return;
+        await addGroupMember(selectedGroup.ID, userId);
+        await reloadGroupsAndSync();
+    };
+
+    const handleRemoveMember = async (userId) => {
+        if (!selectedGroup) return;
+        await removeGroupMember(selectedGroup.ID, userId);
+        await reloadGroupsAndSync();
+    };
+
     const toggleMember = (userId) => {
         setSelectedMemberIds((prev) =>
             prev.includes(userId)
@@ -481,33 +521,42 @@ function Notifications({ onClose }) {
                                                     <span className="text-[var(--black)] text-sm font-medium">
                                                         {group.NAME}
                                                     </span>
-                                                    <span className="text-xs text-[var(--gray)] truncate">
-                                                        {group.MEMBERS?.map(
-                                                            (m) =>
-                                                                formatUsername(
-                                                                    m.Username,
-                                                                ),
-                                                        ).join(", ")}
-                                                    </span>
+                                                    {hasUnread && groupLatestUnread[group.ID] ? (
+                                                        <span className="text-xs text-[var(--black)] truncate font-medium">
+                                                            {formatUsername(groupLatestUnread[group.ID].senderUsername)}:{" "}
+                                                            {groupLatestUnread[group.ID].content}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs text-[var(--gray)] truncate">
+                                                            {group.MEMBERS?.map(
+                                                                (m) =>
+                                                                    formatUsername(
+                                                                        m.Username,
+                                                                    ),
+                                                            ).join(", ")}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 {hasUnread && (
                                                     <span className="w-2.5 h-2.5 rounded-full bg-[var(--red)] flex-shrink-0" />
                                                 )}
 
-                                                <button
-                                                    type="button"
-                                                    onClick={async (e) => {
-                                                        e.stopPropagation();
-                                                        await deleteGroup(
-                                                            group.ID,
-                                                        );
-                                                        await loadGroups();
-                                                    }}
-                                                    className="opacity-0 group-hover/row:opacity-100 flex-shrink-0 p-1 rounded text-[var(--red)] transition-all duration-150"
-                                                >
-                                                    <DeleteIcon className="w-6" />
-                                                </button>
+                                                {canCreateGroup && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            await deleteGroup(
+                                                                group.ID,
+                                                            );
+                                                            await loadGroups();
+                                                        }}
+                                                        className="opacity-0 group-hover/row:opacity-100 flex-shrink-0 p-1 rounded text-[var(--red)] transition-all duration-150"
+                                                    >
+                                                        <DeleteIcon className="w-6" />
+                                                    </button>
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -746,11 +795,100 @@ function Notifications({ onClose }) {
                             >
                                 <ArrowLeftIcon className="w-6" />
                             </div>
-                            <h1 className="text-lg text-[var(--black)]">
+                            <h1 className="text-lg text-[var(--black)] flex-1">
                                 {chatTitle}
                             </h1>
+                            {view === "group-chat" && canCreateGroup && (
+                                <button
+                                    type="button"
+                                    onClick={() => setView("manage-members")}
+                                    className="text-xs border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition rounded-md px-3 py-2 flex-shrink-0"
+                                >
+                                    Gestisci membri
+                                </button>
+                            )}
                         </div>
                     </>
+                )}
+                {/* ── MANAGE MEMBERS VIEW ──────────────────────────────────── */}
+                {view === "manage-members" && selectedGroup && (
+                    <div className="flex flex-col flex-1 min-h-0">
+                        <div className="flex flex-col gap-4 overflow-y-auto pr-1 flex-1 min-h-0">
+                            {/* Current members */}
+                            <div>
+                                <p className="text-xs text-[var(--gray)] uppercase tracking-wide mb-2">
+                                    Membri attuali
+                                </p>
+                                <div className="flex flex-col gap-2">
+                                    {(selectedGroup.MEMBERS ?? []).map((member) => (
+                                        <div
+                                            key={member.ID}
+                                            className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)]"
+                                        >
+                                            <span className="text-[var(--black)] text-sm font-medium">
+                                                {formatUsername(member.Username)}
+                                            </span>
+                                            {member.ID !== currentUserId && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveMember(member.ID)}
+                                                    className="text-xs text-[var(--red)] border border-[var(--red)] rounded-md px-2 py-1 hover:bg-[var(--red)] hover:text-white transition-all duration-150"
+                                                >
+                                                    Rimuovi
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Users not in group */}
+                            {(() => {
+                                const memberIds = new Set((selectedGroup.MEMBERS ?? []).map((m) => m.ID));
+                                const nonMembers = users.filter((u) => !memberIds.has(u.ID));
+                                if (nonMembers.length === 0) return null;
+                                return (
+                                    <div>
+                                        <p className="text-xs text-[var(--gray)] uppercase tracking-wide mb-2">
+                                            Aggiungi utenti
+                                        </p>
+                                        <div className="flex flex-col gap-2">
+                                            {nonMembers.map((user) => (
+                                                <div
+                                                    key={user.ID}
+                                                    className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)]"
+                                                >
+                                                    <span className="text-[var(--black)] text-sm font-medium">
+                                                        {formatUsername(user.Username)}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAddMember(user.ID)}
+                                                        className="text-xs text-[var(--primary)] border border-[var(--primary)] rounded-md px-2 py-1 hover:bg-[var(--primary)] hover:text-white transition-all duration-150"
+                                                    >
+                                                        Aggiungi
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+
+                        {/* Back */}
+                        <div className="flex items-center gap-4 pt-4 mt-4 border-t border-[var(--light-primary)] flex-shrink-0">
+                            <div
+                                onClick={handleBack}
+                                className="flex gap-2 items-center border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:text-[var(--primary)] transition rounded-md p-2 cursor-pointer"
+                            >
+                                <ArrowLeftIcon className="w-6" />
+                            </div>
+                            <h1 className="text-lg text-[var(--black)]">
+                                {selectedGroup.NAME}
+                            </h1>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
