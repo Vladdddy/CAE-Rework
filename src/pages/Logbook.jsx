@@ -342,6 +342,8 @@ function Logbook() {
                     timeFilter === "Diurno" ? "Day Report" : "Night Report";
             }
 
+            const isReportExport =
+                exportType !== "activity" && exportType !== "activities";
             const itemsExported = exportTasksToPDF(
                 itemsToExport,
                 hasActiveFilters ? null : startDate,
@@ -350,7 +352,8 @@ function Logbook() {
                 pdfTitle,
                 notesMap,
                 users,
-                exportType !== "activity" && exportType !== "activities",
+                isReportExport,
+                isReportExport && timeFilter === "Diurno",
             );
             setPopupType("success");
             setPopupMessage(

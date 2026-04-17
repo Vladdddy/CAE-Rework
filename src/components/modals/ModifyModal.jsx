@@ -68,11 +68,17 @@ function ModifyModal({
         task.SIMULATOR || simulators[0],
     );
     const { updateTask, addTask } = useTasks();
-    const { addTask: addUnavailableTask, fetchTasks: fetchUnavailableTasks } =
-        useUnavailableTasks();
+    const {
+        addTask: addUnavailableTask,
+        fetchTasks: fetchUnavailableTasks,
+        tasks: unavailableTasks,
+        deleteTask: deleteUnavailableTask,
+    } = useUnavailableTasks();
     const {
         addLogbook: addUnavailableLogbook,
         fetchLogbooks: fetchUnavailableLogbooks,
+        logbooks: unavailableLogbooks,
+        deleteLogbook: deleteUnavailableLogbook,
     } = useUnavailableLogbooks();
     const { updateLogbook, addLogbook } = useLogbooks();
     const { uploadTaskImages } = useImageTasks();
@@ -363,6 +369,8 @@ function ModifyModal({
                 shouldMoveCompletedLogbookToToday) &&
             passedCompletedCutoff;
 
+        const finalStatus =
+            isConverting && isLogbook ? "Convertito in task" : selectedStatus;
         const modifiedTask = {
             title: title,
             description: description,
@@ -377,10 +385,13 @@ function ModifyModal({
                     : selectedDate,
             time: shouldForceDiurnoOnMovedToday ? "Diurno" : selectedRadio,
             assigned_to: selectedAssignees.join(", ") || null,
-            status:
-                isConverting && isLogbook
-                    ? "Convertito in task"
-                    : selectedStatus,
+            status: finalStatus,
+            completed_by:
+                finalStatus === "Completato"
+                    ? originalStatus !== "Completato"
+                        ? currentUserId
+                        : (task.COMPLETED_BY ?? null)
+                    : null,
         };
 
         // Handle task duplication or rescheduling
@@ -593,6 +604,38 @@ function ModifyModal({
         let attachmentsUploadedSuccessfully = true;
 
         if (result.success) {
+            // If the task was moved to a date that already has an unavailable
+            // placeholder for it (e.g. moved back after a reschedule), remove
+            // that placeholder so the same task doesn't appear twice on one day.
+            const newDate = modifiedTask.date; // YYYY-MM-DD
+            if (isLogbook) {
+                const conflicting = (unavailableLogbooks || []).find((u) => {
+                    const uDate = u.DATE
+                        ? new Date(u.DATE).toISOString().split("T")[0]
+                        : null;
+                    return u.ORIGINAL_LOGBOOK_ID === task.ID && uDate === newDate;
+                });
+                if (conflicting) {
+                    await deleteUnavailableLogbook(
+                        conflicting.ID ?? conflicting.id,
+                    );
+                    await fetchUnavailableLogbooks();
+                }
+            } else {
+                const conflicting = (unavailableTasks || []).find((u) => {
+                    const uDate = u.DATE
+                        ? new Date(u.DATE).toISOString().split("T")[0]
+                        : null;
+                    return u.ORIGINAL_TASK_ID === task.ID && uDate === newDate;
+                });
+                if (conflicting) {
+                    await deleteUnavailableTask(
+                        conflicting.ID ?? conflicting.id,
+                    );
+                    await fetchUnavailableTasks();
+                }
+            }
+
             if (shouldMoveCompletedTaskToToday) {
                 const unavailableTaskPayload = {
                     title: task.TITLE,

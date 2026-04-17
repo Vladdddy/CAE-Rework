@@ -176,6 +176,7 @@ export const exportTasksToPDF = (
     notesMap = {},
     users = [],
     showStatus = true,
+    isDayReport = false,
 ) => {
     // Exclude rescheduled items from export.
     const tasksForExport = tasks.filter(
@@ -394,78 +395,81 @@ export const exportTasksToPDF = (
         // Light grey background for header
         fillRect(cardX, cardY, cardW, headerH, 240, 240, 240);
 
-        // Column split: sim name col ~28%, time col ~42%, readiness col ~30%
-        const col1W = cardW * 0.28;
-        const col2W = cardW * 0.42;
-        // Sim name
+        // Sim name (always shown, spans full width when isDayReport)
         doc.setFontSize(10);
         doc.setFont(undefined, "bold");
         doc.setTextColor(0, 0, 0);
         doc.text(`Sim: ${simName}`, cardX + 4, cardY + 9);
 
-        // Vertical divider after col1
-        vRule(cardX + col1W, cardY, headerH);
+        if (!isDayReport) {
+            // Column split: sim name col ~28%, time col ~42%, readiness col ~30%
+            const col1W = cardW * 0.28;
+            const col2W = cardW * 0.42;
 
-        // Training times (two rows)
-        const timeX = cardX + col1W + 4;
-        const endTime = sim.START_HOUR
-            ? formatTime(sim.START_HOUR)
-            : sim.END_HOUR
-              ? formatTime(sim.END_HOUR)
-              : "----";
-        const startTime = sim.END_HOUR
-            ? formatTime(sim.END_HOUR)
-            : sim.START_HOUR
-              ? formatTime(sim.START_HOUR)
-              : "----";
+            // Vertical divider after col1
+            vRule(cardX + col1W, cardY, headerH);
 
-        doc.setFontSize(8.5);
-        doc.setFont(undefined, "normal");
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Training end time:`, timeX, cardY + 5.5);
-        doc.setFont(undefined, "bold");
-        doc.text(
-            endTime,
-            timeX + doc.getTextWidth("Training end time: ") - 2,
-            cardY + 5.5,
-        );
+            // Training times (two rows)
+            const timeX = cardX + col1W + 4;
+            const endTime = sim.START_HOUR
+                ? formatTime(sim.START_HOUR)
+                : sim.END_HOUR
+                  ? formatTime(sim.END_HOUR)
+                  : "----";
+            const startTime = sim.END_HOUR
+                ? formatTime(sim.END_HOUR)
+                : sim.START_HOUR
+                  ? formatTime(sim.START_HOUR)
+                  : "----";
 
-        doc.setFont(undefined, "normal");
-        doc.text(`Training start time:`, timeX, cardY + 11);
-        doc.setFont(undefined, "bold");
-        doc.text(
-            startTime,
-            timeX + doc.getTextWidth("Training start time: ") - 2,
-            cardY + 11,
-        );
-
-        // Vertical divider after col2
-        vRule(cardX + col1W + col2W, cardY, headerH);
-
-        // Morning readiness + Tech
-        const readX = cardX + col1W + col2W + 4;
-
-        // Morning readiness label
-        doc.setFontSize(8.5);
-        doc.setFont(undefined, "normal");
-        doc.setTextColor(0, 0, 0);
-        const phLabel = sim.PHASE
-            ? `Morning Readiness (${sim.PHASE})`
-            : "Morning Readiness";
-        doc.text(phLabel, readX, cardY + 5.5);
-
-        // Tech label + colored name
-        doc.setFont(undefined, "normal");
-        doc.setTextColor(0, 0, 0);
-        doc.text("Tech:", readX, cardY + 11);
-        if (sim.ASSIGNED_TO) {
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, "normal");
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Training end time:`, timeX, cardY + 5.5);
             doc.setFont(undefined, "bold");
-            doc.setTextColor(200, 0, 0); // red like in image
             doc.text(
-                ` ${sim.ASSIGNED_TO}`,
-                readX + doc.getTextWidth("Tech:"),
+                endTime,
+                timeX + doc.getTextWidth("Training end time: ") - 2,
+                cardY + 5.5,
+            );
+
+            doc.setFont(undefined, "normal");
+            doc.text(`Training start time:`, timeX, cardY + 11);
+            doc.setFont(undefined, "bold");
+            doc.text(
+                startTime,
+                timeX + doc.getTextWidth("Training start time: ") - 2,
                 cardY + 11,
             );
+
+            // Vertical divider after col2
+            vRule(cardX + col1W + col2W, cardY, headerH);
+
+            // Morning readiness + Tech
+            const readX = cardX + col1W + col2W + 4;
+
+            // Morning readiness label
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, "normal");
+            doc.setTextColor(0, 0, 0);
+            const phLabel = sim.PHASE
+                ? `Morning Readiness (${sim.PHASE})`
+                : "Morning Readiness";
+            doc.text(phLabel, readX, cardY + 5.5);
+
+            // Tech label + colored name
+            doc.setFont(undefined, "normal");
+            doc.setTextColor(0, 0, 0);
+            doc.text("Tech:", readX, cardY + 11);
+            if (sim.ASSIGNED_TO) {
+                doc.setFont(undefined, "bold");
+                doc.setTextColor(200, 0, 0); // red like in image
+                doc.text(
+                    ` ${sim.ASSIGNED_TO}`,
+                    readX + doc.getTextWidth("Tech:"),
+                    cardY + 11,
+                );
+            }
         }
 
         // Outer border for header
@@ -570,6 +574,15 @@ export const exportTasksToPDF = (
                     const translatedStatus =
                         statusTranslations[status] || status;
                     const isCompleted = status === "Completato";
+                    let statusText = `Status: ${translatedStatus}`;
+                    if (isCompleted && task.COMPLETED_BY != null) {
+                        const completedByUser = users.find(
+                            (u) => u.ID === task.COMPLETED_BY,
+                        );
+                        if (completedByUser?.Username) {
+                            statusText += ` by ${completedByUser.Username}`;
+                        }
+                    }
                     doc.setFontSize(8.5);
                     doc.setFont(undefined, "bold");
                     doc.setTextColor(
@@ -577,7 +590,7 @@ export const exportTasksToPDF = (
                         isCompleted ? 140 : 0,
                         0,
                     );
-                    doc.text(`Status: ${translatedStatus}`, cardX + 14, by);
+                    doc.text(statusText, cardX + 14, by);
                     by += 5.5;
                 }
 
@@ -654,11 +667,20 @@ export const exportTasksToPDF = (
 
     // ── Loop macro groups ─────────────────────────────────────────────────────
 
-    if (macroSimulatorNames.length === 0) {
+    // For report exports (showStatus=true) hide macro groups and individual
+    // simulators that have no tasks so they don't appear as empty cards.
+    const visibleMacroSimulatorNames = showStatus
+        ? macroSimulatorNames.filter((macroSimName) => {
+              const sims = tasksByMacroSimulator[macroSimName];
+              return Object.keys(sims).some((sn) => sims[sn].length > 0);
+          })
+        : macroSimulatorNames;
+
+    if (visibleMacroSimulatorNames.length === 0) {
         doc.setFontSize(10);
         doc.text("No tasks found.", margin, y);
     } else {
-        macroSimulatorNames.forEach((macroSimName, macroIdx) => {
+        visibleMacroSimulatorNames.forEach((macroSimName, macroIdx) => {
             const simulatorsInMacro = tasksByMacroSimulator[macroSimName];
             const simNamesInMacro = Object.keys(simulatorsInMacro).sort();
 
@@ -686,12 +708,15 @@ export const exportTasksToPDF = (
                 drawSimulatorCard(displayName, allOthersTasks);
             } else {
                 simNamesInMacro.forEach((simName) => {
+                    // For report exports, skip simulators with no tasks
+                    if (showStatus && simulatorsInMacro[simName].length === 0)
+                        return;
                     drawSimulatorCard(simName, simulatorsInMacro[simName]);
                 });
             }
 
             // Bold separator between macro groups
-            if (macroIdx < macroSimulatorNames.length - 1) {
+            if (macroIdx < visibleMacroSimulatorNames.length - 1) {
                 checkPageBreak(12);
                 y += 2;
                 hRule(margin, y, contentWidth, 0.8, 100, 100, 100);

@@ -44,11 +44,17 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [attachmentError, setAttachmentError] = useState("");
     const { deleteTask, fetchTasks, updateTask, addTask, tasks } = useTasks();
-    const { addTask: addUnavailableTask, fetchTasks: fetchUnavailableTasks } =
-        useUnavailableTasks();
+    const {
+        addTask: addUnavailableTask,
+        fetchTasks: fetchUnavailableTasks,
+        tasks: unavailableTasks,
+        deleteTask: deleteUnavailableTask,
+    } = useUnavailableTasks();
     const {
         addLogbook: addUnavailableLogbook,
         fetchLogbooks: fetchUnavailableLogbooks,
+        logbooks: unavailableLogbooks,
+        deleteLogbook: deleteUnavailableLogbook,
     } = useUnavailableLogbooks();
     const { updateTaskSimOne } = useTaskSimOne();
     const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
@@ -261,6 +267,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         type: baseTask.TYPE,
         isFlagged: baseTask.IS_FLAGGED ? 1 : 0,
         original_task_id: baseTask.ORIGINAL_TASK_ID || null,
+        completed_by: baseTask.COMPLETED_BY ?? null,
         ...overrides,
     });
 
@@ -279,6 +286,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         isLogbook: true,
         original_logbook_id:
             baseLogbook.ORIGINAL_LOGBOOK_ID || baseLogbook.ID || null,
+        completed_by: baseLogbook.COMPLETED_BY ?? null,
         ...overrides,
     });
 
@@ -347,6 +355,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         newStatus,
         triggerLabel,
         applyCompletedCutoff = false,
+        completedById = undefined,
     ) => {
         if (isUnavailableEntity) {
             return { success: false, skipped: true };
@@ -371,16 +380,22 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                   ? "Notturno"
                   : baseTurno;
 
+        const completedByOverride =
+            completedById !== undefined
+                ? { completed_by: completedById }
+                : {};
         const updatedEntityData = taskInfo.ISLOGBOOK
             ? buildLogbookPayload(taskInfo, {
                   status: newStatus,
                   date: shouldMoveTask ? todayDate : originalDate,
                   time: updatedTurno,
+                  ...completedByOverride,
               })
             : buildTaskPayload(taskInfo, {
                   status: newStatus,
                   date: shouldMoveTask ? todayDate : originalDate,
                   time: updatedTurno,
+                  ...completedByOverride,
               });
 
         const updateResult = taskInfo.ISLOGBOOK
@@ -399,6 +414,41 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
         let unavailableCreated = false;
         if (shouldMoveTask) {
+            // Before creating the unavailable on originalDate, delete any
+            // existing unavailable that already sits on todayDate for this
+            // entity — so the task can't appear as both active and unavailable
+            // on the same day (e.g. moved back after a previous reschedule).
+            if (taskInfo.ISLOGBOOK) {
+                const conflicting = (unavailableLogbooks || []).find((u) => {
+                    const uDate = u.DATE
+                        ? new Date(u.DATE).toISOString().split("T")[0]
+                        : null;
+                    return (
+                        u.ORIGINAL_LOGBOOK_ID === taskInfo.ID &&
+                        uDate === todayDate
+                    );
+                });
+                if (conflicting) {
+                    await deleteUnavailableLogbook(
+                        conflicting.ID ?? conflicting.id,
+                    );
+                }
+            } else {
+                const conflicting = (unavailableTasks || []).find((u) => {
+                    const uDate = u.DATE
+                        ? new Date(u.DATE).toISOString().split("T")[0]
+                        : null;
+                    return (
+                        u.ORIGINAL_TASK_ID === taskInfo.ID && uDate === todayDate
+                    );
+                });
+                if (conflicting) {
+                    await deleteUnavailableTask(
+                        conflicting.ID ?? conflicting.id,
+                    );
+                }
+            }
+
             const unavailablePayload = taskInfo.ISLOGBOOK
                 ? buildLogbookPayload(taskInfo, {
                       date: originalDate,
@@ -789,6 +839,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                     newStatus,
                     "stato Completato",
                     !isLogbook,
+                    currentUserId,
                 );
 
             if (!completionResult.success) {
@@ -839,6 +890,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
             status: newStatus,
             date: toDateInputValue(taskInfo.DATE),
             time: adjustedTime,
+            completed_by: newStatus === "Completato" ? currentUserId : null,
         });
 
         const result = isLogbook
