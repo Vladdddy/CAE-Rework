@@ -316,20 +316,24 @@ function Logbook() {
                 }
             });
 
-            itemsToExport = itemsToExport.filter((item) => {
-                if (!item.IS_PM_PLAN_TASK) return true;
-                if (
-                    (item.TITLE || "")
-                        .trim()
-                        .toLowerCase()
-                        .startsWith("morning readiness")
-                )
-                    return true;
-                const notes = (notesMap[item.ID] || []).filter(
-                    (n) => n.TYPE !== "automatico",
-                );
-                return notes.length > 0;
-            });
+            const isActivityExport =
+                exportType === "activity" || exportType === "activities";
+            if (!isActivityExport) {
+                itemsToExport = itemsToExport.filter((item) => {
+                    if (!item.IS_PM_PLAN_TASK) return true;
+                    if (
+                        (item.TITLE || "")
+                            .trim()
+                            .toLowerCase()
+                            .startsWith("morning readiness")
+                    )
+                        return true;
+                    const notes = (notesMap[item.ID] || []).filter(
+                        (n) => n.TYPE !== "automatico",
+                    );
+                    return notes.length > 0;
+                });
+            }
 
             let pdfTitle;
             if (exportType === "activity" || exportType === "activities") {
@@ -342,8 +346,7 @@ function Logbook() {
                     timeFilter === "Diurno" ? "Day Report" : "Night Report";
             }
 
-            const isReportExport =
-                exportType !== "activity" && exportType !== "activities";
+            const isReportExport = !isActivityExport;
             const itemsExported = exportTasksToPDF(
                 itemsToExport,
                 hasActiveFilters ? null : startDate,
