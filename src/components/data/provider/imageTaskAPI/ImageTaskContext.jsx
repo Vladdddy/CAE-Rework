@@ -377,6 +377,44 @@ export const ImageTaskProvider = ({ children }) => {
 
     const isImageFile = useCallback((image) => isImageAttachment(image), []);
 
+    const copyTaskImages = useCallback(async (originalTaskId, newTaskId) => {
+        try {
+            const fetchResponse = await fetch(`${API_URL}/imageTask/${originalTaskId}`);
+            if (!fetchResponse.ok) {
+                return { success: false, copied: 0, failed: 0 };
+            }
+            const attachments = await fetchResponse.json();
+            if (!attachments || attachments.length === 0) {
+                return { success: true, copied: 0, failed: 0 };
+            }
+
+            let copied = 0;
+            let failed = 0;
+
+            for (const attachment of attachments) {
+                const attachmentPath = attachment.PATH || attachment.path || "";
+                if (!attachmentPath) {
+                    failed++;
+                    continue;
+                }
+                const postResponse = await fetch(`${API_URL}/imageTask/${newTaskId}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ path: attachmentPath }),
+                });
+                if (postResponse.ok) {
+                    copied++;
+                } else {
+                    failed++;
+                }
+            }
+
+            return { success: failed === 0, copied, failed };
+        } catch {
+            return { success: false, copied: 0, failed: 0 };
+        }
+    }, []);
+
     return (
         <ImageTaskContext.Provider
             value={{
@@ -391,6 +429,7 @@ export const ImageTaskProvider = ({ children }) => {
                 getAttachmentPreviewUrl,
                 getAttachmentPreviewSources,
                 isImageFile,
+                copyTaskImages,
             }}
         >
             {children}

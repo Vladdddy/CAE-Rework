@@ -56,6 +56,7 @@ function ModifyModal({
     );
     const [titleError, setTitleError] = useState(false);
     const [importNotes, setImportNotes] = useState("No");
+    const [importAttachments, setImportAttachments] = useState("No");
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [attachmentError, setAttachmentError] = useState("");
     const { createNote, fetchNotes, notes } = useNotes();
@@ -81,7 +82,7 @@ function ModifyModal({
         deleteLogbook: deleteUnavailableLogbook,
     } = useUnavailableLogbooks();
     const { updateLogbook, addLogbook } = useLogbooks();
-    const { uploadTaskImages } = useImageTasks();
+    const { uploadTaskImages, copyTaskImages } = useImageTasks();
     const { uploadLogbookImages } = useImageLogbooks();
     const { users, currentUserId } = useUsers();
     const { employeeShifts } = useEmployeeShifts();
@@ -521,6 +522,17 @@ function ModifyModal({
                                 );
                             }
                         }
+                    }
+                }
+
+                // Copy attachments from original task if user selected "Si"
+                if (importAttachments === "Si" && createdEntityId) {
+                    const copyResult = await copyTaskImages(
+                        task.ID,
+                        createdEntityId,
+                    );
+                    if (!copyResult.success) {
+                        attachmentsUploadedSuccessfully = false;
                     }
                 }
 
@@ -1207,6 +1219,68 @@ function ModifyModal({
                                     <label
                                         className="cursor-pointer"
                                         htmlFor="importNotesSi"
+                                    >
+                                        Si
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isDuplicating && (
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-sm text-[var(--gray)]">
+                                Importare allegati
+                            </h3>
+                            <div className="flex flex-row items-center gap-1 gap-2 border border-[var(--light-primary)] rounded-md p-2">
+                                <div
+                                    onClick={() => setImportAttachments("No")}
+                                    className={`flex items-center justify-center p-2 gap-2 rounded-md cursor-pointer border border-transparent text-[var(--black)] hover:bg-[var(--light-primary)] flex-1 ${
+                                        importAttachments === "No"
+                                            ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                            : ""
+                                    }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="importAttachments"
+                                        id="importAttachmentsNo"
+                                        value="No"
+                                        checked={importAttachments === "No"}
+                                        onChange={(e) =>
+                                            setImportAttachments(e.target.value)
+                                        }
+                                        className="hidden"
+                                    />
+                                    <label
+                                        className="cursor-pointer"
+                                        htmlFor="importAttachmentsNo"
+                                    >
+                                        No
+                                    </label>
+                                </div>
+                                <div
+                                    onClick={() => setImportAttachments("Si")}
+                                    className={`flex items-center justify-center p-2 gap-2 rounded-md cursor-pointer border border-transparent text-[var(--black)] hover:bg-[var(--light-primary)] flex-1 ${
+                                        importAttachments === "Si"
+                                            ? "border-[var(--light-primary)] bg-[var(--light-primary)] text-[var(--primary)]"
+                                            : ""
+                                    }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="importAttachments"
+                                        id="importAttachmentsSi"
+                                        value="Si"
+                                        checked={importAttachments === "Si"}
+                                        onChange={(e) =>
+                                            setImportAttachments(e.target.value)
+                                        }
+                                        className="hidden"
+                                    />
+                                    <label
+                                        className="cursor-pointer"
+                                        htmlFor="importAttachmentsSi"
                                     >
                                         Si
                                     </label>
