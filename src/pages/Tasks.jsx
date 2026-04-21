@@ -16,6 +16,7 @@ import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
+import { getPmPlanTime } from "../functions/GetPmPlanTime.jsx";
 
 const SIMULATOR_MAP = {
     1: "109FFS",
@@ -157,7 +158,7 @@ function Tasks() {
                     TYPE: "PM Plan",
                     IS_PM_PLAN_TASK: true,
                     SIMULATOR: SIMULATOR_MAP[simulatorId],
-                    TIME: "Notturno",
+                    TIME: getPmPlanTime(task),
                     Data: task["Scheduled on"] ?? task.Data,
                 };
             });

@@ -9,6 +9,7 @@ import { useLogbooks } from "../data/provider/logbookAPI/useLogbooks";
 import { useUsers } from "../data/provider/userAPI/useUsers";
 import { useEmployeeShifts } from "../data/provider/employeeShiftsAPI/useEmployeeShifts";
 import { useTaskSimOne } from "../data/provider/taskSimOneAPI/useTaskSimOne";
+import { getPmPlanTime } from "../../functions/GetPmPlanTime.jsx";
 
 const SIMULATOR_MAP = {
     1: "109",
@@ -151,7 +152,7 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
         .map((task) => ({
             ...task,
             DATE: task["Scheduled on"] ?? task.DATE,
-            TIME: "Notturno",
+            TIME: getPmPlanTime(task),
             IS_PM_PLAN_TASK: true,
         }));
 

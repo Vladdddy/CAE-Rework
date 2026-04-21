@@ -573,6 +573,9 @@ function ModifyModal({
                 // Delete the original logbook
                 //const deleteResult = await deleteLogbook(task.ID);
 
+                // Update the original logbook status to "Convertito in task"
+                await updateLogbook(task.ID, { ...modifiedTask, status: "Convertito in task" });
+
                 onClose();
 
                 if (onSuccess) {

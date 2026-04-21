@@ -24,6 +24,7 @@ import UnflagIcon from "../../assets/icons/unflag.tsx";
 import EditIcon from "../../assets/icons/edit.tsx";
 import DeleteIcon from "../../assets/icons/delete.tsx";
 import RescheduleIcon from "../../assets/icons/reschedule.tsx";
+import { usePendingDeletion } from "../data/provider/pendingDeletionAPI/usePendingDeletion.js";
 
 function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -57,7 +58,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         deleteLogbook: deleteUnavailableLogbook,
     } = useUnavailableLogbooks();
     const { updateTaskSimOne } = useTaskSimOne();
-    const { deleteLogbook, updateLogbook, fetchLogbooks } = useLogbooks();
+    const { deleteLogbook, updateLogbook, fetchLogbooks, logbooks } =
+        useLogbooks();
     const { notes, fetchNotes, createNote, editNote, deleteNote } = useNotes();
     const {
         fetchTaskImages,
@@ -95,6 +97,31 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         deleteTechComment,
     } = usePMTechComments();
     const { employeeShifts } = useEmployeeShifts();
+    const { scheduleDelete, cancelDelete, isPendingDeletion, getDeleteTime } =
+        usePendingDeletion();
+    const [deleteCountdown, setDeleteCountdown] = useState(null);
+
+    useEffect(() => {
+        if (!isPendingDeletion(taskInfo?.ID)) {
+            setDeleteCountdown(null);
+            return;
+        }
+        const update = () => {
+            const remaining = getDeleteTime(taskInfo.ID) - Date.now();
+            if (remaining <= 0) {
+                setDeleteCountdown("00:00");
+            } else {
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                setDeleteCountdown(
+                    `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`,
+                );
+            }
+        };
+        update();
+        const interval = setInterval(update, 1000);
+        return () => clearInterval(interval);
+    }, [taskInfo?.ID, isPendingDeletion(taskInfo?.ID)]);
     const [hasPmAssigneeBeenEdited, setHasPmAssigneeBeenEdited] =
         useState(false);
     const [selectedAssignees, setSelectedAssignees] = useState(
@@ -111,6 +138,17 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         taskInfo.ISLOGBOOK &&
         (taskInfo?.TYPE === "Unavailable" || taskInfo?.IS_UNAVAILABLE);
     const isUnavailableEntity = isUnavailableTask || isUnavailableLogbook;
+
+    const originalEntityId = taskInfo.ISLOGBOOK
+        ? taskInfo.ORIGINAL_LOGBOOK_ID
+        : taskInfo.ORIGINAL_TASK_ID;
+    const originalEntity = isUnavailableEntity
+        ? taskInfo.ISLOGBOOK
+            ? logbooks?.find((l) => l.ID === originalEntityId)
+            : tasks?.find((t) => t.ID === originalEntityId)
+        : null;
+    const rescheduledToDate = originalEntity?.DATE;
+
     const isPmPlanTask = Boolean(taskInfo?.IS_PM_PLAN_TASK);
     const attachmentImages = taskInfo.ISLOGBOOK
         ? getLogbookImages(taskInfo.ID)
@@ -381,9 +419,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                   : baseTurno;
 
         const completedByOverride =
-            completedById !== undefined
-                ? { completed_by: completedById }
-                : {};
+            completedById !== undefined ? { completed_by: completedById } : {};
         const updatedEntityData = taskInfo.ISLOGBOOK
             ? buildLogbookPayload(taskInfo, {
                   status: newStatus,
@@ -439,7 +475,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                         ? new Date(u.DATE).toISOString().split("T")[0]
                         : null;
                     return (
-                        u.ORIGINAL_TASK_ID === taskInfo.ID && uDate === todayDate
+                        u.ORIGINAL_TASK_ID === taskInfo.ID &&
+                        uDate === todayDate
                     );
                 });
                 if (conflicting) {
@@ -547,28 +584,12 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         return `${days[dateOfWeek.getDay()]} • ${day}/${month}/${year} • ${hours}:${minutes}`;
     };
 
-    const handleDelete = async () => {
-        const isLogbook = taskInfo.ISLOGBOOK;
+    const handleDelete = () => {
+        scheduleDelete(taskInfo.ID, !!taskInfo.ISLOGBOOK);
+    };
 
-        const result = isLogbook
-            ? await deleteLogbook(taskInfo.ID)
-            : await deleteTask(taskInfo.ID);
-        onClose();
-
-        if (onSuccess) {
-            if (isLogbook) {
-                await fetchLogbooks();
-            } else {
-                await fetchTasks();
-            }
-
-            onSuccess(
-                result.success,
-                isLogbook
-                    ? `Entry "${taskInfo.TITLE}" eliminata con successo`
-                    : `Task "${taskInfo.TITLE}" eliminata con successo`,
-            );
-        }
+    const handleCancelDelete = () => {
+        cancelDelete(taskInfo.ID);
     };
 
     const formatDate = (dateString) => {
@@ -1462,6 +1483,17 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {isUnavailableEntity &&
+                                        rescheduledToDate && (
+                                            <p className="text-sm text-[var(--primary)] font-semibold">
+                                                {taskInfo.ISLOGBOOK
+                                                    ? "Entry"
+                                                    : "Task"}{" "}
+                                                rischedulata al{" "}
+                                                {formatDate(rescheduledToDate)}
+                                            </p>
+                                        )}
                                 </div>
 
                                 <div className="flex flex-col gap-2 md:w-1/2 w-full">
@@ -2014,17 +2046,41 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                     (u) =>
                                                         u.ID === currentUserId,
                                                 ).Username,
-                                            ))) && (
+                                            ))) &&
+                                    (isPendingDeletion(taskInfo.ID) ? (
                                         <button
                                             className="btn delete"
-                                            onClick={() => handleDelete()}
+                                            onClick={handleCancelDelete}
+                                        >
+                                            <DeleteIcon className="w-6 md:hidden" />
+                                            <p className="hidden md:block">
+                                                Ripristina
+                                                {deleteCountdown && (
+                                                    <span
+                                                        style={{
+                                                            marginLeft:
+                                                                "0.4rem",
+                                                            opacity: 0.85,
+                                                            fontVariantNumeric:
+                                                                "tabular-nums",
+                                                        }}
+                                                    >
+                                                        {deleteCountdown}
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="btn delete"
+                                            onClick={handleDelete}
                                         >
                                             <DeleteIcon className="w-6 md:hidden" />
                                             <p className="hidden md:block">
                                                 Elimina
                                             </p>
                                         </button>
-                                    )}
+                                    ))}
 
                                 {!isUnavailableEntity &&
                                     !isPmPlanTask &&
@@ -2153,7 +2209,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                         currentUserId &&
                                                         note.TYPE !==
                                                             "automatico" &&
-                                                        currentUserRole !== "View" && (
+                                                        currentUserRole !==
+                                                            "View" && (
                                                             <div className="flex flex-col items-center gap-2">
                                                                 <EditIcon
                                                                     className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
@@ -2225,7 +2282,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                         currentUserId &&
                                                         note.TYPE !==
                                                             "automatico" &&
-                                                        currentUserRole !== "View" && (
+                                                        currentUserRole !==
+                                                            "View" && (
                                                             <div className="flex flex-col items-center gap-2">
                                                                 <EditIcon
                                                                     className="w-6 text-[var(--black)] hover:text-[var(--primary)] cursor-pointer transition-all duration-200"
@@ -2293,33 +2351,39 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                             placeholder="Inserisci il testo della nota qui..."
                                             value={noteDescription}
                                             onChange={(e) =>
-                                                setNoteDescription(e.target.value)
+                                                setNoteDescription(
+                                                    e.target.value,
+                                                )
                                             }
                                         ></textarea>
-                                        {!editingNoteId && !isUnavailableEntity && (
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <input
-                                                    id="do-not-move-task-on-note"
-                                                    type="checkbox"
-                                                    checked={doNotMoveTaskOnNote}
-                                                    onChange={(e) =>
-                                                        setDoNotMoveTaskOnNote(
-                                                            e.target.checked,
-                                                        )
-                                                    }
-                                                    className="h-4 w-4 rounded border border-[var(--light-primary)] bg-[var(--white)] accent-[var(--primary)] cursor-pointer focus:ring-none focus:ring-[var(--primary)] focus:ring-offset-0"
-                                                />
-                                                <label
-                                                    htmlFor="do-not-move-task-on-note"
-                                                    className="text-sm text-[var(--black)] cursor-pointer select-none"
-                                                >
-                                                    Non spostare la{" "}
-                                                    {taskInfo.ISLOGBOOK
-                                                        ? "entry"
-                                                        : "task"}
-                                                </label>
-                                            </div>
-                                        )}
+                                        {!editingNoteId &&
+                                            !isUnavailableEntity && (
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <input
+                                                        id="do-not-move-task-on-note"
+                                                        type="checkbox"
+                                                        checked={
+                                                            doNotMoveTaskOnNote
+                                                        }
+                                                        onChange={(e) =>
+                                                            setDoNotMoveTaskOnNote(
+                                                                e.target
+                                                                    .checked,
+                                                            )
+                                                        }
+                                                        className="h-4 w-4 rounded border border-[var(--light-primary)] bg-[var(--white)] accent-[var(--primary)] cursor-pointer focus:ring-none focus:ring-[var(--primary)] focus:ring-offset-0"
+                                                    />
+                                                    <label
+                                                        htmlFor="do-not-move-task-on-note"
+                                                        className="text-sm text-[var(--black)] cursor-pointer select-none"
+                                                    >
+                                                        Non spostare la{" "}
+                                                        {taskInfo.ISLOGBOOK
+                                                            ? "entry"
+                                                            : "task"}
+                                                    </label>
+                                                </div>
+                                            )}
                                     </div>
 
                                     <div className="flex justify-end gap-1 border-t border-[var(--light-primary)] pt-4 mt-4">

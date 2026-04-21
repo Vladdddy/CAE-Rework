@@ -12,6 +12,7 @@ import Popup from "../components/modals/Popup.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
+import { getPmPlanTime } from "../functions/GetPmPlanTime.jsx";
 import { usePMTechComments } from "../components/data/provider/PMTechCommentsAPI/usePMTechComments";
 import { useUnavailableLogbooks } from "../components/data/provider/unavailableLogbookAPI/useUnavailableLogbooks";
 import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks";
@@ -166,7 +167,7 @@ function Logbook() {
                         ID: task["ID_task"] ?? task.ID,
                         SIMULATOR: SIMULATOR_MAP[simulatorId],
                         DATE: task["Scheduled on"] ?? task.DATE,
-                        TIME: "Notturno",
+                        TIME: getPmPlanTime(task),
                         TITLE: task["Task"] || "PM Task",
                         ASSIGNED_TO:
                             task["Task Performed By"] || task["Tech id"] || "",
@@ -296,6 +297,18 @@ function Logbook() {
                 }),
             );
 
+            // Filter notes to only include those created on the selected export date
+            const exportDate = new Date(startDate);
+            exportDate.setHours(0, 0, 0, 0);
+            Object.keys(notesMap).forEach((key) => {
+                notesMap[key] = notesMap[key].filter((note) => {
+                    if (!note.CREATEDDATE) return true;
+                    const noteDate = new Date(note.CREATEDDATE);
+                    noteDate.setHours(0, 0, 0, 0);
+                    return noteDate.getTime() === exportDate.getTime();
+                });
+            });
+
             // Add PM tech comments to notesMap for PM Plan tasks, then filter
             // out PM tasks that have no comments at all.
             itemsToExport.forEach((item) => {
@@ -412,7 +425,7 @@ function Logbook() {
                     TYPE: "PM Plan",
                     IS_PM_PLAN_TASK: true,
                     SIMULATOR: SIMULATOR_MAP[simulatorId],
-                    TIME: "Notturno",
+                    TIME: getPmPlanTime(task),
                     Data: task["Scheduled on"] ?? task.Data,
                 };
             });

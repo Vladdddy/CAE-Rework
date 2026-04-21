@@ -12,6 +12,7 @@ import { useLogbooks } from "../components/data/provider/logbookAPI/useLogbooks"
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import { useEmployeeShifts } from "../components/data/provider/employeeShiftsAPI/useEmployeeShifts";
 import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
+import { getPmPlanTime } from "../functions/GetPmPlanTime.jsx";
 import {
     GetTaskCountTime,
     GetTaskCountStatus,
@@ -244,7 +245,7 @@ function Dashboard() {
                 TYPE: "PM Plan",
                 IS_PM_PLAN_TASK: true,
                 SIMULATOR: simulatorName,
-                TIME: "Notturno", // Add TIME property for GetSimulators filtering
+                TIME: getPmPlanTime(task),
                 Data: task["Scheduled on"] ?? task.Data,
             };
         });

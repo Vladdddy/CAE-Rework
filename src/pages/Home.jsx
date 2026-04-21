@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Logo from "../../src/assets/cae-logo.png";
 import Rotorsim from "../../public/rotorsim.jpg";
 import Cae from "../../public/cae2.png";
+import Vdb from "../../public/vdb.jpg";
 import { useNavigate } from "react-router-dom";
 import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import LogoutIcon from "../assets/icons/logout";
@@ -77,7 +78,7 @@ function Home() {
                 </div>
 
                 <h2 className="text-lg font-semibold text-[var(--black)] mb-4">
-                    App (4)
+                    App (5)
                 </h2>
 
                 <div className="flex flex-wrap gap-6">
@@ -142,6 +143,24 @@ function Home() {
                         </div>
                         <p className="text-sm font-medium text-[var(--black)] text-center">
                             Dashboard
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <div
+                            onClick={() =>
+                                navigate("http://172.254.60.174:5173/dashboard")
+                            }
+                            className="rounded-3xl flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
+                        >
+                            <img
+                                className="w-32 h-32 rounded-3xl"
+                                src={Vdb}
+                                alt="Logo"
+                            />
+                        </div>
+                        <p className="text-sm font-medium text-[var(--black)] text-center">
+                            VDB Portal
                         </p>
                     </div>
                 </div>

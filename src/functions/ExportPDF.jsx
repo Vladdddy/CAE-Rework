@@ -178,10 +178,14 @@ export const exportTasksToPDF = (
     showStatus = true,
     isDayReport = false,
 ) => {
-    // Exclude rescheduled items from export.
-    const tasksForExport = tasks.filter(
-        (task) => (task?.STATUS || "").trim() !== "Rischedulato",
-    );
+    // Exclude rescheduled items from export, but keep unavailable tasks/logbooks
+    // (they were moved to the unavailable table and should appear as "Rescheduled").
+    const tasksForExport = tasks.filter((task) => {
+        const isUnavailable =
+            task?.IS_UNAVAILABLE === true || task?.TYPE === "Unavailable";
+        if (isUnavailable) return true;
+        return (task?.STATUS || "").trim() !== "Rischedulato";
+    });
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -318,6 +322,7 @@ export const exportTasksToPDF = (
         "Non completato": "Not completed",
         "Da definire": "To be defined",
         "Non iniziato": "Not started",
+        Rischedulato: "Rescheduled",
     };
 
     // ── Draw one simulator card ───────────────────────────────────────────────

@@ -35,6 +35,7 @@ import { TrainingLoadProvider } from "./components/data/provider/trainingLoadAPI
 import { TaskSimOneProvider } from "./components/data/provider/taskSimOneAPI/TaskSimOneContext.jsx";
 import { PMTechCommentsProvider } from "./components/data/provider/PMTechCommentsAPI/PMTechCommentsContext.jsx";
 import { GroupChatProvider } from "./components/data/provider/groupChatAPI/GroupChatContext.jsx";
+import { PendingDeletionProvider } from "./components/data/provider/pendingDeletionAPI/PendingDeletionContext.jsx";
 import "./App.css";
 
 const ProtectedRoute = ({ children }) => {
@@ -73,6 +74,7 @@ function App() {
                                                                             <EmployeeOverviewProvider>
                                                                                 <EmployeeMessageProvider>
                                                                                 <GroupChatProvider>
+                                                                                    <PendingDeletionProvider>
                                                                                     <Router>
                                                                                         <Routes>
                                                                                             <Route
@@ -166,6 +168,7 @@ function App() {
                                                                                             />
                                                                                         </Routes>
                                                                                     </Router>
+                                                                                    </PendingDeletionProvider>
                                                                                 </GroupChatProvider>
                                                                                 </EmployeeMessageProvider>
                                                                             </EmployeeOverviewProvider>
