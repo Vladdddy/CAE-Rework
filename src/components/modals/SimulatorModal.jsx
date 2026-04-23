@@ -7,6 +7,18 @@ import { GetSimulatorsList } from "../../functions/Simulators.jsx";
 import { useSimulators } from "../data/provider/simulatorAPI/useSimulators.js";
 import { useUsers } from "../data/provider/userAPI/useUsers.js";
 
+function toTimeInputValue(dbTime) {
+    if (!dbTime) return "";
+    let timePart = dbTime;
+    if (timePart.includes("T")) timePart = timePart.split("T")[1];
+    if (timePart.includes(" ")) timePart = timePart.split(" ")[1];
+    timePart = timePart.split(".")[0];
+    if (timePart.split(":").length > 2)
+        timePart = timePart.split(":").slice(0, 2).join(":");
+    if (timePart.length > 5) timePart = timePart.slice(0, 5);
+    return timePart;
+}
+
 function SimulatorModal({
     onClose,
     simulatorInfo,
@@ -17,8 +29,8 @@ function SimulatorModal({
     time,
 }) {
     const [name, setName] = useState(simulatorInfo || "FTD");
-    const [startHour, setStartHour] = useState("");
-    const [endHour, setEndHour] = useState("");
+    const [startHour, setStartHour] = useState(toTimeInputValue(startTime));
+    const [endHour, setEndHour] = useState(toTimeInputValue(endTime));
     const [assignedTo, setAssignedTo] = useState(
         assignee ? assignee.split(",").map((a) => a.trim()) : [],
     );
@@ -38,7 +50,7 @@ function SimulatorModal({
     };
 
     const handleSave = async () => {
-        if (!name || !startHour || !endHour) {
+        if (!name) {
             setEmptyError(true);
             return;
         }
@@ -52,8 +64,8 @@ function SimulatorModal({
 
         const newSimulator = {
             name: name,
-            startHour: startHour,
-            endHour: endHour,
+            startHour: startHour || null,
+            endHour: endHour || null,
             assignedTo: assignedTo.join(", "),
             creationDate: localDate,
         };
@@ -74,8 +86,8 @@ function SimulatorModal({
 
     const handleEdit = async () => {
         const finalName = name || simulatorInfo;
-        const finalStartHour = startHour || toTimeInputValue(startTime);
-        const finalEndHour = endHour || toTimeInputValue(endTime);
+        const finalStartHour = startHour || null;
+        const finalEndHour = endHour || null;
         const finalAssignedTo = assignedTo.join(", ");
 
         console.log("Editing Simulator with data:", {
@@ -85,7 +97,7 @@ function SimulatorModal({
             assignedTo: finalAssignedTo,
         });
 
-        if (!finalName || !finalStartHour || !finalEndHour) {
+        if (!finalName) {
             setEmptyError(true);
             return;
         }
@@ -114,21 +126,6 @@ function SimulatorModal({
 
         onClose();
     };
-
-    function toTimeInputValue(dbTime) {
-        if (!dbTime) return "";
-        let timePart = dbTime;
-
-        // To convert all combinations of date-time strings to HH:MM format
-        if (timePart.includes("T")) timePart = timePart.split("T")[1];
-        if (timePart.includes(" ")) timePart = timePart.split(" ")[1];
-        timePart = timePart.split(".")[0];
-        if (timePart.split(":").length > 2)
-            timePart = timePart.split(":").slice(0, 2).join(":");
-        if (timePart.length > 5) timePart = timePart.slice(0, 5);
-
-        return timePart;
-    }
 
     return (
         <div
@@ -204,8 +201,7 @@ function SimulatorModal({
                             <input
                                 type="time"
                                 className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                value={startHour || toTimeInputValue(startTime)}
-                                required
+                                value={startHour}
                                 onChange={(e) => {
                                     setStartHour(e.target.value);
                                     setEditSimulator(true);
@@ -222,9 +218,8 @@ function SimulatorModal({
                             </h3>
                             <input
                                 type="time"
-                                required
                                 className="w-full text-[var(--black)] p-2 border border-[var(--light-primary)] rounded-md bg-[var(--white)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
-                                value={endHour || toTimeInputValue(endTime)}
+                                value={endHour}
                                 onChange={(e) => {
                                     setEndHour(e.target.value);
                                     setEditSimulator(true);
@@ -307,7 +302,7 @@ function SimulatorModal({
 
                     {emptyError && (
                         <p className="text-[var(--red)] text-sm -mt-4">
-                            Compila simulatore, orario inizio e orario fine.
+                            Compila il nome del simulatore.
                         </p>
                     )}
 

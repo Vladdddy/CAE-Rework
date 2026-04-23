@@ -413,9 +413,9 @@ export function GetTableSimulators({
                                                         Fine
                                                     </p>
                                                     <p className="text-xs">
-                                                        {toTimeInputValue(
-                                                            matchingSimulator.START_HOUR,
-                                                        )}
+                                                        {matchingSimulator.START_HOUR
+                                                            ? toTimeInputValue(matchingSimulator.START_HOUR)
+                                                            : "N/A"}
                                                     </p>
                                                 </div>
 
@@ -424,9 +424,9 @@ export function GetTableSimulators({
                                                         Inizio
                                                     </p>
                                                     <p className="text-xs">
-                                                        {toTimeInputValue(
-                                                            matchingSimulator.END_HOUR,
-                                                        )}
+                                                        {matchingSimulator.END_HOUR
+                                                            ? toTimeInputValue(matchingSimulator.END_HOUR)
+                                                            : "N/A"}
                                                     </p>
                                                 </div>
 

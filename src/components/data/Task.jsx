@@ -38,7 +38,7 @@ function Task({
             {type === "table" ? (
                 <>
                     <div
-                        className={`flex flex-row items-center gap-1 mb-2 w-full ${isUnavailableTask ? "opacity-50" : ""}`}
+                        className={`flex flex-row items-center gap-1 mb-2 w-full ${isUnavailableTask ? "opacity-20" : ""}`}
                     >
                         {!isLogbook === true ? (
                             <TaskIcon
@@ -55,7 +55,7 @@ function Task({
                     </div>
 
                     <div
-                        className={`flex flex-col justify-between gap-2 w-full ${isUnavailableTask ? "opacity-50" : ""}`}
+                        className={`flex flex-col justify-between gap-2 w-full ${isUnavailableTask ? "opacity-20" : ""}`}
                     >
                         <div className="flex items-center gap-1 flex-wrap truncate flex-1">
                             <Splitter

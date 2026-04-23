@@ -178,12 +178,8 @@ export const exportTasksToPDF = (
     showStatus = true,
     isDayReport = false,
 ) => {
-    // Exclude rescheduled items from export, but keep unavailable tasks/logbooks
-    // (they were moved to the unavailable table and should appear as "Rescheduled").
     const tasksForExport = tasks.filter((task) => {
-        const isUnavailable =
-            task?.IS_UNAVAILABLE === true || task?.TYPE === "Unavailable";
-        if (isUnavailable) return true;
+        if (task?.IS_UNAVAILABLE === true || task?.TYPE === "Unavailable") return false;
         return (task?.STATUS || "").trim() !== "Rischedulato";
     });
 
@@ -555,7 +551,8 @@ export const exportTasksToPDF = (
                     doc.setFont(undefined, "normal");
                     doc.setTextColor(50, 50, 50);
                     descLines.forEach((line) => {
-                        if (by + 4.5 + footerH + 4 > pageHeight - 15) continueOnNextPage();
+                        if (by + 4.5 + footerH + 4 > pageHeight - 15)
+                            continueOnNextPage();
                         doc.text(line, cardX + 14, by);
                         by += 4.5;
                     });
@@ -567,7 +564,8 @@ export const exportTasksToPDF = (
                     notesMap[getNotesKeyForItem(task)] || []
                 ).filter((n) => n.TYPE !== "automatico");
                 if (taskNotes.length > 0) {
-                    if (by + 4.5 + footerH + 4 > pageHeight - 15) continueOnNextPage();
+                    if (by + 4.5 + footerH + 4 > pageHeight - 15)
+                        continueOnNextPage();
                     doc.setFontSize(8.5);
                     doc.setFont(undefined, "bold");
                     doc.setTextColor(0, 80, 180);
@@ -578,7 +576,8 @@ export const exportTasksToPDF = (
                         const authorName =
                             note.AUTHOR_OVERRIDE ||
                             getUsernameById(note.CREATEDBY, users);
-                        if (by + 4 + footerH + 4 > pageHeight - 15) continueOnNextPage();
+                        if (by + 4 + footerH + 4 > pageHeight - 15)
+                            continueOnNextPage();
                         doc.setFontSize(8);
                         doc.setFont(undefined, "bold");
                         doc.setTextColor(0, 80, 180);
@@ -593,7 +592,8 @@ export const exportTasksToPDF = (
                         doc.setFont(undefined, "normal");
                         doc.setTextColor(100, 100, 100);
                         noteLines.forEach((line) => {
-                            if (by + 4 + footerH + 4 > pageHeight - 15) continueOnNextPage();
+                            if (by + 4 + footerH + 4 > pageHeight - 15)
+                                continueOnNextPage();
                             doc.text(line, cardX + 18, by);
                             by += 4;
                         });
@@ -603,7 +603,8 @@ export const exportTasksToPDF = (
 
                 // Status
                 if (showStatus) {
-                    if (by + 5.5 + footerH + 4 > pageHeight - 15) continueOnNextPage();
+                    if (by + 5.5 + footerH + 4 > pageHeight - 15)
+                        continueOnNextPage();
                     const status = task.STATUS || "N/A";
                     const translatedStatus =
                         statusTranslations[status] || status;
@@ -778,9 +779,16 @@ export const exportTasksToPDF = (
     }
 
     // ── Save ──────────────────────────────────────────────────────────────────
+    const filePrefixMap = {
+        "Day Report": "Report_Day",
+        "Night Report": "Report_Night",
+        "Day Activities": "Activity_Day",
+        "Night Activities": "Activity_Night",
+    };
+    const filePrefix = filePrefixMap[title] ?? title.replace(/\s+/g, "_");
     const fileName = date
-        ? `Daily_Report_${formatDate(date).replace(/\//g, "-")}.pdf`
-        : `Daily_Report_${new Date().getTime()}.pdf`;
+        ? `${filePrefix}_${formatDate(date).replace(/\//g, "-")}.pdf`
+        : `${filePrefix}_${new Date().getTime()}.pdf`;
     doc.save(fileName);
 
     return tasksForExport.length;
