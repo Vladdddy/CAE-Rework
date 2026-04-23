@@ -483,6 +483,23 @@ export const exportTasksToPDF = (
         // ── Task body ─────────────────────────────────────────────────────────
         const bodyY = cardY + headerH;
         let by = bodyY + 5; // inner cursor
+        let currentBodyY = bodyY; // tracks the body-start Y for the current page
+
+        // Closes the current page's body section and opens a continuation on a new page.
+        const continueOnNextPage = () => {
+            strokeRect(cardX, currentBodyY, cardW, by - currentBodyY, 0.4);
+            doc.addPage();
+            y = 20;
+            fillRect(cardX, y, cardW, headerH, 240, 240, 240);
+            doc.setFontSize(10);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Sim: ${simName} (cont.)`, cardX + 4, y + 9);
+            strokeRect(cardX, y, cardW, headerH, 0.5);
+            y += headerH;
+            currentBodyY = y;
+            by = y + 5;
+        };
 
         if (simTasks.length === 0) {
             doc.setFontSize(9);
@@ -492,6 +509,13 @@ export const exportTasksToPDF = (
             by += 8;
         } else {
             simTasks.forEach((task, idx) => {
+                // Before drawing each task, ensure there's enough room for at least
+                // the title + assigned-to lines + footer. If not, spill to a new page.
+                const minTaskH = 5.5 + 6 + (showStatus ? 5.5 : 0) + 5;
+                if (by + minTaskH + footerH + 4 > pageHeight - 15) {
+                    continueOnNextPage();
+                }
+
                 const isLogbook =
                     task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
                 const titleColor = isLogbook ? [200, 100, 0] : [0, 80, 180];
@@ -531,6 +555,7 @@ export const exportTasksToPDF = (
                     doc.setFont(undefined, "normal");
                     doc.setTextColor(50, 50, 50);
                     descLines.forEach((line) => {
+                        if (by + 4.5 + footerH + 4 > pageHeight - 15) continueOnNextPage();
                         doc.text(line, cardX + 14, by);
                         by += 4.5;
                     });
@@ -542,6 +567,7 @@ export const exportTasksToPDF = (
                     notesMap[getNotesKeyForItem(task)] || []
                 ).filter((n) => n.TYPE !== "automatico");
                 if (taskNotes.length > 0) {
+                    if (by + 4.5 + footerH + 4 > pageHeight - 15) continueOnNextPage();
                     doc.setFontSize(8.5);
                     doc.setFont(undefined, "bold");
                     doc.setTextColor(0, 80, 180);
@@ -552,6 +578,7 @@ export const exportTasksToPDF = (
                         const authorName =
                             note.AUTHOR_OVERRIDE ||
                             getUsernameById(note.CREATEDBY, users);
+                        if (by + 4 + footerH + 4 > pageHeight - 15) continueOnNextPage();
                         doc.setFontSize(8);
                         doc.setFont(undefined, "bold");
                         doc.setTextColor(0, 80, 180);
@@ -566,6 +593,7 @@ export const exportTasksToPDF = (
                         doc.setFont(undefined, "normal");
                         doc.setTextColor(100, 100, 100);
                         noteLines.forEach((line) => {
+                            if (by + 4 + footerH + 4 > pageHeight - 15) continueOnNextPage();
                             doc.text(line, cardX + 18, by);
                             by += 4;
                         });
@@ -575,6 +603,7 @@ export const exportTasksToPDF = (
 
                 // Status
                 if (showStatus) {
+                    if (by + 5.5 + footerH + 4 > pageHeight - 15) continueOnNextPage();
                     const status = task.STATUS || "N/A";
                     const translatedStatus =
                         statusTranslations[status] || status;
@@ -610,12 +639,18 @@ export const exportTasksToPDF = (
 
         by += 4; // bottom padding of body
 
-        // Body border (left + right sides of body area)
-        const bodyActualH = by - bodyY;
-        strokeRect(cardX, bodyY, cardW, bodyActualH, 0.4);
+        // Body border for the final (or only) page segment
+        const bodyActualH = by - currentBodyY;
+        strokeRect(cardX, currentBodyY, cardW, bodyActualH, 0.4);
 
         // ── Footer / config row ───────────────────────────────────────────────
-        const fY = bodyY + bodyActualH;
+        let fY = by; // footer starts right after body bottom padding
+        // If the footer won't fit on the current page, move it to a fresh page.
+        if (fY + footerH > pageHeight - 15) {
+            doc.addPage();
+            y = 20;
+            fY = y;
+        }
         fillRect(cardX, fY, cardW, footerH, 248, 248, 248);
 
         const fc1W = cardW * 0.38;
