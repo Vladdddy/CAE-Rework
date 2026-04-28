@@ -741,12 +741,136 @@ export const exportTasksToPDF = (
                     allOthersTasks.push(...simulatorsInMacro[sn]),
                 );
 
-                // Use the first sim name as the "card" name, or "Others"
-                const displayName =
-                    simNamesInMacro.length > 0
-                        ? simNamesInMacro.join(", ")
-                        : "Others";
-                drawSimulatorCard(displayName, allOthersTasks);
+                if (allOthersTasks.length === 0) {
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, "italic");
+                    doc.setTextColor(130, 130, 130);
+                    doc.text("No tasks assigned", margin + 8, y + 3);
+                    y += 10;
+                } else {
+                    allOthersTasks.forEach((task, idx) => {
+                        checkPageBreak(20);
+
+                        const isLogbook =
+                            task.ISLOGBOOK === true || task.ISLOGBOOK === 1;
+                        const titleColor = isLogbook
+                            ? [200, 100, 0]
+                            : [0, 80, 180];
+
+                        doc.setFontSize(9.5);
+                        doc.setFont(undefined, "bold");
+                        doc.setTextColor(...titleColor);
+                        doc.text("-  ", margin + 6, y);
+                        doc.text(task.TITLE || "N/A", margin + 12, y);
+                        y += 5.5;
+
+                        doc.setFontSize(8.5);
+                        doc.setFont(undefined, "normal");
+                        doc.setTextColor(180, 0, 0);
+                        doc.text(
+                            `Assigned to: ${task.ASSIGNED_TO || "N/A"}`,
+                            margin + 14,
+                            y,
+                        );
+                        doc.setTextColor(0, 0, 0);
+                        y += 6;
+
+                        if (task.DESCRIPTION) {
+                            const descLines = doc.splitTextToSize(
+                                task.DESCRIPTION,
+                                contentWidth - 22,
+                            );
+                            doc.setFontSize(8.5);
+                            doc.setFont(undefined, "normal");
+                            doc.setTextColor(50, 50, 50);
+                            descLines.forEach((line) => {
+                                checkPageBreak(5);
+                                doc.text(line, margin + 14, y);
+                                y += 4.5;
+                            });
+                            y += 1;
+                        }
+
+                        const taskNotes = (
+                            notesMap[getNotesKeyForItem(task)] || []
+                        ).filter((n) => n.TYPE !== "automatico");
+                        if (taskNotes.length > 0) {
+                            checkPageBreak(10);
+                            doc.setFontSize(8.5);
+                            doc.setFont(undefined, "bold");
+                            doc.setTextColor(0, 80, 180);
+                            doc.text("Notes", margin + 14, y);
+                            y += 4.5;
+
+                            taskNotes.forEach((note) => {
+                                const authorName =
+                                    note.AUTHOR_OVERRIDE ||
+                                    getUsernameById(note.CREATEDBY, users);
+                                checkPageBreak(8);
+                                doc.setFontSize(8);
+                                doc.setFont(undefined, "bold");
+                                doc.setTextColor(0, 80, 180);
+                                doc.text(`${authorName}:`, margin + 18, y);
+                                y += 4;
+
+                                const noteLines = doc.splitTextToSize(
+                                    note.DESCRIPTION || "",
+                                    contentWidth - 30,
+                                );
+                                doc.setFontSize(8);
+                                doc.setFont(undefined, "normal");
+                                doc.setTextColor(100, 100, 100);
+                                noteLines.forEach((line) => {
+                                    checkPageBreak(4);
+                                    doc.text(line, margin + 18, y);
+                                    y += 4;
+                                });
+                                y += 2;
+                            });
+                        }
+
+                        if (showStatus) {
+                            checkPageBreak(6);
+                            const status = task.STATUS || "N/A";
+                            const translatedStatus =
+                                statusTranslations[status] || status;
+                            const isCompleted = status === "Completato";
+                            let statusText = `Status: ${translatedStatus}`;
+                            if (isCompleted && task.COMPLETED_BY != null) {
+                                const completedByUser = users.find(
+                                    (u) => u.ID === task.COMPLETED_BY,
+                                );
+                                if (completedByUser?.Username) {
+                                    statusText += ` by ${completedByUser.Username}`;
+                                }
+                            }
+                            doc.setFontSize(8.5);
+                            doc.setFont(undefined, "bold");
+                            doc.setTextColor(
+                                isCompleted ? 0 : 200,
+                                isCompleted ? 140 : 0,
+                                0,
+                            );
+                            doc.text(statusText, margin + 14, y);
+                            y += 5.5;
+                        }
+
+                        if (idx < allOthersTasks.length - 1) {
+                            y += 1;
+                            hRule(
+                                margin + 8,
+                                y,
+                                contentWidth - 8,
+                                0.2,
+                                200,
+                                200,
+                                200,
+                            );
+                            y += 4;
+                        }
+                    });
+                    y += 4;
+                }
             } else {
                 simNamesInMacro.forEach((simName) => {
                     // For report exports, skip simulators with no tasks

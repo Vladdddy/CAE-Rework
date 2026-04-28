@@ -9,6 +9,7 @@ import { useUsers } from "../components/data/provider/userAPI/useUsers";
 import LogoutIcon from "../assets/icons/logout";
 import LogoutModal from "../components/modals/LogoutModal.jsx";
 import DashboardIcon from "../assets/icons/dashboard.js";
+import DashboardImage from "../../public/dashboard.png";
 
 function Home() {
     const [isDarkMode] = useState(() => {
@@ -137,9 +138,13 @@ function Home() {
                                     "http://172.254.60.111:1880/ui/#!/0?socketid=jGqLQlTym8Ea__NwAACl%23%2F7",
                                 )
                             }
-                            className="bg-[var(--light-primary)] rounded-3xl p-4 w-32 h-32 flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
+                            className="rounded-3xl flex items-center justify-center shadow-md hover:opacity-80 cursor-pointer transition-all duration-200"
                         >
-                            <DashboardIcon className="w-16 text-[var(--primary)]" />
+                            <img
+                                className="w-32 h-32 rounded-3xl"
+                                src={DashboardImage}
+                                alt="Logo"
+                            />
                         </div>
                         <p className="text-sm font-medium text-[var(--black)] text-center">
                             Dashboard

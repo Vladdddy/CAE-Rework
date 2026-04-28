@@ -129,21 +129,37 @@ function MobileCalendar({
         return "text-[var(--black)]";
     };
 
-    const pmPlanTasks = useMemo(
-        () =>
-            (taskSimOne || [])
-                .filter((task) => {
-                    const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
-                    return simulatorId && SIMULATOR_MAP[simulatorId];
-                })
-                .map((task) => ({
+    const pmPlanTasks = useMemo(() => {
+        const y = today.getFullYear();
+        const mo = String(today.getMonth() + 1).padStart(2, "0");
+        const da = String(today.getDate()).padStart(2, "0");
+        const todayDateStr = `${y}-${mo}-${da}`;
+        const todayIso = `${todayDateStr}T00:00:00.000Z`;
+
+        return (taskSimOne || [])
+            .filter((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                return simulatorId && SIMULATOR_MAP[simulatorId];
+            })
+            .map((task) => {
+                const isDone = task["Task Done"] === true;
+                const scheduledOn = task["Scheduled on"] ?? task.DATE;
+                const scheduledDateStr = scheduledOn
+                    ? String(scheduledOn).split("T")[0]
+                    : null;
+                const isOverdue =
+                    !isDone &&
+                    scheduledDateStr &&
+                    scheduledDateStr < todayDateStr;
+                return {
                     ...task,
-                    DATE: task["Scheduled on"] ?? task.DATE,
+                    DATE: isOverdue ? todayIso : scheduledOn,
                     TIME: "Notturno",
                     IS_PM_PLAN_TASK: true,
-                })),
-        [taskSimOne],
-    );
+                };
+            });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [taskSimOne]);
 
     const mergedTasks = useMemo(
         () => [

@@ -297,15 +297,18 @@ function Logbook() {
                 }),
             );
 
-            // Filter notes to only include those created on the selected export date
+            // Filter notes to only include those created on the selected export date or the day before
             const exportDate = new Date(startDate);
             exportDate.setHours(0, 0, 0, 0);
+            const exportDateYesterday = new Date(exportDate);
+            exportDateYesterday.setDate(exportDateYesterday.getDate() - 1);
             Object.keys(notesMap).forEach((key) => {
                 notesMap[key] = notesMap[key].filter((note) => {
                     if (!note.CREATEDDATE) return true;
                     const noteDate = new Date(note.CREATEDDATE);
                     noteDate.setHours(0, 0, 0, 0);
-                    return noteDate.getTime() === exportDate.getTime();
+                    const t = noteDate.getTime();
+                    return t === exportDate.getTime() || t === exportDateYesterday.getTime();
                 });
             });
 

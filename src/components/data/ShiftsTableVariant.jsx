@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useUsers } from "./provider/userAPI/useUsers.js";
 import DragIcon from "../../assets/icons/drag.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
@@ -12,6 +12,7 @@ function ShiftsTable({
     numMonths = 1,
     onChangesDetected,
     currentUserRole,
+    onVisibleMonthChange,
 }) {
     const { users, loading } = useUsers();
     const {
@@ -30,6 +31,7 @@ function ShiftsTable({
     const { employeeShifts } = useEmployeeShifts();
     const scrollContainerRef = useRef(null);
     const todayColumnRef = useRef(null);
+    const lastReportedMonthRef = useRef(null);
     const [popup, setPopup] = useState({ show: false, type: "", message: "" });
     // Track if we're on mobile — initialize synchronously to avoid layout flash
     const [selectedUserIndex, setSelectedUserIndex] = useState(null);
@@ -299,6 +301,41 @@ function ShiftsTable({
             }
         }
     }, [selectedMonth, isCurrentMonth, todayIndex, isMobile]);
+
+    const handleTableScroll = useCallback(() => {
+        if (!scrollContainerRef.current || !onVisibleMonthChange || numMonths <= 1) return;
+        const colWidth = 128; // 8rem at 16px base font size
+        const dayIndex = Math.min(
+            Math.floor(scrollContainerRef.current.scrollLeft / colWidth),
+            allDays.length - 1,
+        );
+        const visibleDay = allDays[Math.max(0, dayIndex)];
+        const monthKey = `${visibleDay.getFullYear()}-${visibleDay.getMonth()}`;
+        if (lastReportedMonthRef.current !== monthKey) {
+            lastReportedMonthRef.current = monthKey;
+            onVisibleMonthChange(visibleDay);
+        }
+    }, [allDays, onVisibleMonthChange, numMonths]);
+
+    useEffect(() => {
+        const el = scrollContainerRef.current;
+        if (!el || numMonths <= 1) return;
+        el.addEventListener("scroll", handleTableScroll, { passive: true });
+        return () => el.removeEventListener("scroll", handleTableScroll);
+    }, [handleTableScroll, numMonths]);
+
+    // Report initial visible month when allDays changes (month picker or numMonths changed)
+    useEffect(() => {
+        if (!onVisibleMonthChange || numMonths <= 1 || allDays.length === 0) return;
+        lastReportedMonthRef.current = null;
+        const colWidth = 128;
+        const scrollLeft = scrollContainerRef.current?.scrollLeft ?? 0;
+        const dayIndex = Math.min(Math.floor(scrollLeft / colWidth), allDays.length - 1);
+        const visibleDay = allDays[Math.max(0, dayIndex)];
+        const monthKey = `${visibleDay.getFullYear()}-${visibleDay.getMonth()}`;
+        lastReportedMonthRef.current = monthKey;
+        onVisibleMonthChange(visibleDay);
+    }, [allDays, onVisibleMonthChange, numMonths]);
 
     const formatUsername = (user) => {
         return (
@@ -833,7 +870,10 @@ function ShiftsTable({
                                                                 handleShiftKeyDown(
                                                                     userIndex,
                                                                     index,
-                                                                    getShiftValue(userIndex, index),
+                                                                    getShiftValue(
+                                                                        userIndex,
+                                                                        index,
+                                                                    ),
                                                                     e,
                                                                 )
                                                             }
@@ -959,14 +999,6 @@ function ShiftsTable({
                                     <p
                                         className={`${index === todayIndex ? "bg-[var(--weekend-cells)] text-[var(--weekend-text)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--black)]" : "bg-[var(--bento-bg)] text-[var(--gray)]"} text-sm p-4 text-center border-r border-[var(--separator)]`}
                                     >
-                                        {isMonthStart && (
-                                            <span className="block text-[10px] font-bold uppercase text-[var(--primary)] leading-none mb-0.5">
-                                                {dayDate.toLocaleString(
-                                                    "it-IT",
-                                                    { month: "short" },
-                                                )}
-                                            </span>
-                                        )}
                                         {dayDate.getDate()}
                                     </p>
                                 </div>
@@ -1051,7 +1083,8 @@ function ShiftsTable({
                                         <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
                                             {isEmployee &&
                                                 (currentUserRole === "Admin" ||
-                                                    currentUserRole === "Shift Leader") && (
+                                                    currentUserRole ===
+                                                        "Shift Leader") && (
                                                     <DragIcon className="w-6 text-[var(--black)]" />
                                                 )}
                                             {formatUsername(user.Username)}
@@ -1095,7 +1128,10 @@ function ShiftsTable({
                                                                 handleShiftKeyDown(
                                                                     userIndex,
                                                                     index,
-                                                                    getShiftValue(userIndex, index),
+                                                                    getShiftValue(
+                                                                        userIndex,
+                                                                        index,
+                                                                    ),
                                                                     e,
                                                                 )
                                                             }

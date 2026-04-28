@@ -57,7 +57,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         logbooks: unavailableLogbooks,
         deleteLogbook: deleteUnavailableLogbook,
     } = useUnavailableLogbooks();
-    const { updateTaskSimOne } = useTaskSimOne();
+    const { updateTaskSimOne, updateTaskSimOneStatus, fetchTaskSimOne } = useTaskSimOne();
     const { deleteLogbook, updateLogbook, fetchLogbooks, logbooks } =
         useLogbooks();
     const { notes, fetchNotes, createNote, editNote, deleteNote } = useNotes();
@@ -175,6 +175,12 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const canManageAttachments =
         !isUnavailableEntity &&
         (currentUserRole === "Admin" || currentUserRole === "Shift Leader");
+
+    const canUploadAttachments =
+        !isUnavailableEntity &&
+        (currentUserRole === "Admin" ||
+            currentUserRole === "Shift Leader" ||
+            currentUserRole === "Employee");
 
     const taskDate = taskInfo.DATE
         ? (typeof taskInfo.DATE === "string"
@@ -854,6 +860,37 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
         const newStatus = e.target.value;
 
+        if (isPmPlanTask) {
+            const taskDone = newStatus === "Completato";
+            // Build a "fake-UTC" string using local clock hours so that
+            // getUTCHours() on the frontend (and in getPmPlanTime) returns
+            // the actual Italian local hour — matching how existing DB rows
+            // store Performed on as local time without a timezone offset.
+            const performedOn = (() => {
+                if (!taskDone) return null;
+                const n = new Date();
+                const pad = (v) => String(v).padStart(2, "0");
+                return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}.000Z`;
+            })();
+            const result = await updateTaskSimOneStatus(
+                taskInfo.ID,
+                taskDone,
+                performedOn,
+            );
+            if (result.success) {
+                await fetchTaskSimOne();
+                if (onSuccess)
+                    onSuccess(true, `Stato aggiornato a "${newStatus}"`);
+            } else if (onSuccess) {
+                onSuccess(
+                    false,
+                    result.error ||
+                        "Errore durante l'aggiornamento dello stato",
+                );
+            }
+            return;
+        }
+
         if (!isUnavailableEntity && newStatus === "Completato") {
             const completionResult =
                 await moveEntityToTodayAndCreateUnavailable(
@@ -1515,7 +1552,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 onChange={handleStatusChange}
                                                 name=""
                                                 id=""
-                                                disabled={isPmPlanTask}
+                                                disabled={isUnavailableEntity}
                                                 className="p-2 pr-10 text-[var(--black)] border border-[var(--light-primary)] rounded-md bg-[var(--white)] hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none cursor-pointer"
                                             >
                                                 <option value="In corso">
@@ -1811,7 +1848,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         )}
 
                                         {/* File Upload Input - appears under existing attachments */}
-                                        {canManageAttachments &&
+                                        {canUploadAttachments &&
                                             !isPmPlanTask && (
                                                 <div className="flex flex-col gap-2 mt-4">
                                                     <input
@@ -2094,7 +2131,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                               >
                                                   <FlagIcon className="w-6" />
                                                   <p className="hidden md:block">
-                                                      Flag task
+                                                      Monitora task
                                                   </p>
                                               </button>
                                           )

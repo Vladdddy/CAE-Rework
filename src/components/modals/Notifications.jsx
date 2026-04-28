@@ -39,7 +39,7 @@ function Notifications({ onClose }) {
     const previousGroupRef = useRef(null);
 
     const { users, currentUserId, currentUserRole } = useUsers();
-    const { fetchUserMessages, sendMessage, markAsRead, fetchUnreadCount } =
+    const { fetchUserMessages, sendMessage, markAsRead, fetchUnreadCount, deleteMessage } =
         useEmployeeMessages();
     const {
         createGroup,
@@ -49,6 +49,7 @@ function Notifications({ onClose }) {
         markGroupAsRead,
         fetchGroupUnreadCount,
         deleteGroup,
+        deleteGroupMessage,
         addGroupMember,
         removeGroupMember,
         fetchGroupUnreadTotal,
@@ -521,10 +522,23 @@ function Notifications({ onClose }) {
                                                     <span className="text-[var(--black)] text-sm font-medium">
                                                         {group.NAME}
                                                     </span>
-                                                    {hasUnread && groupLatestUnread[group.ID] ? (
+                                                    {hasUnread &&
+                                                    groupLatestUnread[
+                                                        group.ID
+                                                    ] ? (
                                                         <span className="text-xs text-[var(--black)] truncate font-medium">
-                                                            {formatUsername(groupLatestUnread[group.ID].senderUsername)}:{" "}
-                                                            {groupLatestUnread[group.ID].content}
+                                                            {formatUsername(
+                                                                groupLatestUnread[
+                                                                    group.ID
+                                                                ]
+                                                                    .senderUsername,
+                                                            )}
+                                                            :{" "}
+                                                            {
+                                                                groupLatestUnread[
+                                                                    group.ID
+                                                                ].content
+                                                            }
                                                         </span>
                                                     ) : (
                                                         <span className="text-xs text-[var(--gray)] truncate">
@@ -569,33 +583,37 @@ function Notifications({ onClose }) {
                             )}
 
                             {/* Individual users — hidden for View role */}
-                            {currentUserRole !== "View" && otherUsers.length === 0 && (
-                                <p className="text-[var(--gray)] text-sm text-center py-4">
-                                    Nessun utente disponibile
-                                </p>
-                            )}
-                            {currentUserRole !== "View" && otherUsers.map((user) => {
-                                const hasUnread =
-                                    usersWithUnreadMessages.includes(user.ID);
-                                return (
-                                    <button
-                                        key={user.ID}
-                                        type="button"
-                                        onClick={() => {
-                                            setSelectedReceiver(user);
-                                            setView("chat");
-                                        }}
-                                        className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:border-[var(--primary)] transition-all duration-200 cursor-pointer text-left"
-                                    >
-                                        <span className="text-[var(--black)] text-sm font-medium">
-                                            {formatUsername(user.Username)}
-                                        </span>
-                                        {hasUnread && (
-                                            <span className="w-2.5 h-2.5 rounded-full bg-[var(--red)] flex-shrink-0" />
-                                        )}
-                                    </button>
-                                );
-                            })}
+                            {currentUserRole !== "View" &&
+                                otherUsers.length === 0 && (
+                                    <p className="text-[var(--gray)] text-sm text-center py-4">
+                                        Nessun utente disponibile
+                                    </p>
+                                )}
+                            {currentUserRole !== "View" &&
+                                otherUsers.map((user) => {
+                                    const hasUnread =
+                                        usersWithUnreadMessages.includes(
+                                            user.ID,
+                                        );
+                                    return (
+                                        <button
+                                            key={user.ID}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedReceiver(user);
+                                                setView("chat");
+                                            }}
+                                            className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:border-[var(--primary)] transition-all duration-200 cursor-pointer text-left"
+                                        >
+                                            <span className="text-[var(--black)] text-sm font-medium">
+                                                {formatUsername(user.Username)}
+                                            </span>
+                                            {hasUnread && (
+                                                <span className="w-2.5 h-2.5 rounded-full bg-[var(--red)] flex-shrink-0" />
+                                            )}
+                                        </button>
+                                    );
+                                })}
                         </div>
                     </>
                 )}
@@ -726,7 +744,7 @@ function Notifications({ onClose }) {
                                 return (
                                     <div
                                         key={index}
-                                        className={`flex flex-col gap-2 w-3/4 ${isMine ? "self-end items-end" : ""}`}
+                                        className={`group/msg flex flex-col gap-2 w-3/4 ${isMine ? "self-end items-end" : ""}`}
                                     >
                                         <h1 className="text-md text-[var(--gray)]">
                                             {isMine ? "Tu:" : `${senderName}:`}
@@ -741,6 +759,44 @@ function Notifications({ onClose }) {
                                                 {formatDate(msg.DATE_SENT)}
                                             </p>
                                         </div>
+                                        {isMine && view === "group-chat" && (
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    await deleteGroupMessage(
+                                                        msg.ID,
+                                                    );
+                                                    const res =
+                                                        await fetchGroupMessages(
+                                                            selectedGroup.ID,
+                                                        );
+                                                    if (res.success)
+                                                        setGroupMessages(
+                                                            res.data,
+                                                        );
+                                                }}
+                                                className="p-1 rounded text-[var(--red)] hover:text-[var(--text)] transition-all duration-200"
+                                            >
+                                                <DeleteIcon className="w-5" />
+                                            </button>
+                                        )}
+                                        {isMine && view === "chat" && (
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    await deleteMessage(msg.ID);
+                                                    setChatMessages((prev) =>
+                                                        prev.filter(
+                                                            (m) =>
+                                                                m.ID !== msg.ID,
+                                                        ),
+                                                    );
+                                                }}
+                                                className="p-1 rounded text-[var(--red)] hover:text-[var(--text)] transition-all duration-200"
+                                            >
+                                                <DeleteIcon className="w-5" />
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -772,7 +828,9 @@ function Notifications({ onClose }) {
                                     className="w-full h-[44px] p-3 border border-[var(--light-primary)] rounded-md bg-[var(--white)] text-[var(--black)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200"
                                     placeholder="Scrivi qui..."
                                     value={emptyText}
-                                    onChange={(e) => setEmptyText(e.target.value)}
+                                    onChange={(e) =>
+                                        setEmptyText(e.target.value)
+                                    }
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter" && emptyText)
                                             handleSendMessage();
@@ -822,32 +880,47 @@ function Notifications({ onClose }) {
                                     Membri attuali
                                 </p>
                                 <div className="flex flex-col gap-2">
-                                    {(selectedGroup.MEMBERS ?? []).map((member) => (
-                                        <div
-                                            key={member.ID}
-                                            className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)]"
-                                        >
-                                            <span className="text-[var(--black)] text-sm font-medium">
-                                                {formatUsername(member.Username)}
-                                            </span>
-                                            {member.ID !== currentUserId && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemoveMember(member.ID)}
-                                                    className="text-xs text-[var(--red)] border border-[var(--red)] rounded-md px-2 py-1 hover:bg-[var(--red)] hover:text-white transition-all duration-150"
-                                                >
-                                                    Rimuovi
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
+                                    {(selectedGroup.MEMBERS ?? []).map(
+                                        (member) => (
+                                            <div
+                                                key={member.ID}
+                                                className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)]"
+                                            >
+                                                <span className="text-[var(--black)] text-sm font-medium">
+                                                    {formatUsername(
+                                                        member.Username,
+                                                    )}
+                                                </span>
+                                                {member.ID !==
+                                                    currentUserId && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleRemoveMember(
+                                                                member.ID,
+                                                            )
+                                                        }
+                                                        className="text-xs text-[var(--red)] border border-[var(--red)] rounded-md px-2 py-1 hover:bg-[var(--red)] hover:text-white transition-all duration-150"
+                                                    >
+                                                        Rimuovi
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ),
+                                    )}
                                 </div>
                             </div>
 
                             {/* Users not in group */}
                             {(() => {
-                                const memberIds = new Set((selectedGroup.MEMBERS ?? []).map((m) => m.ID));
-                                const nonMembers = users.filter((u) => !memberIds.has(u.ID));
+                                const memberIds = new Set(
+                                    (selectedGroup.MEMBERS ?? []).map(
+                                        (m) => m.ID,
+                                    ),
+                                );
+                                const nonMembers = users.filter(
+                                    (u) => !memberIds.has(u.ID),
+                                );
                                 if (nonMembers.length === 0) return null;
                                 return (
                                     <div>
@@ -861,11 +934,17 @@ function Notifications({ onClose }) {
                                                     className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)]"
                                                 >
                                                     <span className="text-[var(--black)] text-sm font-medium">
-                                                        {formatUsername(user.Username)}
+                                                        {formatUsername(
+                                                            user.Username,
+                                                        )}
                                                     </span>
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleAddMember(user.ID)}
+                                                        onClick={() =>
+                                                            handleAddMember(
+                                                                user.ID,
+                                                            )
+                                                        }
                                                         className="text-xs text-[var(--primary)] border border-[var(--primary)] rounded-md px-2 py-1 hover:bg-[var(--primary)] hover:text-white transition-all duration-150"
                                                     >
                                                         Aggiungi

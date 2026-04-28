@@ -19,6 +19,7 @@ function Shifts() {
     });
     const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [startDate, setStartDate] = useState(new Date());
+    const [visibleScrollMonth, setVisibleScrollMonth] = useState(new Date());
     const [impagination, setImpagination] = useState(1);
     const [viewMonths, setViewMonths] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,6 +30,10 @@ function Shifts() {
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
+
+    useEffect(() => {
+        setVisibleScrollMonth(startDate);
+    }, [startDate]);
 
     const handleChangesDetected = useCallback(
         (hasChanges, postData, putData) => {
@@ -99,7 +104,8 @@ function Shifts() {
                                 </div>
                             </div>
 
-                            {(currentUserRole === "Admin" || currentUserRole === "Shift Leader") && (
+                            {(currentUserRole === "Admin" ||
+                                currentUserRole === "Shift Leader") && (
                                 <div
                                     className="flex items-center gap-1 text-[var(--primary)] cursor-pointer hover:text-[var(--primary-hover)] w-fit my-4 md:my-0"
                                     onClick={() => setPatternsModalOpen(true)}
@@ -141,6 +147,17 @@ function Shifts() {
                         )}
                     </div>
 
+                    {viewMonths === 3 && (
+                        <p className="m-4 md:m-8 text-sm text-[var(--gray)] mb-2">
+                            Mese corrente:{" "}
+                            <span className=" ml-1 text-[var(--primary)] text-2xl font-semibold">
+                                {visibleScrollMonth.toLocaleString("it-IT", {
+                                    month: "long",
+                                })}
+                            </span>
+                        </p>
+                    )}
+
                     <div className="m-4 md:m-8 flex flex-row items-start justify-between gap-8">
                         {impagination === 1 && (
                             <>
@@ -155,6 +172,7 @@ function Shifts() {
                                     numMonths={viewMonths}
                                     onChangesDetected={handleChangesDetected}
                                     currentUserRole={currentUserRole}
+                                    onVisibleMonthChange={setVisibleScrollMonth}
                                 />
                             </>
                         )}

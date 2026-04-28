@@ -144,17 +144,34 @@ function Calendar({ startDate, setStartDate, onDayClick, type }) {
         return "text-[var(--black)]";
     };
 
+    const todayDateStr = (() => {
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    })();
+    const todayIso = `${todayDateStr}T00:00:00.000Z`;
+
     const pmPlanTasks = (taskSimOne || [])
         .filter((task) => {
             const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
             return simulatorId && SIMULATOR_MAP[simulatorId];
         })
-        .map((task) => ({
-            ...task,
-            DATE: task["Scheduled on"] ?? task.DATE,
-            TIME: getPmPlanTime(task),
-            IS_PM_PLAN_TASK: true,
-        }));
+        .map((task) => {
+            const isDone = task["Task Done"] === true;
+            const scheduledOn = task["Scheduled on"] ?? task.DATE;
+            const scheduledDateStr = scheduledOn
+                ? String(scheduledOn).split("T")[0]
+                : null;
+            const isOverdue =
+                !isDone && scheduledDateStr && scheduledDateStr < todayDateStr;
+            return {
+                ...task,
+                DATE: isOverdue ? todayIso : scheduledOn,
+                TIME: getPmPlanTime(task),
+                IS_PM_PLAN_TASK: true,
+            };
+        });
 
     const mergedTasks = [
         ...(tasks || []),

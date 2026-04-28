@@ -35,7 +35,7 @@ function Tasks() {
         loading: unavailableLoading,
         fetchTasks: fetchUnavailableTasks,
     } = useUnavailableTasks();
-    const { taskSimOne } = useTaskSimOne();
+    const { taskSimOne, unfinishedPmTasks, unfinishedPmLoading, fetchUnfinishedPmTasks } = useTaskSimOne();
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
         const saved = localStorage.getItem("sidebarOpen");
         return saved !== null ? JSON.parse(saved) : true;
@@ -134,7 +134,62 @@ function Tasks() {
     }, [startDate, viewDays]);
 
     const pmPlanTasks = useMemo(() => {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        const todayDateStr = `${y}-${m}-${d}`;
+
         return (taskSimOne || [])
+            .filter((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                if (!simulatorId || !SIMULATOR_MAP[simulatorId]) return false;
+                // Exclude past unfinished tasks — they are handled by normalizedUnfinishedPmTasks
+                const isDone = task["Task Done"] === true;
+                const scheduledOn = task["Scheduled on"] ?? task.DATE;
+                const scheduledDateStr = scheduledOn
+                    ? String(scheduledOn).split("T")[0]
+                    : null;
+                const isOverdue =
+                    !isDone && scheduledDateStr && scheduledDateStr < todayDateStr;
+                return !isOverdue;
+            })
+            .map((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                const isDone = task["Task Done"] === true;
+                const scheduledOn = task["Scheduled on"] ?? task.DATE;
+                return {
+                    ...task,
+                    ID: task["ID_task"] ?? task.ID,
+                    TITLE: task["Task"] ?? task.TITLE,
+                    DATE: scheduledOn,
+                    STATUS: isDone ? "Completato" : "Non completato",
+                    ASSIGNED_TO: task["Task Performed By"] ?? task.ASSIGNED_TO,
+                    DESCRIPTION:
+                        task["Reference Doc"] ??
+                        task["Maintenance Manual Reference"] ??
+                        task.DESCRIPTION,
+                    TYPE: "PM Plan",
+                    IS_PM_PLAN_TASK: true,
+                    SIMULATOR: SIMULATOR_MAP[simulatorId],
+                    TIME: getPmPlanTime(task),
+                    Data: scheduledOn ?? task.Data,
+                };
+            });
+    }, [taskSimOne]);
+
+    useEffect(() => {
+        fetchUnfinishedPmTasks();
+    }, [fetchUnfinishedPmTasks]);
+
+    const normalizedUnfinishedPmTasks = useMemo(() => {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        const todayIso = `${y}-${m}-${d}T00:00:00.000Z`;
+
+        return (unfinishedPmTasks || [])
             .filter((task) => {
                 const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
                 return simulatorId && SIMULATOR_MAP[simulatorId];
@@ -145,11 +200,8 @@ function Tasks() {
                     ...task,
                     ID: task["ID_task"] ?? task.ID,
                     TITLE: task["Task"] ?? task.TITLE,
-                    DATE: task["Scheduled on"] ?? task.DATE,
-                    STATUS:
-                        task["Task Done"] === true
-                            ? "Completato"
-                            : "Non completato",
+                    DATE: todayIso,
+                    STATUS: "Non completato",
                     ASSIGNED_TO: task["Task Performed By"] ?? task.ASSIGNED_TO,
                     DESCRIPTION:
                         task["Reference Doc"] ??
@@ -159,10 +211,10 @@ function Tasks() {
                     IS_PM_PLAN_TASK: true,
                     SIMULATOR: SIMULATOR_MAP[simulatorId],
                     TIME: getPmPlanTime(task),
-                    Data: task["Scheduled on"] ?? task.Data,
+                    Data: todayIso,
                 };
             });
-    }, [taskSimOne]);
+    }, [unfinishedPmTasks]);
 
     const mergedTasks = useMemo(() => {
         const normalizedUnavailableTasks = (unavailableTasks || []).map(
@@ -176,8 +228,9 @@ function Tasks() {
             ...(tasks || []),
             ...normalizedUnavailableTasks,
             ...pmPlanTasks,
+            ...normalizedUnfinishedPmTasks,
         ];
-    }, [tasks, unavailableTasks, pmPlanTasks]);
+    }, [tasks, unavailableTasks, pmPlanTasks, normalizedUnfinishedPmTasks]);
 
     const getSelectedDateString = (currentDate) => {
         return (

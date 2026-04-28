@@ -25,6 +25,9 @@ const SIMULATOR_MAP = {
 
 function SearchModal({ onClose, onDeleteSuccess }) {
     const { tasks, loading, fetchTasks } = useTasks();
+    const currentMonthName = new Date().toLocaleString("default", {
+        month: "long",
+    });
     const { logbooks, loading: logbooksLoading, fetchLogbooks } = useLogbooks();
     const {
         currentMonthTasks,
@@ -769,7 +772,8 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                                     Risultato
                                 </h1>
                                 <p className="text-xs bg-[var(--weekend-cells)] text-[var(--weekend-text)] rounded-md px-2 py-1">
-                                    {filteredPmTasks.length} PM Plan (mensili)
+                                    {filteredPmTasks.length} PM Plan di{" "}
+                                    {currentMonthName}
                                 </p>
                             </div>
 

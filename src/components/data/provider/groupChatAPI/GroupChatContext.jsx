@@ -127,6 +127,20 @@ export const GroupChatProvider = ({ children }) => {
         }
     };
 
+    // Delete a single group message
+    const deleteGroupMessage = async (messageId) => {
+        try {
+            const response = await fetch(
+                `${API_URL}/groupChat/messages/${messageId}`,
+                { method: "DELETE" },
+            );
+            if (!response.ok) throw new Error("Failed to delete group message");
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    };
+
     // Delete a group
     const deleteGroup = async (groupId) => {
         try {
@@ -164,6 +178,7 @@ export const GroupChatProvider = ({ children }) => {
                 markGroupAsRead,
                 fetchGroupUnreadCount,
                 deleteGroup,
+                deleteGroupMessage,
                 addGroupMember,
                 removeGroupMember,
                 groupUnreadCount,

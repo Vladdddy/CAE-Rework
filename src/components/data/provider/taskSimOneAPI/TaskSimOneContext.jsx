@@ -9,6 +9,8 @@ export const TaskSimOneProvider = ({ children }) => {
     const [error, setError] = useState(null);
     const [currentMonthTasks, setCurrentMonthTasks] = useState([]);
     const [currentMonthLoading, setCurrentMonthLoading] = useState(false);
+    const [unfinishedPmTasks, setUnfinishedPmTasks] = useState([]);
+    const [unfinishedPmLoading, setUnfinishedPmLoading] = useState(false);
 
     useEffect(() => {
         fetchTaskSimOne();
@@ -46,6 +48,24 @@ export const TaskSimOneProvider = ({ children }) => {
             }
         }
     };
+
+    const fetchUnfinishedPmTasks = useCallback(async () => {
+        try {
+            setUnfinishedPmLoading(true);
+            const response = await fetch(`${API_URL}/taskSimOne/unfinished-pm`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch unfinished PM tasks");
+            }
+            const data = await response.json();
+            console.log("Unfinished PM tasks (/unfinished-pm):", data);
+            setUnfinishedPmTasks(data);
+            setError(null);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setUnfinishedPmLoading(false);
+        }
+    }, []);
 
     const fetchCurrentMonthTasks = useCallback(async () => {
         try {
@@ -87,6 +107,29 @@ export const TaskSimOneProvider = ({ children }) => {
         }
     };
 
+    const updateTaskSimOneStatus = async (id, taskDone, performedOn) => {
+        try {
+            const response = await fetch(`${API_URL}/taskSimOne/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ taskDone, performedOn }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update taskSimOne status");
+            }
+
+            await fetchTaskSimOne(true);
+            setError(null);
+            return { success: true };
+        } catch (err) {
+            setError(err.message);
+            return { success: false, error: err.message };
+        }
+    };
+
     return (
         <TaskSimOneContext.Provider
             value={{
@@ -95,9 +138,13 @@ export const TaskSimOneProvider = ({ children }) => {
                 error,
                 fetchTaskSimOne,
                 updateTaskSimOne,
+                updateTaskSimOneStatus,
                 currentMonthTasks,
                 currentMonthLoading,
                 fetchCurrentMonthTasks,
+                unfinishedPmTasks,
+                unfinishedPmLoading,
+                fetchUnfinishedPmTasks,
             }}
         >
             {children}
