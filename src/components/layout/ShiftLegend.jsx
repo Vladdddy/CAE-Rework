@@ -124,7 +124,7 @@ function ShiftLegend() {
                 <p className="text-md">Legenda turni</p>
             </button>
             <div
-                className={`fixed z-40 bg-[var(--white)] w-[90vw] max-w-[340px] p-4 py-0 rounded-lg overflow-y-auto pr-2 overflow-hidden transition-opacity duration-300 shadow-lg border border-[var(--separator)] ${showLegend ? "max-h-[calc(100vh-20rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
+                className={`fixed z-40 bg-[var(--white)] w-[90vw] max-w-[340px] p-4 py-0 rounded-lg overflow-y-auto pr-2 overflow-hidden transition-opacity duration-300 shadow-lg border border-[var(--separator)] ${showLegend ? "max-h-[calc(100vh-12rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
                 style={{
                     left: `${Math.max(16, Math.min(position.x, window.innerWidth - 356))}px`,
                     top: `${position.y}px`,

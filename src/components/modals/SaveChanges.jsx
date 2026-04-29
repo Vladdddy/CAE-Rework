@@ -14,7 +14,7 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
         employeeShifts,
     } = useEmployeeShifts();
     const { sendMessage } = useEmployeeMessages();
-    const { currentUserId, currentUsername, users } = useUsers();
+    const { currentUserId, currentUsername, currentUserRole, users } = useUsers();
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState(null);
 
@@ -168,15 +168,17 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
                 );
                 const ccNotifications = manualUpdateNotifications.flatMap(
                     (notification) => {
-                        const receiverRole = users.find(
+                        const receiver = users.find(
                             (u) =>
                                 String(u.ID) ===
                                 String(notification.receiverId),
-                        )?.Role;
-                        if (receiverRole !== "Employee") return [];
+                        );
+                        if (currentUserRole !== "Admin" && receiver?.Role !== "Employee") return [];
+                        const employeeName = formatUserDisplayName(receiver.USERNAME);
+                        const ccMessageContent = `Dipendente: ${employeeName} | ${notification.messageContent}`;
                         return otherShiftLeaders.map((sl) => ({
                             receiverId: sl.ID,
-                            messageContent: notification.messageContent,
+                            messageContent: ccMessageContent,
                         }));
                     },
                 );

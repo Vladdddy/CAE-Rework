@@ -7,7 +7,7 @@
     font-family: "Quicksand", sans-serif;
 }
 
-:root {
+/* :root {
     --primary: #4690ff;
     --primary-hover: #3a7bd5;
     --dark-primary: #000814;
@@ -32,6 +32,35 @@
     --primary-panoramica: #4690ff;
     --orange-panoramica: #ff9f43;
     --purple-panoramica: #5d00ff;
+    --shift-leader-bg: #dbeafe;
+} */
+
+:root {
+    --primary: hsl(217, 100%, 55%);
+    --primary-hover: hsl(217, 100%, 50%);
+    --dark-primary: hsl(0, 0%, 100%);
+    --light-primary: hsl(0, 0%, 93%);
+    --black: hsl(0, 0%, 10%);
+    --gray: hsl(0, 0%, 45%);
+    --separator: hsl(0, 0%, 88%);
+    --white: hsl(0, 0%, 98%);
+    --pure-white: hsl(0, 0%, 100%);
+    --bento-bg: hsl(0, 0%, 96%);
+    --red: hsl(0, 100%, 50%);
+    --ambra: #ffd000;
+    --green: #32de84;
+    --dark-green: hsl(145, 63%, 25%);
+    --orange: hsl(31, 100%, 50%);
+    --orange-light: hsl(31, 60%, 90%);
+    --placeholder: hsl(0, 0%, 60%);
+    --weekend-cells: #f3eeff;
+    --weekend-text: #7b2fff;
+    --holiday-cells: #ffeeee;
+    --holiday-text: #cc0000;
+    --primary-panoramica: hsla(217, 100%, 55%, 0.3);
+    --orange-panoramica: hsla(31, 100%, 50%, 0.3);
+    --purple-panoramica: #7b2fff30;
+    --shift-leader-bg: hsl(217, 100%, 93%);
 }
 
 body.dark-mode {
@@ -59,6 +88,7 @@ body.dark-mode {
     --primary-panoramica: hsla(217, 100%, 68%, 0.5);
     --orange-panoramica: hsl(31, 100%, 65%, 0.5);
     --purple-panoramica: #a775ff50;
+    --shift-leader-bg: hsl(217, 40%, 20%);
 }
 
 ::-webkit-scrollbar-button {

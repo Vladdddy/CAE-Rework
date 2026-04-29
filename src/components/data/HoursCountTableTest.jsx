@@ -86,24 +86,28 @@ function HoursCountTableTest({ selectedMonth }) {
 
         let annualHours = 0;
         let annualDaysOff = 0;
+        let annualVacationHours = 0;
         // Index 0 = January, 11 = December
         const monthlyHours = new Array(12).fill(0);
+
+        const fHours = user.Role === "Shift Leader" || user.Role === "Admin" ? 8 : 11;
 
         userShifts.forEach((shift) => {
             const shiftDate = shift.SELECTED_DATE.split("T")[0];
             const shiftMonthIndex = parseInt(shiftDate.split("-")[1], 10) - 1;
             const isOff = shift.SHIFT_TYPE === "F";
-            const hours = shiftHours[shift.SHIFT_TYPE] || 0;
+            const hours = isOff ? fHours : (shiftHours[shift.SHIFT_TYPE] || 0);
 
             if (isOff) {
                 annualDaysOff += 1;
+                annualVacationHours += hours;
             } else {
                 annualHours += hours;
                 monthlyHours[shiftMonthIndex] += hours;
             }
         });
 
-        return { annualHours, annualDaysOff, monthlyHours };
+        return { annualHours, annualDaysOff, annualVacationHours, monthlyHours };
     };
 
     const adminUsers = orderedUsers.filter(
@@ -114,7 +118,7 @@ function HoursCountTableTest({ selectedMonth }) {
     );
 
     const renderRow = (user, keyPrefix) => {
-        const { annualHours, annualDaysOff, monthlyHours } =
+        const { annualHours, annualDaysOff, annualVacationHours, monthlyHours } =
             calculateUserStats(user);
         return (
             <div
@@ -130,7 +134,13 @@ function HoursCountTableTest({ selectedMonth }) {
                 {/* Days off */}
                 <div className="bg-[var(--bento-bg)] border-r border-[var(--separator)] min-w-[140px] w-[140px]">
                     <p className="text-[var(--black)] text-sm p-4 text-start">
-                        {annualDaysOff}
+                        {annualDaysOff}gg
+                    </p>
+                </div>
+                {/* Vacation hours */}
+                <div className="bg-[var(--bento-bg)] border-r border-[var(--separator)] min-w-[140px] w-[140px]">
+                    <p className="text-[var(--black)] text-sm p-4 text-start">
+                        {annualVacationHours}h
                     </p>
                 </div>
                 {/* Annual hours */}
@@ -167,6 +177,7 @@ function HoursCountTableTest({ selectedMonth }) {
     const renderSectionHeader = () => (
         <div className="flex border-b border-l border-r border-[var(--separator)] bg-[var(--light-primary)]">
             <div className="min-w-[140px] w-[140px] border-r border-[var(--separator)]" />
+            <div className="min-w-[140px] w-[140px] border-r border-[var(--separator)]" />
             <div className="min-w-[120px] w-[120px] border-r border-[var(--separator)]" />
             {MONTH_LABELS.map((_, i) => (
                 <div
@@ -192,6 +203,12 @@ function HoursCountTableTest({ selectedMonth }) {
                             GG ferie da inizio anno
                         </p>
                     </div>
+                    <div className="bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)] min-w-[140px] w-[140px]">
+                        <p className="text-[var(--gray)] text-sm p-4 text-start">
+                            Ore ferie da inizio anno
+                        </p>
+                    </div>
+
                     <div className="bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)] min-w-[120px] w-[120px]">
                         <p className="text-[var(--gray)] text-sm p-4 text-start">
                             Ore annuali

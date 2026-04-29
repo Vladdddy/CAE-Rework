@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+    useState,
+    useEffect,
+    useRef,
+    useMemo,
+    useCallback,
+} from "react";
 import { useUsers } from "./provider/userAPI/useUsers.js";
 import DragIcon from "../../assets/icons/drag.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
@@ -303,7 +309,12 @@ function ShiftsTable({
     }, [selectedMonth, isCurrentMonth, todayIndex, isMobile]);
 
     const handleTableScroll = useCallback(() => {
-        if (!scrollContainerRef.current || !onVisibleMonthChange || numMonths <= 1) return;
+        if (
+            !scrollContainerRef.current ||
+            !onVisibleMonthChange ||
+            numMonths <= 1
+        )
+            return;
         const colWidth = 128; // 8rem at 16px base font size
         const dayIndex = Math.min(
             Math.floor(scrollContainerRef.current.scrollLeft / colWidth),
@@ -326,11 +337,15 @@ function ShiftsTable({
 
     // Report initial visible month when allDays changes (month picker or numMonths changed)
     useEffect(() => {
-        if (!onVisibleMonthChange || numMonths <= 1 || allDays.length === 0) return;
+        if (!onVisibleMonthChange || numMonths <= 1 || allDays.length === 0)
+            return;
         lastReportedMonthRef.current = null;
         const colWidth = 128;
         const scrollLeft = scrollContainerRef.current?.scrollLeft ?? 0;
-        const dayIndex = Math.min(Math.floor(scrollLeft / colWidth), allDays.length - 1);
+        const dayIndex = Math.min(
+            Math.floor(scrollLeft / colWidth),
+            allDays.length - 1,
+        );
         const visibleDay = allDays[Math.max(0, dayIndex)];
         const monthKey = `${visibleDay.getFullYear()}-${visibleDay.getMonth()}`;
         lastReportedMonthRef.current = monthKey;
@@ -1056,7 +1071,7 @@ function ShiftsTable({
                         return (
                             <div
                                 key={`user-${userIndex}`}
-                                className={`flex relative ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""} ${selectedUserIndex === userIndex ? "ring-2 ring-inset ring-[var(--primary)] z-10" : ""}`}
+                                className={`flex relative ${draggedIndex === userIndex ? "opacity-50" : ""} ${dragOverIndex === userIndex && isEmployee ? "border-t-2 border-t-blue-500" : ""}`}
                                 draggable={isEmployee && canEdit}
                                 onDragStart={(e) =>
                                     handleDragStart(e, userIndex)
@@ -1070,7 +1085,7 @@ function ShiftsTable({
                                 }}
                             >
                                 <div
-                                    className={`flex items-center justify-center sticky left-0 z-20 bg-[var(--bento-bg)] border-r border-b border-l border-[var(--separator)] cursor-pointer ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""} ${selectedUserIndex === userIndex ? "!bg-[var(--light-primary)]" : ""}`}
+                                    className={`flex items-center justify-center sticky left-0 z-20 border-r border-b border-l border-[var(--separator)] cursor-pointer ${user.Role === "Shift Leader" ? "bg-[var(--shift-leader-bg)]" : "bg-[var(--bento-bg)]"} ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""}`}
                                     onClick={() =>
                                         setSelectedUserIndex(
                                             selectedUserIndex === userIndex
@@ -1108,7 +1123,7 @@ function ShiftsTable({
                                                 className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)]" : ""}`}
                                             >
                                                 <div
-                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
+                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${selectedUserIndex === userIndex && !isCellModified(userIndex, index) ? "!bg-blue-200" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
                                                 >
                                                     <div className="relative">
                                                         <select

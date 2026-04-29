@@ -38,7 +38,7 @@ function Logbook() {
         loading: unavailableLoading,
         fetchTasks: fetchUnavailableTasks,
     } = useUnavailableTasks();
-    const { taskSimOne } = useTaskSimOne();
+    const { taskSimOne, unfinishedPmTasks, fetchUnfinishedPmTasks } = useTaskSimOne();
     const { techComments } = usePMTechComments();
     const {
         logbooks: unavailableLogbooks,
@@ -403,24 +403,50 @@ function Logbook() {
         });
     }, [startDate, viewDays]);
 
+    useEffect(() => {
+        fetchUnfinishedPmTasks();
+    }, [fetchUnfinishedPmTasks]);
+
     const pmPlanTasks = useMemo(() => {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        const todayDateStr = `${y}-${m}-${d}`;
+
         return (taskSimOne || [])
             .filter((task) => {
                 const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
-                return simulatorId && SIMULATOR_MAP[simulatorId];
+                if (!simulatorId || !SIMULATOR_MAP[simulatorId]) return false;
+                // Exclude past unfinished tasks — they are handled by normalizedUnfinishedPmTasks
+                const isDone = task["Task Done"] === true;
+                const scheduledOn = task["Scheduled on"] ?? task.DATE;
+                const scheduledDateStr = scheduledOn
+                    ? String(scheduledOn).split("T")[0]
+                    : null;
+                const isOverdue =
+                    !isDone && scheduledDateStr && scheduledDateStr < todayDateStr;
+                return !isOverdue;
             })
             .map((task) => {
                 const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                const isDone = task["Task Done"] === true;
+                const scheduledOn = task["Scheduled on"] ?? task.DATE;
+                const assignedToId = task["AssignedTo"];
+                const assignedUser =
+                    assignedToId != null
+                        ? users.find((u) => u.ID === assignedToId)
+                        : null;
+                const displayAssignee = isDone
+                    ? (task["Task Performed By"] ?? null)
+                    : (assignedUser?.Username ?? null);
                 return {
                     ...task,
                     ID: task["ID_task"] ?? task.ID,
                     TITLE: task["Task"] ?? task.TITLE,
-                    DATE: task["Scheduled on"] ?? task.DATE,
-                    STATUS:
-                        task["Task Done"] === true
-                            ? "Completato"
-                            : "Non completato",
-                    ASSIGNED_TO: task["Task Performed By"] ?? task.ASSIGNED_TO,
+                    DATE: scheduledOn,
+                    STATUS: isDone ? "Completato" : "Non completato",
+                    ASSIGNED_TO: displayAssignee,
                     DESCRIPTION:
                         task["Reference Doc"] ??
                         task["Maintenance Manual Reference"] ??
@@ -429,10 +455,49 @@ function Logbook() {
                     IS_PM_PLAN_TASK: true,
                     SIMULATOR: SIMULATOR_MAP[simulatorId],
                     TIME: getPmPlanTime(task),
-                    Data: task["Scheduled on"] ?? task.Data,
+                    Data: scheduledOn ?? task.Data,
                 };
             });
-    }, [taskSimOne]);
+    }, [taskSimOne, users]);
+
+    const normalizedUnfinishedPmTasks = useMemo(() => {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        const todayIso = `${y}-${m}-${d}T00:00:00.000Z`;
+
+        return (unfinishedPmTasks || [])
+            .filter((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                return simulatorId && SIMULATOR_MAP[simulatorId];
+            })
+            .map((task) => {
+                const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                const assignedToId = task["AssignedTo"];
+                const assignedUser =
+                    assignedToId != null
+                        ? users.find((u) => u.ID === assignedToId)
+                        : null;
+                return {
+                    ...task,
+                    ID: task["ID_task"] ?? task.ID,
+                    TITLE: task["Task"] ?? task.TITLE,
+                    DATE: todayIso,
+                    STATUS: "Non completato",
+                    ASSIGNED_TO: assignedUser?.Username ?? null,
+                    DESCRIPTION:
+                        task["Reference Doc"] ??
+                        task["Maintenance Manual Reference"] ??
+                        task.DESCRIPTION,
+                    TYPE: "PM Plan",
+                    IS_PM_PLAN_TASK: true,
+                    SIMULATOR: SIMULATOR_MAP[simulatorId],
+                    TIME: getPmPlanTime(task),
+                    Data: todayIso,
+                };
+            });
+    }, [unfinishedPmTasks, users]);
 
     const mergedTasks = useMemo(() => {
         const normalizedUnavailableTasks = (unavailableTasks || []).map(
@@ -442,8 +507,9 @@ function Logbook() {
             ...(tasks || []),
             ...normalizedUnavailableTasks,
             ...pmPlanTasks,
+            ...normalizedUnfinishedPmTasks,
         ];
-    }, [tasks, unavailableTasks, pmPlanTasks]);
+    }, [tasks, unavailableTasks, pmPlanTasks, normalizedUnfinishedPmTasks]);
 
     const mergedLogbooks = useMemo(() => {
         const normalizedUnavailableLogbooks = (unavailableLogbooks || []).map(

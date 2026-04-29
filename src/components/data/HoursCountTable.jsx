@@ -1,3 +1,15 @@
+{
+    /*
+     *
+     *
+     *
+     *This one is the deprecated one, use HoursCountTableTest
+     *
+     *
+     *
+     */
+}
+
 import React, { useState, useEffect } from "react";
 import { useUsers } from "./provider/userAPI/useUsers.js";
 import { useEmployeeShifts } from "./provider/employeeShiftsAPI/useEmployeeShifts.js";
@@ -62,11 +74,9 @@ function HoursCountTable({ selectedMonth }) {
     };
 
     const calculateUserHours = (user) => {
-        // Get year and month from the selected date
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
 
-        // Filter shifts for this user in the selected month
         const userShifts = employeeShifts.filter((shift) => {
             if (shift.EMPLOYEE_ID !== user.ID) return false;
             if (!shift.SELECTED_DATE) return false;
@@ -77,7 +87,6 @@ function HoursCountTable({ selectedMonth }) {
             return shiftYear === String(year) && shiftMonth === month;
         });
 
-        // Calculate total hours
         let totalHours = 0;
         userShifts.forEach((shift) => {
             const hours = shiftHours[shift.SHIFT_TYPE] || 0;
@@ -85,6 +94,26 @@ function HoursCountTable({ selectedMonth }) {
         });
 
         return totalHours;
+    };
+
+    const calculateUserVacationHours = (user) => {
+        const year = date.getFullYear();
+        const endMonth = date.getMonth() + 1;
+
+        const vacationShifts = employeeShifts.filter((shift) => {
+            if (shift.EMPLOYEE_ID !== user.ID) return false;
+            if (!shift.SELECTED_DATE) return false;
+            if (shift.SHIFT_TYPE !== "F") return false;
+
+            const shiftDate = shift.SELECTED_DATE.split("T")[0];
+            const [shiftYear, shiftMonth] = shiftDate.split("-");
+
+            return (
+                parseInt(shiftYear) === year && parseInt(shiftMonth) <= endMonth
+            );
+        });
+
+        return vacationShifts.length * (shiftHours["F"] || 0);
     };
 
     // Group users by role
@@ -105,9 +134,14 @@ function HoursCountTable({ selectedMonth }) {
                             Nome Dipendente
                         </p>
                     </div>
-                    <div className="bg-[var(--bento-bg)] min-w-[200px] w-[200px]">
+                    <div className="bg-[var(--bento-bg)] min-w-[200px] w-[200px] border-r border-[var(--separator)]">
                         <p className="text-[var(--black)] font-bold text-md p-4 text-center">
                             Ore Totali
+                        </p>
+                    </div>
+                    <div className="bg-[var(--bento-bg)] min-w-[240px] w-[240px]">
+                        <p className="text-[var(--black)] font-bold text-md p-4 text-center">
+                            Ore ferie da inizio anno
                         </p>
                     </div>
                 </div>
@@ -123,7 +157,10 @@ function HoursCountTable({ selectedMonth }) {
                                             SL
                                         </p>
                                     </div>
-                                    <div className="min-w-[200px] w-[200px]">
+                                    <div className="border-r border-[var(--separator)] min-w-[200px] w-[200px]">
+                                        <p className="text-[var(--gray)] font-semibold text-sm p-3 text-center"></p>
+                                    </div>
+                                    <div className="min-w-[240px] w-[240px]">
                                         <p className="text-[var(--gray)] font-semibold text-sm p-3 text-center"></p>
                                     </div>
                                 </div>
@@ -137,9 +174,17 @@ function HoursCountTable({ selectedMonth }) {
                                                 {formatUsername(user.Username)}
                                             </p>
                                         </div>
-                                        <div className="min-w-[200px] w-[200px]">
+                                        <div className="border-r border-[var(--separator)] min-w-[200px] w-[200px]">
                                             <p className="text-[var(--primary)] font-bold text-md p-4 text-center">
                                                 {calculateUserHours(user)}h
+                                            </p>
+                                        </div>
+                                        <div className="min-w-[240px] w-[240px]">
+                                            <p className="text-[var(--primary)] font-bold text-md p-4 text-center">
+                                                {calculateUserVacationHours(
+                                                    user,
+                                                )}
+                                                h
                                             </p>
                                         </div>
                                     </div>
@@ -156,7 +201,10 @@ function HoursCountTable({ selectedMonth }) {
                                             Tecnici
                                         </p>
                                     </div>
-                                    <div className="min-w-[200px] w-[200px]">
+                                    <div className="border-r border-[var(--separator)] min-w-[200px] w-[200px]">
+                                        <p className="text-[var(--gray)] font-semibold text-sm p-3 text-center"></p>
+                                    </div>
+                                    <div className="min-w-[240px] w-[240px]">
                                         <p className="text-[var(--gray)] font-semibold text-sm p-3 text-center"></p>
                                     </div>
                                 </div>
@@ -170,9 +218,17 @@ function HoursCountTable({ selectedMonth }) {
                                                 {formatUsername(user.Username)}
                                             </p>
                                         </div>
-                                        <div className="min-w-[200px] w-[200px]">
+                                        <div className="border-r border-[var(--separator)] min-w-[200px] w-[200px]">
                                             <p className="text-[var(--primary)] font-bold text-md p-4 text-center">
                                                 {calculateUserHours(user)}h
+                                            </p>
+                                        </div>
+                                        <div className="min-w-[240px] w-[240px]">
+                                            <p className="text-[var(--primary)] font-bold text-md p-4 text-center">
+                                                {calculateUserVacationHours(
+                                                    user,
+                                                )}
+                                                h
                                             </p>
                                         </div>
                                     </div>

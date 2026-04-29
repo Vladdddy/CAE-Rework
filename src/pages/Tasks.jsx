@@ -50,7 +50,7 @@ function Tasks() {
     const [showCalendar, setShowCalendar] = useState(true);
     // eslint-disable-next-line no-unused-vars
     const [selectedDay, setSelectedDay] = useState(null);
-    const { currentUserRole } = useUsers();
+    const { currentUserRole, users } = useUsers();
     const [viewDays, setViewDays] = useState(1);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const exportMenuRef = useRef(null);
@@ -158,13 +158,21 @@ function Tasks() {
                 const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
                 const isDone = task["Task Done"] === true;
                 const scheduledOn = task["Scheduled on"] ?? task.DATE;
+                const assignedToId = task["AssignedTo"];
+                const assignedUser =
+                    assignedToId != null
+                        ? users.find((u) => u.ID === assignedToId)
+                        : null;
+                const displayAssignee = isDone
+                    ? (task["Task Performed By"] ?? null)
+                    : (assignedUser?.Username ?? null);
                 return {
                     ...task,
                     ID: task["ID_task"] ?? task.ID,
                     TITLE: task["Task"] ?? task.TITLE,
                     DATE: scheduledOn,
                     STATUS: isDone ? "Completato" : "Non completato",
-                    ASSIGNED_TO: task["Task Performed By"] ?? task.ASSIGNED_TO,
+                    ASSIGNED_TO: displayAssignee,
                     DESCRIPTION:
                         task["Reference Doc"] ??
                         task["Maintenance Manual Reference"] ??
@@ -176,7 +184,7 @@ function Tasks() {
                     Data: scheduledOn ?? task.Data,
                 };
             });
-    }, [taskSimOne]);
+    }, [taskSimOne, users]);
 
     useEffect(() => {
         fetchUnfinishedPmTasks();
@@ -196,13 +204,18 @@ function Tasks() {
             })
             .map((task) => {
                 const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                const assignedToId = task["AssignedTo"];
+                const assignedUser =
+                    assignedToId != null
+                        ? users.find((u) => u.ID === assignedToId)
+                        : null;
                 return {
                     ...task,
                     ID: task["ID_task"] ?? task.ID,
                     TITLE: task["Task"] ?? task.TITLE,
                     DATE: todayIso,
                     STATUS: "Non completato",
-                    ASSIGNED_TO: task["Task Performed By"] ?? task.ASSIGNED_TO,
+                    ASSIGNED_TO: assignedUser?.Username ?? null,
                     DESCRIPTION:
                         task["Reference Doc"] ??
                         task["Maintenance Manual Reference"] ??
@@ -214,7 +227,7 @@ function Tasks() {
                     Data: todayIso,
                 };
             });
-    }, [unfinishedPmTasks]);
+    }, [unfinishedPmTasks, users]);
 
     const mergedTasks = useMemo(() => {
         const normalizedUnavailableTasks = (unavailableTasks || []).map(
