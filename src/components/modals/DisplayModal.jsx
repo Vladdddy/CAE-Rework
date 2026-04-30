@@ -57,7 +57,8 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         logbooks: unavailableLogbooks,
         deleteLogbook: deleteUnavailableLogbook,
     } = useUnavailableLogbooks();
-    const { updateTaskSimOne, updateTaskSimOneStatus, fetchTaskSimOne } = useTaskSimOne();
+    const { updateTaskSimOne, updateTaskSimOneStatus, fetchTaskSimOne } =
+        useTaskSimOne();
     const { deleteLogbook, updateLogbook, fetchLogbooks, logbooks } =
         useLogbooks();
     const { notes, fetchNotes, createNote, editNote, deleteNote } = useNotes();
@@ -2131,7 +2132,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                               >
                                                   <FlagIcon className="w-6" />
                                                   <p className="hidden md:block">
-                                                      Monitora task
+                                                      Monitora
                                                   </p>
                                               </button>
                                           )
@@ -2144,7 +2145,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                               >
                                                   <UnflagIcon className="w-6" />
                                                   <p className="hidden md:block">
-                                                      Remove flag
+                                                      Non monitorare
                                                   </p>
                                               </button>
                                           ))}

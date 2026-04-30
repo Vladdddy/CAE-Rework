@@ -432,14 +432,25 @@ function Logbook() {
                 const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
                 const isDone = task["Task Done"] === true;
                 const scheduledOn = task["Scheduled on"] ?? task.DATE;
-                const assignedToId = task["AssignedTo"];
-                const assignedUser =
-                    assignedToId != null
-                        ? users.find((u) => u.ID === assignedToId)
-                        : null;
+                const resolveAssignees = (raw) => {
+                    const ids =
+                        typeof raw === "number"
+                            ? [raw]
+                            : typeof raw === "string"
+                              ? raw
+                                    .split(",")
+                                    .map((v) => Number(v.trim()))
+                                    .filter(Number.isInteger)
+                              : [];
+                    const names = ids
+                        .map((id) => users.find((u) => u.ID === id)?.Username)
+                        .filter(Boolean)
+                        .join(", ");
+                    return names || null;
+                };
                 const displayAssignee = isDone
                     ? (task["Task Performed By"] ?? null)
-                    : (assignedUser?.Username ?? null);
+                    : resolveAssignees(task["AssignedTo"]);
                 return {
                     ...task,
                     ID: task["ID_task"] ?? task.ID,
@@ -474,18 +485,29 @@ function Logbook() {
             })
             .map((task) => {
                 const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
-                const assignedToId = task["AssignedTo"];
-                const assignedUser =
-                    assignedToId != null
-                        ? users.find((u) => u.ID === assignedToId)
-                        : null;
+                const resolveAssignees = (raw) => {
+                    const ids =
+                        typeof raw === "number"
+                            ? [raw]
+                            : typeof raw === "string"
+                              ? raw
+                                    .split(",")
+                                    .map((v) => Number(v.trim()))
+                                    .filter(Number.isInteger)
+                              : [];
+                    const names = ids
+                        .map((id) => users.find((u) => u.ID === id)?.Username)
+                        .filter(Boolean)
+                        .join(", ");
+                    return names || null;
+                };
                 return {
                     ...task,
                     ID: task["ID_task"] ?? task.ID,
                     TITLE: task["Task"] ?? task.TITLE,
                     DATE: todayIso,
                     STATUS: "Non completato",
-                    ASSIGNED_TO: assignedUser?.Username ?? null,
+                    ASSIGNED_TO: resolveAssignees(task["AssignedTo"]),
                     DESCRIPTION:
                         task["Reference Doc"] ??
                         task["Maintenance Manual Reference"] ??

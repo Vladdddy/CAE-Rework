@@ -98,7 +98,7 @@ export const TaskSimOneProvider = ({ children }) => {
                 throw new Error("Failed to update taskSimOne task");
             }
 
-            await fetchTaskSimOne(true);
+            await Promise.all([fetchTaskSimOne(true), fetchUnfinishedPmTasks()]);
             setError(null);
             return { success: true };
         } catch (err) {

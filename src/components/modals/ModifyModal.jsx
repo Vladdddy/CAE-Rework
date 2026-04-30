@@ -33,7 +33,7 @@ function ModifyModal({
     );
     const [selectedRadio, setSelectedRadio] = useState(task.TIME || "Diurno");
     const [selectedAssignees, setSelectedAssignees] = useState(
-        isDuplicating
+        isDuplicating || isConverting
             ? []
             : task.ASSIGNED_TO
               ? typeof task.ASSIGNED_TO === "string"
@@ -84,7 +84,7 @@ function ModifyModal({
     const { updateLogbook, addLogbook } = useLogbooks();
     const { uploadTaskImages, copyTaskImages } = useImageTasks();
     const { uploadLogbookImages } = useImageLogbooks();
-    const { users, currentUserId } = useUsers();
+    const { users, currentUserId, currentUsername } = useUsers();
     const { employeeShifts } = useEmployeeShifts();
 
     const isAttachmentUploadEnabled = true;
@@ -585,8 +585,30 @@ function ModifyModal({
                 // Delete the original logbook
                 //const deleteResult = await deleteLogbook(task.ID);
 
-                // Update the original logbook status to "Convertito in task"
-                await updateLogbook(task.ID, { ...modifiedTask, status: "Convertito in task" });
+                // Update the original logbook status to "Convertito in task", preserving its original date
+                await updateLogbook(task.ID, {
+                    ...modifiedTask,
+                    status: "Convertito in task",
+                    date: task.DATE
+                        ? task.DATE.split("T")[0]
+                        : modifiedTask.date,
+                });
+
+                const conversionNoteText = `Ha convertito in task`;
+                await createNoteLogbook(
+                    task.ID,
+                    currentUserId,
+                    conversionNoteText,
+                    "automatico",
+                );
+                if (createdTaskId) {
+                    await createNote(
+                        createdTaskId,
+                        currentUserId,
+                        conversionNoteText,
+                        "automatico",
+                    );
+                }
 
                 onClose();
 
@@ -628,7 +650,9 @@ function ModifyModal({
                     const uDate = u.DATE
                         ? new Date(u.DATE).toISOString().split("T")[0]
                         : null;
-                    return u.ORIGINAL_LOGBOOK_ID === task.ID && uDate === newDate;
+                    return (
+                        u.ORIGINAL_LOGBOOK_ID === task.ID && uDate === newDate
+                    );
                 });
                 if (conflicting) {
                     await deleteUnavailableLogbook(

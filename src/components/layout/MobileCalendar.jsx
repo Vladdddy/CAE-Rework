@@ -96,7 +96,7 @@ function MobileCalendar({
 
         const statuses = items
             .map(getItemStatus)
-            .filter((s) => Boolean(s) && s !== "Rischedulato");
+            .filter((s) => Boolean(s) && s !== "Rischedulato" && s !== "Convertito in task");
 
         if (statuses.length === 0) {
             return "text-[var(--black)]";
