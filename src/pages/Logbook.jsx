@@ -150,6 +150,24 @@ function Logbook() {
                 }),
             );
 
+            const resolvePmAssignees = (raw) => {
+                const ids =
+                    typeof raw === "number"
+                        ? [raw]
+                        : typeof raw === "string"
+                          ? raw
+                                .split(",")
+                                .map((v) => Number(v.trim()))
+                                .filter(Number.isInteger)
+                          : [];
+                return (
+                    ids
+                        .map((id) => users.find((u) => u.ID === id)?.Username)
+                        .filter(Boolean)
+                        .join(", ") || ""
+                );
+            };
+
             const normalizedPmTasks = (taskSimOne || [])
                 .filter((task) => {
                     const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
@@ -169,8 +187,11 @@ function Logbook() {
                         DATE: task["Scheduled on"] ?? task.DATE,
                         TIME: getPmPlanTime(task),
                         TITLE: task["Task"] || "PM Task",
-                        ASSIGNED_TO:
-                            task["Task Performed By"] || task["Tech id"] || "",
+                        ASSIGNED_TO: isDone
+                            ? task["Task Performed By"] ||
+                              task["Tech id"] ||
+                              ""
+                            : resolvePmAssignees(task["AssignedTo"]),
                         STATUS: isDone ? "Completato" : "Non completato",
                         IS_PM_PLAN_TASK: true,
                     };

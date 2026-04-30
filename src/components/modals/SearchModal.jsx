@@ -372,6 +372,8 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         "Routine Task": [
             "PM",
             "MR",
+            "MDR",
+            "FDR",
             "Backup",
             "QTG",
             "FMS & Parsing",

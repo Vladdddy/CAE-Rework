@@ -125,13 +125,27 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     }, [taskInfo?.ID, isPendingDeletion(taskInfo?.ID)]);
     const [hasPmAssigneeBeenEdited, setHasPmAssigneeBeenEdited] =
         useState(false);
-    const [selectedAssignees, setSelectedAssignees] = useState(
-        taskInfo.ASSIGNED_TO
-            ? typeof taskInfo.ASSIGNED_TO === "string"
-                ? taskInfo.ASSIGNED_TO.split(", ").filter((name) => name.trim())
-                : taskInfo.ASSIGNED_TO
-            : [],
-    );
+    const [selectedAssignees, setSelectedAssignees] = useState(() => {
+        if (taskInfo?.IS_PM_PLAN_TASK) {
+            const raw = taskInfo?.AssignedTo;
+            const ids =
+                typeof raw === "number"
+                    ? [raw]
+                    : typeof raw === "string"
+                      ? raw
+                            .split(",")
+                            .map((v) => Number(v.trim()))
+                            .filter(Number.isInteger)
+                      : [];
+            return ids
+                .map((id) => users.find((u) => u.ID === id)?.Username)
+                .filter(Boolean);
+        }
+        if (!taskInfo.ASSIGNED_TO) return [];
+        return typeof taskInfo.ASSIGNED_TO === "string"
+            ? taskInfo.ASSIGNED_TO.split(", ").filter((name) => name.trim())
+            : taskInfo.ASSIGNED_TO;
+    });
     const isUnavailableTask =
         !taskInfo.ISLOGBOOK &&
         (taskInfo?.TYPE === "Unavailable" || taskInfo?.IS_UNAVAILABLE);
@@ -275,7 +289,11 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
     const handleCheckboxChange = (name) => {
         if (isPmPlanTask) {
             setHasPmAssigneeBeenEdited(true);
-            setSelectedAssignees((prev) => (prev.includes(name) ? [] : [name]));
+            setSelectedAssignees((prev) =>
+                prev.includes(name)
+                    ? prev.filter((item) => item !== name)
+                    : [...prev, name],
+            );
             return;
         }
 
@@ -337,15 +355,10 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
 
     const handleSaveAssignees = async () => {
         if (isPmPlanTask) {
-            const selectedUsername = selectedAssignees[0] || null;
-            const selectedUser = users.find((user) => {
-                return (
-                    user?.Username === selectedUsername ||
-                    user?.username === selectedUsername
-                );
-            });
-
-            const assignedTo = selectedUser?.ID ?? selectedUser?.id ?? null;
+            const assignedTo =
+                selectedPmAssignedIds.length > 0
+                    ? selectedPmAssignedIds.join(", ")
+                    : null;
             const result = await updateTaskSimOne(taskInfo.ID, assignedTo);
 
             if (result.success) {

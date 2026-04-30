@@ -795,6 +795,7 @@ function ModifyModal({
             "PM",
             "MR",
             "MDR",
+            "FDR",
             "Backup",
             "QTG",
             "FMS & Parsing",
@@ -807,7 +808,9 @@ function ModifyModal({
             "Pre-Cert",
             "Certification",
         ],
-        Comment: [],
+        COMMENT: [],
+        REPAIR: [],
+        Investigation: ["HW", "SW"],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
         Others: [
@@ -816,7 +819,7 @@ function ModifyModal({
             "Remote connection without support",
             "On-Site Connection",
             "Part Repaired",
-            "Extra Task",
+            "EXTRA TASK",
         ],
     };
 

@@ -414,6 +414,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "PM",
             "MR",
             "MDR",
+            "FDR",
             "Backup",
             "QTG",
             "FMS & Parsing",
@@ -426,7 +427,9 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "Pre-Cert",
             "Certification",
         ],
-        Comment: [],
+        COMMENT: [],
+        REPAIR: [],
+        Investigation: ["HW", "SW"],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
         Others: [
@@ -435,7 +438,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "Remote connection without support",
             "On-Site Connection",
             "Part Repaired",
-            "Extra Task",
+            "EXTRA TASK",
         ],
     };
 
