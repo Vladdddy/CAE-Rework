@@ -1085,7 +1085,7 @@ function ShiftsTable({
                                 }}
                             >
                                 <div
-                                    className={`flex items-center justify-center sticky left-0 z-20 border-r border-b border-l border-[var(--separator)] cursor-pointer ${user.Role === "Shift Leader" ? "bg-[var(--shift-leader-bg)]" : "bg-[var(--bento-bg)]"} ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""}`}
+                                    className={`flex items-center justify-center sticky left-0 z-20 border-r border-b border-l border-[var(--separator)] cursor-pointer ${user.Role === "Shift Leader" ? "bg-[var(--shift-leader-bg)]" : "bg-[var(--bento-bg)]"} ${selectedUserIndex === userIndex && !isUserRowModified(userIndex) ? "!bg-blue-200" : ""} ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""}`}
                                     onClick={() =>
                                         setSelectedUserIndex(
                                             selectedUserIndex === userIndex
@@ -1095,7 +1095,9 @@ function ShiftsTable({
                                     }
                                 >
                                     <div className="flex justify-between min-w-[240px] w-[240px]">
-                                        <p className="text-[var(--black)] text-sm p-4 text-start select-none flex items-center gap-2">
+                                        <p
+                                            className={`text-[var(--black)] ${selectedUserIndex === userIndex && !isUserRowModified(userIndex) ? "!text-black" : ""} text-sm p-4 text-start select-none flex items-center gap-2`}
+                                        >
                                             {isEmployee &&
                                                 (currentUserRole === "Admin" ||
                                                     currentUserRole ===
@@ -1120,7 +1122,7 @@ function ShiftsTable({
                                         return (
                                             <div
                                                 key={`user-${userIndex}-day-${index}`}
-                                                className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)]" : ""}`}
+                                                className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)] " : ""} `}
                                             >
                                                 <div
                                                     className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${selectedUserIndex === userIndex && !isCellModified(userIndex, index) ? "!bg-blue-200" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}

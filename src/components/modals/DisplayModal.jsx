@@ -1552,7 +1552,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Stato
                                     </h3>
 
-                                    {isUnavailableEntity ? (
+                                    {isUnavailableEntity || isPmPlanTask ? (
                                         <div className="p-2 text-[var(--gray)] border border-[var(--light-primary)] rounded-md bg-[var(--white)]">
                                             {taskInfo?.STATUS || "Da definire"}
                                         </div>
