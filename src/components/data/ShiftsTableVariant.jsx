@@ -5,6 +5,8 @@ import React, {
     useMemo,
     useCallback,
 } from "react";
+
+const API_URL = import.meta.env.VITE_API_URL;
 import { useUsers } from "./provider/userAPI/useUsers.js";
 import DragIcon from "../../assets/icons/drag.tsx";
 import ArrowRightIcon from "../../assets/icons/arrow-right.tsx";
@@ -44,6 +46,11 @@ function ShiftsTable({
     const [isMobile, setIsMobile] = useState(
         () => typeof window !== "undefined" && window.innerWidth < 768,
     );
+
+    const [highlights, setHighlights] = useState(() => {
+        const saved = localStorage.getItem("shiftHighlights");
+        return saved ? JSON.parse(saved) : {};
+    });
 
     // Track POST and PUT changes
     const [postChanges, setPostChanges] = useState(() => {
@@ -121,6 +128,28 @@ function ShiftsTable({
         }
     }, [postChanges, putChanges, shiftValues, onChangesDetected]);
 
+    const highlightsRef = useRef({});
+    useEffect(() => {
+        highlightsRef.current = highlights;
+    }, [highlights]);
+
+    // On mount: fetch saved highlights from DB and merge with localStorage pending ones
+    useEffect(() => {
+        fetch(`${API_URL}/shiftCellHighlight`)
+            .then((r) => r.json())
+            .then((data) => {
+                if (!Array.isArray(data)) return;
+                const dbMap = {};
+                data.forEach((h) => {
+                    const dateStr = String(h.SELECTED_DATE).split("T")[0];
+                    dbMap[`${h.EMPLOYEE_ID}-${dateStr}`] = h.CHANGE_TYPE;
+                });
+                // DB is the base; localStorage pending highlights take precedence
+                setHighlights((prev) => ({ ...dbMap, ...prev }));
+            })
+            .catch((err) => console.error("ShiftCellHighlight fetch error:", err));
+    }, []);
+
     // Expose clear function via ref or prop callback
     useEffect(() => {
         window.clearShiftChanges = () => {
@@ -130,6 +159,7 @@ function ShiftsTable({
             localStorage.removeItem("shiftPostChanges");
             localStorage.removeItem("shiftPutChanges");
             localStorage.removeItem("shiftValues");
+            localStorage.removeItem("shiftHighlights");
         };
 
         window.applyPatternChanges = (newPostChanges, newPutChanges) => {
@@ -163,9 +193,53 @@ function ShiftsTable({
             });
         };
 
+        window.commitShiftHighlights = () => {
+            const current = highlightsRef.current;
+            const items = Object.entries(current).map(([key, changeType]) => {
+                const dashIdx = key.indexOf("-");
+                return {
+                    employeeId: parseInt(key.slice(0, dashIdx)),
+                    date: key.slice(dashIdx + 1),
+                    changeType,
+                };
+            });
+            if (items.length === 0) return Promise.resolve();
+            return fetch(`${API_URL}/shiftCellHighlight`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items }),
+            })
+                .then((r) => { if (!r.ok) r.json().then((e) => console.error("Highlight commit failed:", e)); })
+                .catch((err) => console.error("Highlight commit error:", err));
+        };
+
+        window.cancelShiftChanges = () => {
+            setPostChanges({});
+            setPutChanges({});
+            setShiftValues({});
+            localStorage.removeItem("shiftPostChanges");
+            localStorage.removeItem("shiftPutChanges");
+            localStorage.removeItem("shiftValues");
+            localStorage.removeItem("shiftHighlights");
+            fetch(`${API_URL}/shiftCellHighlight`)
+                .then((r) => r.json())
+                .then((data) => {
+                    if (!Array.isArray(data)) return;
+                    const map = {};
+                    data.forEach((h) => {
+                        const dateStr = String(h.SELECTED_DATE).split("T")[0];
+                        map[`${h.EMPLOYEE_ID}-${dateStr}`] = h.CHANGE_TYPE;
+                    });
+                    setHighlights(map);
+                })
+                .catch(() => {});
+        };
+
         return () => {
             delete window.clearShiftChanges;
             delete window.applyPatternChanges;
+            delete window.commitShiftHighlights;
+            delete window.cancelShiftChanges;
         };
     }, []);
 
@@ -488,8 +562,38 @@ function ShiftsTable({
                 delete n[key];
                 return n;
             });
+            setHighlights((prev) => {
+                const n = { ...prev };
+                delete n[key];
+                localStorage.setItem("shiftHighlights", JSON.stringify(n));
+                return n;
+            });
+            fetch(`${API_URL}/shiftCellHighlight`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items: [{ employeeId: user.ID, date: formattedDate }] }),
+            }).catch(() => {});
             return;
         }
+
+        let changeType = "modified";
+        if (value === "--") {
+            changeType = "removed";
+        } else if (currentDbValue === "--") {
+            changeType = "added";
+        } else if (
+            user.Role === "Employee" &&
+            ((currentDbValue === "D" && value === "N") ||
+                (currentDbValue === "N" && value === "D"))
+        ) {
+            changeType = "swap";
+        }
+
+        setHighlights((prev) => {
+            const n = { ...prev, [key]: changeType };
+            localStorage.setItem("shiftHighlights", JSON.stringify(n));
+            return n;
+        });
 
         if (value === "--" && currentDbValue !== "--") {
             setShiftValues((prev) => ({ ...prev, [key]: null }));
@@ -501,6 +605,7 @@ function ShiftsTable({
                     SELECTED_DATE: formattedDate,
                     SHIFT_TYPE: null,
                     CHANGE_SOURCE: "manual",
+                    CHANGE_TYPE: changeType,
                 },
             }));
             setPostChanges((prev) => {
@@ -533,6 +638,7 @@ function ShiftsTable({
                     SELECTED_DATE: formattedDate,
                     SHIFT_TYPE: value,
                     CHANGE_SOURCE: "manual",
+                    CHANGE_TYPE: changeType,
                 },
             }));
             setPutChanges((prev) => {
@@ -550,6 +656,7 @@ function ShiftsTable({
                     SELECTED_DATE: formattedDate,
                     SHIFT_TYPE: value,
                     CHANGE_SOURCE: "manual",
+                    CHANGE_TYPE: changeType,
                 },
             }));
             setPostChanges((prev) => {
@@ -633,6 +740,22 @@ function ShiftsTable({
         return (
             Object.hasOwn(postChanges, key) || Object.hasOwn(putChanges, key)
         );
+    };
+
+    const getCellChangeType = (userIndex, dayIndex) => {
+        const user = orderedUsers[userIndex];
+        if (!user) return null;
+        const key = `${user.ID}-${formatDateStr(allDays[dayIndex])}`;
+        return highlights[key] || null;
+    };
+
+    const getCellChangeBg = (userIndex, dayIndex) => {
+        const type = getCellChangeType(userIndex, dayIndex);
+        if (type === "swap")     return "!bg-green-500";
+        if (type === "removed")  return "!bg-violet-400";
+        if (type === "added")    return "!bg-green-200";
+        if (type === "modified") return "!bg-[var(--orange-light)]";
+        return "";
     };
 
     const isUserRowModified = (userIndex) => {
@@ -808,7 +931,7 @@ function ShiftsTable({
                                                 isHoliday(dayDate);
                                             const isToday =
                                                 index === todayIndex;
-                                            const modified = isCellModified(
+                                            const changeType = getCellChangeType(
                                                 userIndex,
                                                 index,
                                             );
@@ -817,7 +940,13 @@ function ShiftsTable({
                                                 index > 0;
 
                                             let cellBg = "";
-                                            if (modified)
+                                            if (changeType === "swap")
+                                                cellBg = "bg-green-500";
+                                            else if (changeType === "removed")
+                                                cellBg = "bg-violet-400";
+                                            else if (changeType === "added")
+                                                cellBg = "bg-green-200";
+                                            else if (changeType === "modified")
                                                 cellBg =
                                                     "bg-[var(--orange-light)]";
                                             else if (isToday)
@@ -1125,7 +1254,7 @@ function ShiftsTable({
                                                 className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)] " : ""} `}
                                             >
                                                 <div
-                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${selectedUserIndex === userIndex && !isCellModified(userIndex, index) ? "!bg-blue-200" : ""} ${isCellModified(userIndex, index) ? "!bg-[var(--orange-light)]" : ""}`}
+                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${selectedUserIndex === userIndex && !isCellModified(userIndex, index) ? "!bg-blue-200" : ""} ${getCellChangeBg(userIndex, index)}`}
                                                 >
                                                     <div className="relative">
                                                         <select

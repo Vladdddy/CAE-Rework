@@ -220,7 +220,10 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
                 }
             }
 
-            // Clear the changes from localStorage
+            // Save highlights to DB then clear pending state
+            if (window.commitShiftHighlights) {
+                await window.commitShiftHighlights();
+            }
             if (window.clearShiftChanges) {
                 window.clearShiftChanges();
             }
@@ -239,11 +242,11 @@ function SaveChanges({ onClose, postChanges, putChanges }) {
     };
 
     const handleCancel = () => {
-        // Clear the changes from localStorage without saving
-        if (window.clearShiftChanges) {
+        if (window.cancelShiftChanges) {
+            window.cancelShiftChanges();
+        } else if (window.clearShiftChanges) {
             window.clearShiftChanges();
         }
-        // Close the modal
         onClose();
     };
 
