@@ -551,8 +551,12 @@ export const exportTasksToPDF = (
                     doc.setFont(undefined, "normal");
                     doc.setTextColor(50, 50, 50);
                     descLines.forEach((line) => {
-                        if (by + 4.5 + footerH + 4 > pageHeight - 15)
+                        if (by + 4.5 + footerH + 4 > pageHeight - 15) {
                             continueOnNextPage();
+                            doc.setFontSize(8.5);
+                            doc.setFont(undefined, "normal");
+                            doc.setTextColor(50, 50, 50);
+                        }
                         doc.text(line, cardX + 14, by);
                         by += 4.5;
                     });
@@ -592,8 +596,12 @@ export const exportTasksToPDF = (
                         doc.setFont(undefined, "normal");
                         doc.setTextColor(100, 100, 100);
                         noteLines.forEach((line) => {
-                            if (by + 4 + footerH + 4 > pageHeight - 15)
+                            if (by + 4 + footerH + 4 > pageHeight - 15) {
                                 continueOnNextPage();
+                                doc.setFontSize(8);
+                                doc.setFont(undefined, "normal");
+                                doc.setTextColor(100, 100, 100);
+                            }
                             doc.text(line, cardX + 18, by);
                             by += 4;
                         });

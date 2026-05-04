@@ -582,6 +582,22 @@ function ModifyModal({
                     attachmentsUploadedSuccessfully = uploadResult.success;
                 }
 
+                // Copy notes from logbook to new task if user selected "Si"
+                if (importNotes === "Si" && createdTaskId) {
+                    const creatoNotes =
+                        noteLogbooks?.filter(
+                            (note) => note.TYPE === "creato",
+                        ) || [];
+                    for (const note of creatoNotes) {
+                        await createNote(
+                            createdTaskId,
+                            note.CREATEDBY,
+                            note.DESCRIPTION,
+                            "creato",
+                        );
+                    }
+                }
+
                 // Delete the original logbook
                 //const deleteResult = await deleteLogbook(task.ID);
 
@@ -592,6 +608,8 @@ function ModifyModal({
                     date: task.DATE
                         ? task.DATE.split("T")[0]
                         : modifiedTask.date,
+                    time: task.TIME,
+                    assigned_to: task.ASSIGNED_TO ?? null,
                 });
 
                 const conversionNoteText = `Ha convertito in task`;
@@ -1192,7 +1210,7 @@ function ModifyModal({
                         </div>
                     </div>
 
-                    {isDuplicating && (
+                    {(isDuplicating || isConverting) && (
                         <div className="flex flex-col gap-1">
                             <h3 className="text-sm text-[var(--gray)]">
                                 Importare note
