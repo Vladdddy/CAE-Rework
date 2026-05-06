@@ -38,6 +38,10 @@ const getUsernameById = (userId, users) => {
 };
 
 const getNotesKeyForItem = (item) => {
+    if (item?.ISLOGBOOK) {
+        return `logbook_${item.ID}`;
+    }
+
     const isUnavailableTask =
         item?.TYPE === "Unavailable" || item?.IS_UNAVAILABLE === true;
 
@@ -179,7 +183,8 @@ export const exportTasksToPDF = (
     isDayReport = false,
 ) => {
     const tasksForExport = tasks.filter((task) => {
-        if (task?.IS_UNAVAILABLE === true || task?.TYPE === "Unavailable") return false;
+        if (task?.IS_UNAVAILABLE === true || task?.TYPE === "Unavailable")
+            return false;
         return (task?.STATUS || "").trim() !== "Rischedulato";
     });
 
@@ -588,8 +593,19 @@ export const exportTasksToPDF = (
                         doc.text(`${authorName}:`, cardX + 18, by);
                         by += 4;
 
+                        const noteText = task.IS_PM_PLAN_TASK
+                            ? note.DESCRIPTION || ""
+                            : (() => {
+                                  const noteTime = note.CREATEDDATE
+                                      ? (() => {
+                                            const d = new Date(note.CREATEDDATE);
+                                            return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+                                        })()
+                                      : "--:--";
+                                  return `(${noteTime}): ${note.DESCRIPTION || ""}`;
+                              })();
                         const noteLines = doc.splitTextToSize(
-                            note.DESCRIPTION || "",
+                            noteText,
                             contentWidth - 30,
                         );
                         doc.setFontSize(8);

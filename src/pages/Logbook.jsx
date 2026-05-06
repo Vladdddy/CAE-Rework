@@ -304,10 +304,13 @@ function Logbook() {
                         const endpoint = item.ISLOGBOOK
                             ? `${API_URL}/notesLogbook/${item.ID}`
                             : `${API_URL}/notes/${notesEntityId}`;
+                        const notesKey = item.ISLOGBOOK
+                            ? `logbook_${item.ID}`
+                            : notesEntityId;
                         const response = await fetch(endpoint);
                         if (response.ok) {
                             const notes = await response.json();
-                            notesMap[notesEntityId] = notes;
+                            notesMap[notesKey] = notes;
                         }
                     } catch (error) {
                         console.error(
@@ -318,20 +321,19 @@ function Logbook() {
                 }),
             );
 
-            // Filter notes to only include those created on the selected export date or the day before
-            const exportDate = new Date(startDate);
-            exportDate.setHours(0, 0, 0, 0);
-            const exportDateYesterday = new Date(exportDate);
-            exportDateYesterday.setDate(exportDateYesterday.getDate() - 1);
-            Object.keys(notesMap).forEach((key) => {
-                notesMap[key] = notesMap[key].filter((note) => {
-                    if (!note.CREATEDDATE) return true;
-                    const noteDate = new Date(note.CREATEDDATE);
-                    noteDate.setHours(0, 0, 0, 0);
-                    const t = noteDate.getTime();
-                    return t === exportDate.getTime() || t === exportDateYesterday.getTime();
+            // For reports: include notes from yesterday at 19:30 onwards through any time today.
+            // For activity exports: include all notes regardless of date.
+            if (exportType !== "activity" && exportType !== "activities") {
+                const noteCutoff = new Date();
+                noteCutoff.setDate(noteCutoff.getDate() - 1);
+                noteCutoff.setHours(19, 30, 0, 0);
+                Object.keys(notesMap).forEach((key) => {
+                    notesMap[key] = notesMap[key].filter((note) => {
+                        if (!note.CREATEDDATE) return true;
+                        return new Date(note.CREATEDDATE) >= noteCutoff;
+                    });
                 });
-            });
+            }
 
             // Add PM tech comments to notesMap for PM Plan tasks, then filter
             // out PM tasks that have no comments at all.
