@@ -14,6 +14,7 @@ import { GetColorForShift } from "../../functions/GetColorPerShift.jsx";
 import { useEmployeeShifts } from "./provider/employeeShiftsAPI_variant/useEmployeeShifts.js";
 import { useShiftOrder } from "./provider/shiftOrderAPI/useShiftOrder.js";
 import Popup from "../modals/Popup.jsx";
+import Colors from "../../assets/icons/color.tsx";
 
 function ShiftsTable({
     selectedMonth,
@@ -51,6 +52,12 @@ function ShiftsTable({
         const saved = localStorage.getItem("shiftHighlights");
         return saved ? JSON.parse(saved) : {};
     });
+
+    const [cellColorChoices, setCellColorChoices] = useState(() => {
+        const saved = localStorage.getItem("shiftColorChoices");
+        return saved ? JSON.parse(saved) : {};
+    });
+    const [openColorPicker, setOpenColorPicker] = useState(null);
 
     // Track POST and PUT changes
     const [postChanges, setPostChanges] = useState(() => {
@@ -128,10 +135,35 @@ function ShiftsTable({
         }
     }, [postChanges, putChanges, shiftValues, onChangesDetected]);
 
+    useEffect(() => {
+        localStorage.setItem(
+            "shiftColorChoices",
+            JSON.stringify(cellColorChoices),
+        );
+    }, [cellColorChoices]);
+
+    useEffect(() => {
+        const close = () => setOpenColorPicker(null);
+        document.addEventListener("click", close);
+        return () => document.removeEventListener("click", close);
+    }, []);
+
     const highlightsRef = useRef({});
+    const cellColorChoicesRef = useRef({});
+    const postChangesRef = useRef({});
+    const putChangesRef = useRef({});
     useEffect(() => {
         highlightsRef.current = highlights;
     }, [highlights]);
+    useEffect(() => {
+        cellColorChoicesRef.current = cellColorChoices;
+    }, [cellColorChoices]);
+    useEffect(() => {
+        postChangesRef.current = postChanges;
+    }, [postChanges]);
+    useEffect(() => {
+        putChangesRef.current = putChanges;
+    }, [putChanges]);
 
     // On mount: fetch saved highlights from DB and merge with localStorage pending ones
     useEffect(() => {
@@ -147,7 +179,9 @@ function ShiftsTable({
                 // DB is the base; localStorage pending highlights take precedence
                 setHighlights((prev) => ({ ...dbMap, ...prev }));
             })
-            .catch((err) => console.error("ShiftCellHighlight fetch error:", err));
+            .catch((err) =>
+                console.error("ShiftCellHighlight fetch error:", err),
+            );
     }, []);
 
     // Expose clear function via ref or prop callback
@@ -156,10 +190,12 @@ function ShiftsTable({
             setPostChanges({});
             setPutChanges({});
             setShiftValues({});
+            setCellColorChoices({});
             localStorage.removeItem("shiftPostChanges");
             localStorage.removeItem("shiftPutChanges");
             localStorage.removeItem("shiftValues");
             localStorage.removeItem("shiftHighlights");
+            localStorage.removeItem("shiftColorChoices");
         };
 
         window.applyPatternChanges = (newPostChanges, newPutChanges) => {
@@ -195,32 +231,72 @@ function ShiftsTable({
 
         window.commitShiftHighlights = () => {
             const current = highlightsRef.current;
-            const items = Object.entries(current).map(([key, changeType]) => {
+            const colors = cellColorChoicesRef.current;
+            const posts = postChangesRef.current;
+            const puts = putChangesRef.current;
+
+            const toPost = [];
+            const toDelete = [];
+
+            Object.entries(current).forEach(([key, changeType]) => {
+                const isManual =
+                    posts[key]?.CHANGE_SOURCE === "manual" ||
+                    puts[key]?.CHANGE_SOURCE === "manual";
                 const dashIdx = key.indexOf("-");
-                return {
-                    employeeId: parseInt(key.slice(0, dashIdx)),
-                    date: key.slice(dashIdx + 1),
-                    changeType,
-                };
+                const employeeId = parseInt(key.slice(0, dashIdx));
+                const date = key.slice(dashIdx + 1);
+
+                if (isManual) {
+                    if (colors[key] != null) {
+                        toPost.push({ employeeId, date, changeType: colors[key] });
+                    } else {
+                        toDelete.push({ employeeId, date });
+                    }
+                } else {
+                    toPost.push({ employeeId, date, changeType });
+                }
             });
-            if (items.length === 0) return Promise.resolve();
-            return fetch(`${API_URL}/shiftCellHighlight`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ items }),
-            })
-                .then((r) => { if (!r.ok) r.json().then((e) => console.error("Highlight commit failed:", e)); })
-                .catch((err) => console.error("Highlight commit error:", err));
+
+            const promises = [];
+
+            if (toPost.length > 0) {
+                promises.push(
+                    fetch(`${API_URL}/shiftCellHighlight`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ items: toPost }),
+                    })
+                        .then((r) => { if (!r.ok) r.json().then((e) => console.error("Highlight commit failed:", e)); })
+                        .catch((err) => console.error("Highlight commit error:", err)),
+                );
+            }
+
+            if (toDelete.length > 0) {
+                promises.push(
+                    fetch(`${API_URL}/shiftCellHighlight`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ items: toDelete }),
+                    })
+                        .then((r) => { if (!r.ok) r.json().then((e) => console.error("Highlight delete failed:", e)); })
+                        .catch((err) => console.error("Highlight delete error:", err)),
+                );
+            }
+
+            if (promises.length === 0) return Promise.resolve();
+            return Promise.all(promises);
         };
 
         window.cancelShiftChanges = () => {
             setPostChanges({});
             setPutChanges({});
             setShiftValues({});
+            setCellColorChoices({});
             localStorage.removeItem("shiftPostChanges");
             localStorage.removeItem("shiftPutChanges");
             localStorage.removeItem("shiftValues");
             localStorage.removeItem("shiftHighlights");
+            localStorage.removeItem("shiftColorChoices");
             fetch(`${API_URL}/shiftCellHighlight`)
                 .then((r) => r.json())
                 .then((data) => {
@@ -571,7 +647,9 @@ function ShiftsTable({
             fetch(`${API_URL}/shiftCellHighlight`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ items: [{ employeeId: user.ID, date: formattedDate }] }),
+                body: JSON.stringify({
+                    items: [{ employeeId: user.ID, date: formattedDate }],
+                }),
             }).catch(() => {});
             return;
         }
@@ -750,11 +828,27 @@ function ShiftsTable({
     };
 
     const getCellChangeBg = (userIndex, dayIndex) => {
-        const type = getCellChangeType(userIndex, dayIndex);
-        if (type === "swap")     return "!bg-green-500";
-        if (type === "removed")  return "!bg-violet-400";
-        if (type === "added")    return "!bg-green-200";
+        const user = orderedUsers[userIndex];
+        if (!user) return "";
+        const key = `${user.ID}-${formatDateStr(allDays[dayIndex])}`;
+        const isManual =
+            postChanges[key]?.CHANGE_SOURCE === "manual" ||
+            putChanges[key]?.CHANGE_SOURCE === "manual";
+        if (isManual) {
+            const chosen = cellColorChoices[key];
+            if (chosen === "violet") return "!bg-violet-400";
+            if (chosen === "green") return "!bg-green-500";
+            if (chosen === "light-green") return "!bg-green-200";
+            return "";
+        }
+        const type = highlights[key];
+        if (type === "swap") return "!bg-green-500";
+        if (type === "removed") return "!bg-violet-400";
+        if (type === "added") return "!bg-green-200";
         if (type === "modified") return "!bg-[var(--orange-light)]";
+        if (type === "violet") return "!bg-violet-400";
+        if (type === "green") return "!bg-green-500";
+        if (type === "light-green") return "!bg-green-200";
         return "";
     };
 
@@ -770,6 +864,42 @@ function ShiftsTable({
                 return true;
         }
         return false;
+    };
+
+    const COLOR_OPTIONS = [
+        {
+            id: "violet",
+            label: "Turno tolto",
+            cellBg: "!bg-violet-400",
+            btnBg: "bg-violet-400",
+        },
+        {
+            id: "green",
+            label: "Turno aggiunto",
+            cellBg: "!bg-green-500",
+            btnBg: "bg-green-500",
+        },
+        {
+            id: "light-green",
+            label: "Turno cambiato",
+            cellBg: "!bg-green-200",
+            btnBg: "bg-green-200",
+        },
+    ];
+
+    const handleColorChoice = (key, colorId) => {
+        setCellColorChoices((prev) => ({ ...prev, [key]: colorId }));
+        setOpenColorPicker(null);
+    };
+
+    const isManualChange = (userIndex, dayIndex) => {
+        const user = orderedUsers[userIndex];
+        if (!user) return false;
+        const key = `${user.ID}-${formatDateStr(allDays[dayIndex])}`;
+        return (
+            postChanges[key]?.CHANGE_SOURCE === "manual" ||
+            putChanges[key]?.CHANGE_SOURCE === "manual"
+        );
     };
 
     const canEdit =
@@ -931,10 +1061,11 @@ function ShiftsTable({
                                                 isHoliday(dayDate);
                                             const isToday =
                                                 index === todayIndex;
-                                            const changeType = getCellChangeType(
-                                                userIndex,
-                                                index,
-                                            );
+                                            const changeType =
+                                                getCellChangeType(
+                                                    userIndex,
+                                                    index,
+                                                );
                                             const isMonthStart =
                                                 dayDate.getDate() === 1 &&
                                                 index > 0;
@@ -1254,8 +1385,107 @@ function ShiftsTable({
                                                 className={`min-w-[8rem] w-[8rem] ${isMonthStart ? "border-l-2 border-l-[var(--primary)] " : ""} `}
                                             >
                                                 <div
-                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${selectedUserIndex === userIndex && !isCellModified(userIndex, index) ? "!bg-blue-200" : ""} ${getCellChangeBg(userIndex, index)}`}
+                                                    className={`py-2 border-r border-[var(--separator)] gap-2 flex flex-col items-center justify-center relative ${index === todayIndex ? "bg-[var(--weekend-cells)]" : isHolidayDay ? "bg-[var(--holiday-cells)] text-[var(--holiday-text)]" : isWeekend ? "bg-[var(--light-primary)] text-[var(--weekend-text)]" : ""} ${selectedUserIndex === userIndex && !isCellModified(userIndex, index) ? "!bg-blue-200" : ""} ${getCellChangeBg(userIndex, index)}`}
                                                 >
+                                                    {canEdit &&
+                                                        isManualChange(
+                                                            userIndex,
+                                                            index,
+                                                        ) &&
+                                                        (() => {
+                                                            const cellKey = `${user.ID}-${formatDateStr(allDays[index])}`;
+                                                            const chosen =
+                                                                cellColorChoices[
+                                                                    cellKey
+                                                                ];
+                                                            return (
+                                                                <div
+                                                                    className="absolute -top-2 -right-2 z-50"
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.stopPropagation()
+                                                                    }
+                                                                >
+                                                                    <button
+                                                                        onClick={(
+                                                                            e,
+                                                                        ) => {
+                                                                            e.stopPropagation();
+                                                                            setOpenColorPicker(
+                                                                                openColorPicker ===
+                                                                                    cellKey
+                                                                                    ? null
+                                                                                    : cellKey,
+                                                                            );
+                                                                        }}
+                                                                        className="w-8 h-8 rounded-full bg-[var(--primary)] flex items-center justify-center shadow-sm"
+                                                                        title="Scegli colore evidenziazione"
+                                                                    >
+                                                                        <Colors className="w-5 h-5 text-white" />
+                                                                    </button>
+                                                                    {openColorPicker ===
+                                                                        cellKey && (
+                                                                        <div className="absolute top-7 right-0 z-50 bg-white rounded-lg shadow-xl py-1 px-1 flex flex-col gap-0.5 border border-gray-200 min-w-[130px]">
+                                                                            {COLOR_OPTIONS.map(
+                                                                                (
+                                                                                    opt,
+                                                                                ) => (
+                                                                                    <button
+                                                                                        key={
+                                                                                            opt.id
+                                                                                        }
+                                                                                        onClick={() =>
+                                                                                            handleColorChoice(
+                                                                                                cellKey,
+                                                                                                opt.id,
+                                                                                            )
+                                                                                        }
+                                                                                        className={`flex items-center gap-2 w-full px-2 py-1 rounded-md hover:bg-gray-100 transition-colors ${chosen === opt.id ? "bg-gray-100" : ""}`}
+                                                                                    >
+                                                                                        <span
+                                                                                            className={`w-6 h-6 rounded-full flex-shrink-0 ${opt.btnBg} `}
+                                                                                        />
+                                                                                        <span className="text-md text-gray-700 whitespace-nowrap">
+                                                                                            {
+                                                                                                opt.label
+                                                                                            }
+                                                                                        </span>
+                                                                                    </button>
+                                                                                ),
+                                                                            )}
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setCellColorChoices(
+                                                                                        (
+                                                                                            prev,
+                                                                                        ) => {
+                                                                                            const n =
+                                                                                                {
+                                                                                                    ...prev,
+                                                                                                };
+                                                                                            delete n[
+                                                                                                cellKey
+                                                                                            ];
+                                                                                            return n;
+                                                                                        },
+                                                                                    );
+                                                                                    setOpenColorPicker(
+                                                                                        null,
+                                                                                    );
+                                                                                }}
+                                                                                className={`flex items-center gap-2 w-full px-2 py-1 rounded-md hover:bg-gray-100 transition-colors ${!chosen ? "bg-gray-100" : ""}`}
+                                                                            >
+                                                                                <span className="text-md text-[var(--gray)] whitespace-nowrap">
+                                                                                    Nessun
+                                                                                    colore
+                                                                                </span>
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                     <div className="relative">
                                                         <select
                                                             value={getShiftValue(

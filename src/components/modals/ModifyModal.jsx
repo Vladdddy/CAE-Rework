@@ -55,8 +55,8 @@ function ModifyModal({
             : new Date().toISOString().split("T")[0],
     );
     const [titleError, setTitleError] = useState(false);
-    const [importNotes, setImportNotes] = useState("No");
-    const [importAttachments, setImportAttachments] = useState("No");
+    const [importNotes, setImportNotes] = useState(isDuplicating ? "Si" : "No");
+    const [importAttachments, setImportAttachments] = useState(isDuplicating ? "Si" : "No");
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [attachmentError, setAttachmentError] = useState("");
     const { createNote, fetchNotes, notes } = useNotes();
