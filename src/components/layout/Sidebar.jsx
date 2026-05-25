@@ -16,6 +16,7 @@ import CloseIcon from "../../assets/icons/close.tsx";
 import UpdateIcon from "../../assets/icons/update.tsx";
 import AccessibilityIcon from "../../assets/icons/accessibility.tsx";
 import Update from "./Update.jsx";
+import ScoreIcon from "../../assets/icons/score.tsx";
 
 function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -196,6 +197,34 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                                 Altro
                             </p>
                         ) : null}
+                        {(currentUserRole === "Admin" ||
+                            currentUserRole === "Shift Leader") && (
+                            <>
+                                <Link
+                                    to="/score"
+                                    className={`flex flex-row items-center gap-2 transition-all duration-300 ${
+                                        props.active === "score"
+                                            ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
+                                                  !props.isSidebarOpen
+                                                      ? "px-2"
+                                                      : "pr-8 pl-2 w-48"
+                                              } py-2`
+                                            : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                                    } ${!props.isSidebarOpen ? "p-2 justify-center" : ""}`}
+                                >
+                                    <ScoreIcon className="w-6 " />
+                                    <p
+                                        className={`transition-opacity duration-300 ${
+                                            props.isSidebarOpen
+                                                ? "opacity-100"
+                                                : "opacity-0 hidden"
+                                        }`}
+                                    >
+                                        Punteggi
+                                    </p>
+                                </Link>
+                            </>
+                        )}
                         {(currentUserRole === "Admin" ||
                             currentUserRole === "Shift Leader") && (
                             <>
@@ -521,6 +550,25 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                                 <SimulatorIcon className="w-6" />
                                 Training Load
                             </Link>
+                            {(currentUserRole === "Admin" ||
+                                currentUserRole === "Shift Leader") && (
+                                <Link
+                                    to="/score"
+                                    className={`flex w-full flex-row items-center gap-2 transition-all duration-300 ${
+                                        props.active === "score"
+                                            ? `text-[var(--primary)] bg-[var(--light-primary)] rounded-md  ${
+                                                  !props.isSidebarOpen
+                                                      ? "p-3"
+                                                      : "pr-8 pl-3 w-48"
+                                              } py-3`
+                                            : "p-2 hover:bg-[var(--light-primary)] rounded-md"
+                                    }`}
+                                    onClick={onMobileClose}
+                                >
+                                    <ScoreIcon className="w-6" />
+                                    Punteggi
+                                </Link>
+                            )}
                             {(currentUserRole === "Admin" ||
                                 currentUserRole === "Shift Leader") && (
                                 <Link

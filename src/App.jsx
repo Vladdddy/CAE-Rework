@@ -15,6 +15,7 @@ import TrainingLoad from "./pages/TrainingLoad";
 import Register from "./pages/Register";
 import ChangePassword from "./pages/ChangePassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import Score from "./pages/Score";
 import { TaskProvider } from "./components/data/provider/taskAPI/TaskContext.jsx";
 import { UnavailableTaskProvider } from "./components/data/provider/unavailableTaskAPI/UnavailableTaskContext.jsx";
 import { UnavailableLogbookProvider } from "./components/data/provider/unavailableLogbookAPI/UnavailableLogbookContext.jsx";
@@ -36,6 +37,7 @@ import { TaskSimOneProvider } from "./components/data/provider/taskSimOneAPI/Tas
 import { PMTechCommentsProvider } from "./components/data/provider/PMTechCommentsAPI/PMTechCommentsContext.jsx";
 import { GroupChatProvider } from "./components/data/provider/groupChatAPI/GroupChatContext.jsx";
 import { PendingDeletionProvider } from "./components/data/provider/pendingDeletionAPI/PendingDeletionContext.jsx";
+
 import "./App.css";
 
 const ProtectedRoute = ({ children }) => {
@@ -73,103 +75,111 @@ function App() {
                                                                         <EmployeeShiftsProvider>
                                                                             <EmployeeOverviewProvider>
                                                                                 <EmployeeMessageProvider>
-                                                                                <GroupChatProvider>
-                                                                                    <PendingDeletionProvider>
-                                                                                    <Router>
-                                                                                        <Routes>
-                                                                                            <Route
-                                                                                                path="/"
-                                                                                                element={
-                                                                                                    <Navigate
-                                                                                                        to="/home"
-                                                                                                        replace
+                                                                                    <GroupChatProvider>
+                                                                                        <PendingDeletionProvider>
+                                                                                            <Router>
+                                                                                                <Routes>
+                                                                                                    <Route
+                                                                                                        path="/"
+                                                                                                        element={
+                                                                                                            <Navigate
+                                                                                                                to="/home"
+                                                                                                                replace
+                                                                                                            />
+                                                                                                        }
                                                                                                     />
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/home"
-                                                                                                element={
-                                                                                                    <ProtectedRoute>
-                                                                                                        <Home />
-                                                                                                    </ProtectedRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/change-password"
-                                                                                                element={
-                                                                                                    <PublicRoute>
-                                                                                                        <ChangePassword />
-                                                                                                    </PublicRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/verify-email"
-                                                                                                element={
-                                                                                                    <PublicRoute>
-                                                                                                        <VerifyEmail />
-                                                                                                    </PublicRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/dashboard"
-                                                                                                element={
-                                                                                                    <ProtectedRoute>
-                                                                                                        <Dashboard />
-                                                                                                    </ProtectedRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/tasks"
-                                                                                                element={
-                                                                                                    <ProtectedRoute>
-                                                                                                        <Tasks />
-                                                                                                    </ProtectedRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/logbook"
-                                                                                                element={
-                                                                                                    <ProtectedRoute>
-                                                                                                        <Logbook />
-                                                                                                    </ProtectedRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/signin"
-                                                                                                element={
-                                                                                                    <PublicRoute>
-                                                                                                        <Signin />
-                                                                                                    </PublicRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/register"
-                                                                                                element={
-                                                                                                    <PublicRoute>
-                                                                                                        <Register />
-                                                                                                    </PublicRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/shifts"
-                                                                                                element={
-                                                                                                    <ProtectedRoute>
-                                                                                                        <Shifts />
-                                                                                                    </ProtectedRoute>
-                                                                                                }
-                                                                                            />
-                                                                                            <Route
-                                                                                                path="/training-load"
-                                                                                                element={
-                                                                                                    <ProtectedRoute>
-                                                                                                        <TrainingLoad />
-                                                                                                    </ProtectedRoute>
-                                                                                                }
-                                                                                            />
-                                                                                        </Routes>
-                                                                                    </Router>
-                                                                                    </PendingDeletionProvider>
-                                                                                </GroupChatProvider>
+                                                                                                    <Route
+                                                                                                        path="/home"
+                                                                                                        element={
+                                                                                                            <ProtectedRoute>
+                                                                                                                <Home />
+                                                                                                            </ProtectedRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/change-password"
+                                                                                                        element={
+                                                                                                            <PublicRoute>
+                                                                                                                <ChangePassword />
+                                                                                                            </PublicRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/verify-email"
+                                                                                                        element={
+                                                                                                            <PublicRoute>
+                                                                                                                <VerifyEmail />
+                                                                                                            </PublicRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/dashboard"
+                                                                                                        element={
+                                                                                                            <ProtectedRoute>
+                                                                                                                <Dashboard />
+                                                                                                            </ProtectedRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/score"
+                                                                                                        element={
+                                                                                                            <ProtectedRoute>
+                                                                                                                <Score />
+                                                                                                            </ProtectedRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/tasks"
+                                                                                                        element={
+                                                                                                            <ProtectedRoute>
+                                                                                                                <Tasks />
+                                                                                                            </ProtectedRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/logbook"
+                                                                                                        element={
+                                                                                                            <ProtectedRoute>
+                                                                                                                <Logbook />
+                                                                                                            </ProtectedRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/signin"
+                                                                                                        element={
+                                                                                                            <PublicRoute>
+                                                                                                                <Signin />
+                                                                                                            </PublicRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/register"
+                                                                                                        element={
+                                                                                                            <PublicRoute>
+                                                                                                                <Register />
+                                                                                                            </PublicRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/shifts"
+                                                                                                        element={
+                                                                                                            <ProtectedRoute>
+                                                                                                                <Shifts />
+                                                                                                            </ProtectedRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                    <Route
+                                                                                                        path="/training-load"
+                                                                                                        element={
+                                                                                                            <ProtectedRoute>
+                                                                                                                <TrainingLoad />
+                                                                                                            </ProtectedRoute>
+                                                                                                        }
+                                                                                                    />
+                                                                                                </Routes>
+                                                                                            </Router>
+                                                                                        </PendingDeletionProvider>
+                                                                                    </GroupChatProvider>
                                                                                 </EmployeeMessageProvider>
                                                                             </EmployeeOverviewProvider>
                                                                         </EmployeeShiftsProvider>
