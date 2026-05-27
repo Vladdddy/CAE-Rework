@@ -1412,7 +1412,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 <p className="text-sm">Dettagli Task</p>
                             </div>
 
-                            {!isUnavailableEntity && !isPmPlanTask && (
+                            {!isUnavailableEntity && !isPmPlanTask && currentUserRole !== "Guest" && (
                                 <div
                                     className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
                                         activeTab === "note"
@@ -1433,7 +1433,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                 </div>
                             )}
 
-                            {isPmPlanTask && (
+                            {isPmPlanTask && currentUserRole !== "Guest" && (
                                 <div
                                     className={`flex items-center gap-2 p-2 px-4 rounded-md cursor-pointer transition-all duration-200 ${
                                         activeTab === "comment"
@@ -1587,7 +1587,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                         Stato
                                     </h3>
 
-                                    {isUnavailableEntity || isPmPlanTask ? (
+                                    {isUnavailableEntity || isPmPlanTask || currentUserRole === "Guest" ? (
                                         <div className="p-2 text-[var(--gray)] border border-[var(--light-primary)] rounded-md bg-[var(--white)]">
                                             {taskInfo?.STATUS || "Da definire"}
                                         </div>

@@ -733,7 +733,7 @@ function Logbook() {
                                     {/* Action bar: add button + view toggle */}
                                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
                                         {/* Left: add entry button */}
-                                        {currentUserRole !== "View" && (
+                                        {currentUserRole !== "View" && currentUserRole !== "Guest" && (
                                             <button
                                                 className="btn tertiary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
                                                 onClick={handleTaskClick}
