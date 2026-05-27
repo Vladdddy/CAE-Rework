@@ -17,6 +17,21 @@ import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbo
 import { useUnavailableTasks } from "../data/provider/unavailableTaskAPI/useUnavailableTasks.js";
 import { useUnavailableLogbooks } from "../data/provider/unavailableLogbookAPI/useUnavailableLogbooks.js";
 
+const formatUsername = (user) => {
+    if (!user) return "";
+    const first = (user.firstname || "").trim();
+    const last = (user.lastname || "").trim();
+    if (first || last) {
+        return [
+            first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+            last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+        ]
+            .filter(Boolean)
+            .join(" ");
+    }
+    return user.Username || (user.FullName || "").trim() || "";
+};
+
 function ModifyModal({
     onClose,
     onSuccess,
@@ -565,7 +580,10 @@ function ModifyModal({
         // Handle conversion from logbook to task
         if (isConverting && isLogbook) {
             // Create a new task with the logbook data
-            const createResult = await addTask(modifiedTask);
+            const createResult = await addTask({
+                ...modifiedTask,
+                from_logbook_id: task.ID,
+            });
 
             if (createResult.success) {
                 const createdTaskId =
@@ -610,6 +628,7 @@ function ModifyModal({
                         : modifiedTask.date,
                     time: task.TIME,
                     assigned_to: task.ASSIGNED_TO ?? null,
+                    converted_to_task_id: createdTaskId,
                 });
 
                 const conversionNoteText = `Ha convertito in task`;
@@ -1370,23 +1389,7 @@ function ModifyModal({
                                         className="cursor-pointer truncate"
                                         htmlFor={user.Username}
                                     >
-                                        {user.Username.split(".")[0]
-                                            .charAt(0)
-                                            .toUpperCase() +
-                                            user.Username.split(".")[0].slice(
-                                                1,
-                                            )}
-                                        {user.Username.split(".")[1] && (
-                                            <>
-                                                {" "}
-                                                {user.Username.split(".")[1]
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    user.Username.split(
-                                                        ".",
-                                                    )[1].slice(1)}
-                                            </>
-                                        )}
+                                        {formatUsername(user)}
                                     </label>
                                 </div>
                             ))}

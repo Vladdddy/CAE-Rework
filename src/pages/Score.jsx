@@ -12,6 +12,21 @@ import AddIcon from "../assets/icons/add.tsx";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const formatUsername = (user) => {
+    if (!user) return "";
+    const first = (user.firstname || "").trim();
+    const last = (user.lastname || "").trim();
+    if (first || last) {
+        return [
+            first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+            last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+        ]
+            .filter(Boolean)
+            .join(" ");
+    }
+    return user.Username || (user.FullName || "").trim() || "";
+};
+
 function Score() {
     const [isMobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
     const [isSidebarOpen, setSidebarStatus] = useState(() => {
@@ -72,7 +87,10 @@ function Score() {
     const tableData = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
         return users
-            .filter((u) => u.Role === "Employee")
+            .filter(
+                (u) =>
+                    (u.Role || "").trim().toLowerCase() === "tech staff",
+            )
             .filter((u) => filter === "tutti" || todayShiftIds.has(u.ID))
             .map((u) => {
                 const summary = scoreSummaries[u.ID];
@@ -80,7 +98,7 @@ function Score() {
                 const competenze = summary?.competenze_total ?? 0;
                 return {
                     key: u.ID,
-                    nome: u.Username,
+                    nome: formatUsername(u),
                     softskills,
                     competenze,
                     totale: softskills + competenze,
@@ -103,10 +121,7 @@ function Score() {
                         fontSize: "1rem",
                     }}
                 >
-                    {val
-                        .split(".")
-                        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-                        .join(" ")}
+                    {val}
                 </span>
             ),
         },

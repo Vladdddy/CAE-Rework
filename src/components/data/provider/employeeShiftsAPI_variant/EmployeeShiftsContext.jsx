@@ -89,8 +89,9 @@ export const EmployeeShiftsProvider = ({ children }) => {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                console.error("Failed to add employee shift:", errorData);
-                throw new Error("Failed to add employee shift");
+                const msg = errorData?.details || errorData?.error || "Failed to add employee shift";
+                console.error("Failed to add employee shift — server said:", msg);
+                throw new Error(msg);
             }
 
             const result = await response.json();

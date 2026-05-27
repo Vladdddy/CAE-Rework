@@ -97,7 +97,16 @@ function ShiftsTable({
     // Apply shift order from database
     useEffect(() => {
         if (shiftOrdersLoading) return;
-        const visibleUsers = users.filter((u) => u.Role !== "View");
+
+        // Debug: log every unique Role value returned by the API
+        const uniqueRoles = [...new Set(users.map((u) => u.Role))];
+        console.log("[ShiftsTable] roles from API:", uniqueRoles);
+
+        // "employee" is the legacy role name from dbo.Employee (maps to "tech staff" in new DB)
+        const VISIBLE_ROLES = ["tech staff", "shift leader", "crew chief", "employee"];
+        const visibleUsers = users.filter((u) =>
+            VISIBLE_ROLES.includes((u.Role || "").trim().toLowerCase()),
+        );
         if (visibleUsers.length === 0) {
             setOrderedUsers([]);
             return;
@@ -248,7 +257,11 @@ function ShiftsTable({
 
                 if (isManual) {
                     if (colors[key] != null) {
-                        toPost.push({ employeeId, date, changeType: colors[key] });
+                        toPost.push({
+                            employeeId,
+                            date,
+                            changeType: colors[key],
+                        });
                     } else {
                         toDelete.push({ employeeId, date });
                     }
@@ -266,8 +279,18 @@ function ShiftsTable({
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ items: toPost }),
                     })
-                        .then((r) => { if (!r.ok) r.json().then((e) => console.error("Highlight commit failed:", e)); })
-                        .catch((err) => console.error("Highlight commit error:", err)),
+                        .then((r) => {
+                            if (!r.ok)
+                                r.json().then((e) =>
+                                    console.error(
+                                        "Highlight commit failed:",
+                                        e,
+                                    ),
+                                );
+                        })
+                        .catch((err) =>
+                            console.error("Highlight commit error:", err),
+                        ),
                 );
             }
 
@@ -278,8 +301,18 @@ function ShiftsTable({
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ items: toDelete }),
                     })
-                        .then((r) => { if (!r.ok) r.json().then((e) => console.error("Highlight delete failed:", e)); })
-                        .catch((err) => console.error("Highlight delete error:", err)),
+                        .then((r) => {
+                            if (!r.ok)
+                                r.json().then((e) =>
+                                    console.error(
+                                        "Highlight delete failed:",
+                                        e,
+                                    ),
+                                );
+                        })
+                        .catch((err) =>
+                            console.error("Highlight delete error:", err),
+                        ),
                 );
             }
 
@@ -503,19 +536,30 @@ function ShiftsTable({
     }, [allDays, onVisibleMonthChange, numMonths]);
 
     const formatUsername = (user) => {
-        return (
-            user.split(".")[0].charAt(0).toUpperCase() +
-            user.split(".")[0].slice(1) +
-            " " +
-            (user.split(".")[1].charAt(0).toUpperCase() +
-                user.split(".")[1].slice(1))
-        );
+        if (!user) return "";
+        const first = (user.firstname || "").trim();
+        const last = (user.lastname || "").trim();
+        if (first || last) {
+            return [
+                first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+                last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+            ]
+                .filter(Boolean)
+                .join(" ");
+        }
+        return user.Username || (user.FullName || "").trim() || "";
     };
 
     // Drag and drop handlers
+    // All visible roles are draggable (tech staff, shift leader, crew chief, legacy employee)
+    const isDraggable = (role) => {
+        const r = (role || "").trim().toLowerCase();
+        return ["tech staff", "employee", "shift leader", "crew chief"].includes(r);
+    };
+
     const handleDragStart = (e, index) => {
         const user = orderedUsers[index];
-        if (user.Role !== "Employee") {
+        if (!isDraggable(user.Role)) {
             e.preventDefault();
             return;
         }
@@ -527,7 +571,7 @@ function ShiftsTable({
     const handleDragOver = (e, index) => {
         e.preventDefault();
         const targetUser = orderedUsers[index];
-        if (targetUser.Role !== "Employee") {
+        if (!isDraggable(targetUser.Role)) {
             e.dataTransfer.dropEffect = "none";
             return;
         }
@@ -660,7 +704,7 @@ function ShiftsTable({
         } else if (currentDbValue === "--") {
             changeType = "added";
         } else if (
-            user.Role === "Employee" &&
+            (user.Role || "").trim().toLowerCase() === "tech staff" &&
             ((currentDbValue === "D" && value === "N") ||
                 (currentDbValue === "N" && value === "D"))
         ) {
@@ -1012,7 +1056,7 @@ function ShiftsTable({
                     </div>
                 ) : (
                     orderedUsers.map((user, userIndex) => {
-                        const isEmployee = user.Role === "Employee";
+                        const isEmployee = isDraggable(user.Role);
                         const isModified = isUserRowModified(userIndex);
 
                         return (
@@ -1028,7 +1072,7 @@ function ShiftsTable({
                                         <DragIcon className="w-5 text-[var(--gray)] flex-shrink-0" />
                                     )}
                                     <p className="text-sm font-semibold text-[var(--black)] flex-1 select-none">
-                                        {formatUsername(user.Username)}
+                                        {formatUsername(user)}
                                     </p>
                                     {isModified && (
                                         <span className="text-xs bg-[var(--orange)] text-white px-2 py-0.5 rounded-full font-medium">
@@ -1327,7 +1371,7 @@ function ShiftsTable({
                 {/* Users Rows */}
                 {!loading ? (
                     orderedUsers.map((user, userIndex) => {
-                        const isEmployee = user.Role === "Employee";
+                        const isEmployee = isDraggable(user.Role);
                         return (
                             <div
                                 key={`user-${userIndex}`}
@@ -1345,7 +1389,7 @@ function ShiftsTable({
                                 }}
                             >
                                 <div
-                                    className={`flex items-center justify-center sticky left-0 z-20 border-r border-b border-l border-[var(--separator)] cursor-pointer ${user.Role === "Shift Leader" ? "bg-[var(--shift-leader-bg)]" : "bg-[var(--bento-bg)]"} ${selectedUserIndex === userIndex && !isUserRowModified(userIndex) ? "!bg-blue-200" : ""} ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""}`}
+                                    className={`flex items-center justify-center sticky left-0 z-20 border-r border-b border-l border-[var(--separator)] cursor-pointer ${["shift leader", "crew chief"].includes((user.Role || "").trim().toLowerCase()) ? "bg-[var(--shift-leader-bg)]" : "bg-[var(--bento-bg)]"} ${selectedUserIndex === userIndex && !isUserRowModified(userIndex) ? "!bg-blue-200" : ""} ${isUserRowModified(userIndex) ? "!bg-[var(--orange-light)]" : ""}`}
                                     onClick={() =>
                                         setSelectedUserIndex(
                                             selectedUserIndex === userIndex
@@ -1364,7 +1408,7 @@ function ShiftsTable({
                                                         "Shift Leader") && (
                                                     <DragIcon className="w-6 text-[var(--black)]" />
                                                 )}
-                                            {formatUsername(user.Username)}
+                                            {formatUsername(user)}
                                         </p>
                                     </div>
                                 </div>

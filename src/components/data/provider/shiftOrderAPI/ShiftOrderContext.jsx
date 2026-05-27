@@ -82,46 +82,47 @@ export const ShiftOrderProvider = ({ children }) => {
 
     const saveShiftOrders = async (orderedUserIds) => {
         try {
-            // Fetch current orders to check what exists
             const currentOrders = shiftOrders;
+            const toUpdate = [];
+            const toCreate = [];
 
-            // Phase 1: Set all existing positions to temporary high values in parallel
-            // This prevents unique constraint violations during reordering
-            const tempOffset = 10000;
-            const tempUpdates = currentOrders.map((order) => {
-                const tempPosition = order.POSITION + tempOffset;
-                return updateShiftOrder(order.ID, {
-                    POSITION: tempPosition,
-                    POSITIONED_USER_ID: order.POSITIONED_USER_ID,
-                });
-            });
-
-            await Promise.all(tempUpdates);
-
-            // Phase 2: Update or create orders with actual positions in parallel
-            const finalUpdates = orderedUserIds.map(async (userId, index) => {
-                const position = index + 1;
-                const existingOrder = currentOrders.find(
-                    (order) => order.POSITIONED_USER_ID === userId,
+            for (let i = 0; i < orderedUserIds.length; i++) {
+                const userId = orderedUserIds[i];
+                const position = i + 1;
+                const existing = currentOrders.find(
+                    (o) => o.POSITIONED_USER_ID === userId,
                 );
-
-                if (existingOrder) {
-                    // Update existing order to actual position
-                    return updateShiftOrder(existingOrder.ID, {
+                if (existing) {
+                    toUpdate.push({
+                        ID: existing.ID,
                         POSITION: position,
                         POSITIONED_USER_ID: userId,
                     });
                 } else {
-                    // Create new order
-                    return addShiftOrder({
-                        POSITION: position,
-                        POSITIONED_USER_ID: userId,
-                    });
+                    toCreate.push({ POSITION: position, POSITIONED_USER_ID: userId });
                 }
-            });
+            }
 
-            await Promise.all(finalUpdates);
+            // Batch-update existing orders in one request (no UNIQUE constraint on backup table)
+            if (toUpdate.length > 0) {
+                const response = await fetch(
+                    `${API_URL}/shiftOrder/batch/reorder`,
+                    {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ orders: toUpdate }),
+                    },
+                );
+                if (!response.ok)
+                    throw new Error("Failed to batch update shift orders");
+            }
 
+            // Create any brand-new entries
+            for (const newOrder of toCreate) {
+                await addShiftOrder(newOrder);
+            }
+
+            await fetchShiftOrders(true);
             return { success: true };
         } catch (err) {
             setError(err.message);

@@ -14,6 +14,21 @@ import { CheckExistingDays } from "../../functions/CheckExistingDays.jsx";
 import { useImageTasks } from "../data/provider/imageTaskAPI/useImageTasks.js";
 import { useImageLogbooks } from "../data/provider/imageLogbookAPI/useImageLogbooks.js";
 
+const formatUsername = (user) => {
+    if (!user) return "";
+    const first = (user.firstname || "").trim();
+    const last = (user.lastname || "").trim();
+    if (first || last) {
+        return [
+            first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+            last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+        ]
+            .filter(Boolean)
+            .join(" ");
+    }
+    return user.Username || (user.FullName || "").trim() || "";
+};
+
 function CreateModal({ onClose, onSuccess, type, initialDate }) {
     // Function to get the adjusted date based on current time
     const getAdjustedDate = () => {
@@ -1007,27 +1022,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
                                                 className={`truncate ${isCurrentUser ? "" : "cursor-pointer"}`}
                                                 htmlFor={user.Username}
                                             >
-                                                {user.Username.split(".")[0]
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    user.Username.split(
-                                                        ".",
-                                                    )[0].slice(1)}
-                                                {user.Username.split(
-                                                    ".",
-                                                )[1] && (
-                                                    <>
-                                                        {" "}
-                                                        {user.Username.split(
-                                                            ".",
-                                                        )[1]
-                                                            .charAt(0)
-                                                            .toUpperCase() +
-                                                            user.Username.split(
-                                                                ".",
-                                                            )[1].slice(1)}
-                                                    </>
-                                                )}
+                                                {formatUsername(user)}
                                             </label>
                                         </div>
                                     );

@@ -131,8 +131,9 @@ export const EmployeeMessageProvider = ({ children }) => {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                console.error("Failed to send message:", errorData);
-                throw new Error("Failed to send message");
+                const msg = errorData?.details || errorData?.error || "Failed to send message";
+                console.error("Failed to send message — server said:", msg);
+                throw new Error(msg);
             }
 
             const data = await response.json();

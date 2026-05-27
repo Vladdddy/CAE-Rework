@@ -42,7 +42,7 @@ function Table({
 
     const getUsersWithShifts = (role, shiftTypes) => {
         return users
-            .filter((user) => user.Role === role)
+            .filter((user) => (user.Role || "").trim().toLowerCase() === role.toLowerCase())
             .filter((user) => {
                 const userShift = todayShifts.find(
                     (shift) => shift.EMPLOYEE_ID === user.ID,
@@ -51,29 +51,36 @@ function Table({
             });
     };
 
-    const dayShiftLeaders = getUsersWithShifts("Shift Leader", dayShiftTypes);
-    const nightShiftLeaders = getUsersWithShifts(
-        "Shift Leader",
-        nightShiftTypes,
-    );
-    const dayShiftEmployees = getUsersWithShifts("Employee", dayShiftTypes);
-    const nightShiftEmployees = getUsersWithShifts("Employee", nightShiftTypes);
+    const dayShiftLeaders = [
+        ...getUsersWithShifts("Shift Leader", dayShiftTypes),
+        ...getUsersWithShifts("Crew Chief", dayShiftTypes),
+    ];
+    const nightShiftLeaders = [
+        ...getUsersWithShifts("Shift Leader", nightShiftTypes),
+        ...getUsersWithShifts("Crew Chief", nightShiftTypes),
+    ];
+    const dayShiftEmployees = getUsersWithShifts("Tech Staff", dayShiftTypes);
+    const nightShiftEmployees = getUsersWithShifts("Tech Staff", nightShiftTypes);
 
     const combinedList =
         type === "tasks&logbook"
             ? [...(taskList || []), ...(logbookList || [])]
             : taskList;
 
-    // Helper: format a username from "first.last" to "First Last"
-    const formatUsername = (username) => {
-        const parts = username.split(".");
-        const first = parts[0]
-            ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1)
-            : "";
-        const last = parts[1]
-            ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1)
-            : "";
-        return last ? `${first} ${last}` : first;
+    // Helper: display first + last name when available, fall back to Username
+    const formatUsername = (user) => {
+        if (!user) return "";
+        const first = (user.firstname || "").trim();
+        const last = (user.lastname || "").trim();
+        if (first || last) {
+            return [
+                first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+                last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+            ]
+                .filter(Boolean)
+                .join(" ");
+        }
+        return user.Username || (user.FullName || "").trim() || "";
     };
 
     // Shared employee badge list component
@@ -85,7 +92,7 @@ function Table({
                         key={leader.ID}
                         className="bg-[var(--light-primary)] text-[var(--black)] text-xs px-2 py-1 rounded-md"
                     >
-                        {formatUsername(leader.Username)}
+                        {formatUsername(leader)}
                     </span>
                 ))}
             {loadingState ? (
@@ -98,7 +105,7 @@ function Table({
                         key={employee.ID}
                         className="bg-[var(--light-primary)] text-[var(--gray)] text-xs px-2 py-1 rounded-md"
                     >
-                        {formatUsername(employee.Username)}
+                        {formatUsername(employee)}
                     </span>
                 ))
             ) : (

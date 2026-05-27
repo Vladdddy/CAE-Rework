@@ -64,13 +64,18 @@ function HoursCountTable({ selectedMonth }) {
     const date = parseSelectedMonth();
 
     const formatUsername = (user) => {
-        return (
-            user.split(".")[0].charAt(0).toUpperCase() +
-            user.split(".")[0].slice(1) +
-            " " +
-            (user.split(".")[1].charAt(0).toUpperCase() +
-                user.split(".")[1].slice(1))
-        );
+        if (!user) return "";
+        const first = (user.firstname || "").trim();
+        const last = (user.lastname || "").trim();
+        if (first || last) {
+            return [
+                first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+                last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+            ]
+                .filter(Boolean)
+                .join(" ");
+        }
+        return user.Username || (user.FullName || "").trim() || "";
     };
 
     const calculateUserHours = (user) => {
@@ -116,12 +121,13 @@ function HoursCountTable({ selectedMonth }) {
         return vacationShifts.length * (shiftHours["F"] || 0);
     };
 
-    // Group users by role
-    const adminUsers = orderedUsers.filter(
-        (user) => user.Role === "Admin" || user.Role === "Shift Leader",
-    );
+    // Group users by role (case-insensitive)
+    const adminUsers = orderedUsers.filter((user) => {
+        const r = (user.Role || "").trim().toLowerCase();
+        return r === "admin" || r === "shift leader" || r === "crew chief";
+    });
     const employeeUsers = orderedUsers.filter(
-        (user) => user.Role === "Employee",
+        (user) => (user.Role || "").trim().toLowerCase() === "tech staff",
     );
 
     return (
@@ -171,7 +177,7 @@ function HoursCountTable({ selectedMonth }) {
                                     >
                                         <div className="border-r border-[var(--separator)] min-w-[300px] w-[300px]">
                                             <p className="text-[var(--black)] text-sm p-4 text-start">
-                                                {formatUsername(user.Username)}
+                                                {formatUsername(user)}
                                             </p>
                                         </div>
                                         <div className="border-r border-[var(--separator)] min-w-[200px] w-[200px]">
@@ -215,7 +221,7 @@ function HoursCountTable({ selectedMonth }) {
                                     >
                                         <div className="border-r border-[var(--separator)] min-w-[300px] w-[300px]">
                                             <p className="text-[var(--black)] text-sm p-4 text-start">
-                                                {formatUsername(user.Username)}
+                                                {formatUsername(user)}
                                             </p>
                                         </div>
                                         <div className="border-r border-[var(--separator)] min-w-[200px] w-[200px]">

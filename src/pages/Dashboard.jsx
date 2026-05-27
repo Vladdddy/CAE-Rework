@@ -22,6 +22,21 @@ import TaskSimOne from "../components/data/TaskSimOne.jsx";
 import TaskTest from "../components/data/TaskTest.jsx";
 import Task from "../components/data/Task.jsx";
 
+const formatUsername = (user) => {
+    if (!user) return "";
+    const first = (user.firstname || "").trim();
+    const last = (user.lastname || "").trim();
+    if (first || last) {
+        return [
+            first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+            last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+        ]
+            .filter(Boolean)
+            .join(" ");
+    }
+    return user.Username || (user.FullName || "").trim() || "";
+};
+
 function Dashboard() {
     const { tasks, loading, fetchTasks } = useTasks();
     const { logbooks, loading: logbooksLoading, fetchLogbooks } = useLogbooks();
@@ -64,10 +79,14 @@ function Dashboard() {
         });
     }, [employeeShifts]);
 
-    // Get users with their shifts for today
+    // Get users with their shifts for today (case-insensitive role match)
     const getUsersWithShifts = (role, shiftTypes) => {
+        const roleLower = role.trim().toLowerCase();
         return users
-            .filter((user) => user.Role === role)
+            .filter(
+                (user) =>
+                    (user.Role || "").trim().toLowerCase() === roleLower,
+            )
             .map((user) => {
                 const userShift = todayShifts.find(
                     (shift) => shift.EMPLOYEE_ID === user.ID,
@@ -88,12 +107,18 @@ function Dashboard() {
     const dayShiftTypes = ["O", "D", "OP"];
     const nightShiftTypes = ["ON", "N"];
 
-    const shiftLeadersToday = getUsersWithShifts("Shift Leader", [
-        ...dayShiftTypes,
-        ...nightShiftTypes,
-    ]);
-    const dayShiftEmployees = getUsersWithShifts("Employee", dayShiftTypes);
-    const nightShiftEmployees = getUsersWithShifts("Employee", nightShiftTypes);
+    const shiftLeadersToday = [
+        ...getUsersWithShifts("Shift Leader", [
+            ...dayShiftTypes,
+            ...nightShiftTypes,
+        ]),
+        ...getUsersWithShifts("Crew Chief", [
+            ...dayShiftTypes,
+            ...nightShiftTypes,
+        ]),
+    ];
+    const dayShiftEmployees = getUsersWithShifts("Tech Staff", dayShiftTypes);
+    const nightShiftEmployees = getUsersWithShifts("Tech Staff", nightShiftTypes);
 
     const SIMULATOR_MAP = {
         1: "109",
@@ -291,12 +316,8 @@ function Dashboard() {
                                             <Employee
                                                 key={user.ID}
                                                 role={user.Role}
-                                                name={user.Username}
+                                                name={formatUsername(user)}
                                                 shiftType={user.shiftType}
-                                                shortName={user.Username?.substring(
-                                                    0,
-                                                    2,
-                                                ).toUpperCase()}
                                             />
                                         ))
                                     )}
@@ -328,12 +349,8 @@ function Dashboard() {
                                             <Employee
                                                 key={user.ID}
                                                 role={user.Role}
-                                                name={user.Username}
+                                                name={formatUsername(user)}
                                                 shiftType={user.shiftType}
-                                                shortName={user.Username?.substring(
-                                                    0,
-                                                    2,
-                                                ).toUpperCase()}
                                                 time="Diurno"
                                             />
                                         ))
@@ -366,12 +383,8 @@ function Dashboard() {
                                             <Employee
                                                 key={user.ID}
                                                 role={user.Role}
-                                                name={user.Username}
+                                                name={formatUsername(user)}
                                                 shiftType={user.shiftType}
-                                                shortName={user.Username?.substring(
-                                                    0,
-                                                    2,
-                                                ).toUpperCase()}
                                                 time="Notturno"
                                             />
                                         ))

@@ -455,6 +455,10 @@ function Logbook() {
                 const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
                 const isDone = task["Task Done"] === true;
                 const scheduledOn = task["Scheduled on"] ?? task.DATE;
+                const performedOn = task["Performed on"]
+                    ? String(task["Performed on"]).split("T")[0] +
+                      "T00:00:00.000Z"
+                    : null;
                 const resolveAssignees = (raw) => {
                     const ids =
                         typeof raw === "number"
@@ -478,7 +482,7 @@ function Logbook() {
                     ...task,
                     ID: task["ID_task"] ?? task.ID,
                     TITLE: task["Task"] ?? task.TITLE,
-                    DATE: scheduledOn,
+                    DATE: isDone ? (performedOn ?? scheduledOn) : scheduledOn,
                     STATUS: isDone ? "Completato" : "Non completato",
                     ASSIGNED_TO: displayAssignee,
                     DESCRIPTION:

@@ -75,6 +75,21 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         }
     };
 
+    const formatUsername = (user) => {
+        if (!user) return "";
+        const first = (user.firstname || "").trim();
+        const last = (user.lastname || "").trim();
+        if (first || last) {
+            return [
+                first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+                last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+            ]
+                .filter(Boolean)
+                .join(" ");
+        }
+        return user.Username || (user.FullName || "").trim() || "";
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
 
@@ -538,27 +553,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
                                                 key={index}
                                                 value={user.Username}
                                             >
-                                                {user.Username.split(".")[0]
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    user.Username.split(
-                                                        ".",
-                                                    )[0].slice(1)}
-                                                {user.Username.split(
-                                                    ".",
-                                                )[1] && (
-                                                    <>
-                                                        {" "}
-                                                        {user.Username.split(
-                                                            ".",
-                                                        )[1]
-                                                            .charAt(0)
-                                                            .toUpperCase() +
-                                                            user.Username.split(
-                                                                ".",
-                                                            )[1].slice(1)}
-                                                    </>
-                                                )}
+                                                {formatUsername(user)}
                                             </option>
                                         ))}
                                     </select>

@@ -236,14 +236,37 @@ function Notifications({ onClose }) {
     }, [selectedGroup, currentUserId, groupMessages, view]);
 
     // ─── Formatters ────────────────────────────────────────────────────────────
-    const formatUsername = (username) => {
-        if (!username) return "";
-        const parts = username.split(".");
-        let formatted = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-        if (parts[1])
-            formatted +=
-                " " + parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
-        return formatted;
+    // Returns the best display name for a user object or a plain name string.
+    // Priority: firstname + lastname → Username → FullName → raw string.
+    // CONCAT(firstname,' ',lastname) can return " " when both are NULL in SQL,
+    // so we always trim before truthy-checking.
+    const displayName = (userOrStr) => {
+        if (!userOrStr) return "";
+        if (typeof userOrStr === "object") {
+            const first = (userOrStr.firstname || "").trim();
+            const last = (userOrStr.lastname || "").trim();
+            if (first || last) {
+                return [
+                    first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+                    last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+                ]
+                    .filter(Boolean)
+                    .join(" ");
+            }
+            // FullName (trimmed) preferred over Username — avoids " " from CONCAT
+            const fullName = (userOrStr.FullName || "").trim();
+            if (fullName) return fullName;
+            const username = (userOrStr.Username || "").trim();
+            return username || "";
+        }
+        // plain string — trim, remove blank parts from spaces-only strings
+        const trimmed = String(userOrStr).trim();
+        if (!trimmed) return "";
+        return trimmed
+            .split(" ")
+            .filter(Boolean)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
     };
 
     const formatDate = (dateString) => {
@@ -458,7 +481,7 @@ function Notifications({ onClose }) {
     // ─── Render ────────────────────────────────────────────────────────────────
     const chatTitle =
         view === "chat"
-            ? formatUsername(selectedReceiver?.Username ?? "")
+            ? displayName(selectedReceiver)
             : view === "group-chat"
               ? (selectedGroup?.NAME ?? "")
               : "";
@@ -527,11 +550,10 @@ function Notifications({ onClose }) {
                                                         group.ID
                                                     ] ? (
                                                         <span className="text-xs text-[var(--black)] truncate font-medium">
-                                                            {formatUsername(
-                                                                groupLatestUnread[
-                                                                    group.ID
-                                                                ]
-                                                                    .senderUsername,
+                                                            {displayName(
+                                                                (groupLatestUnread[group.ID].senderFullName || "").trim() ||
+                                                                groupLatestUnread[group.ID].senderUsername ||
+                                                                "",
                                                             )}
                                                             :{" "}
                                                             {
@@ -544,9 +566,7 @@ function Notifications({ onClose }) {
                                                         <span className="text-xs text-[var(--gray)] truncate">
                                                             {group.MEMBERS?.map(
                                                                 (m) =>
-                                                                    formatUsername(
-                                                                        m.Username,
-                                                                    ),
+                                                                    displayName(m),
                                                             ).join(", ")}
                                                         </span>
                                                     )}
@@ -606,7 +626,7 @@ function Notifications({ onClose }) {
                                             className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)] hover:bg-[var(--light-primary)] hover:border-[var(--primary)] transition-all duration-200 cursor-pointer text-left"
                                         >
                                             <span className="text-[var(--black)] text-sm font-medium">
-                                                {formatUsername(user.Username)}
+                                                {displayName(user)}
                                             </span>
                                             {hasUnread && (
                                                 <span className="w-2.5 h-2.5 rounded-full bg-[var(--red)] flex-shrink-0" />
@@ -657,7 +677,7 @@ function Notifications({ onClose }) {
                                         }`}
                                     >
                                         <span className="text-[var(--black)] text-sm font-medium">
-                                            {formatUsername(user.Username)}
+                                            {displayName(user)}
                                         </span>
                                         <span
                                             className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${
@@ -731,15 +751,14 @@ function Notifications({ onClose }) {
                                 const isMine = msg.SENDER_ID === currentUserId;
                                 const senderName =
                                     view === "group-chat"
-                                        ? formatUsername(
-                                              msg.SenderUsername ?? "",
+                                        ? displayName(
+                                              (msg.SenderFullName || "").trim() ||
+                                              msg.SenderUsername ||
+                                              "",
                                           )
                                         : isMine
                                           ? "Tu"
-                                          : formatUsername(
-                                                selectedReceiver?.Username ??
-                                                    "",
-                                            );
+                                          : displayName(selectedReceiver);
 
                                 return (
                                     <div
@@ -887,9 +906,7 @@ function Notifications({ onClose }) {
                                                 className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)]"
                                             >
                                                 <span className="text-[var(--black)] text-sm font-medium">
-                                                    {formatUsername(
-                                                        member.Username,
-                                                    )}
+                                                    {displayName(member)}
                                                 </span>
                                                 {member.ID !==
                                                     currentUserId && (
@@ -934,9 +951,7 @@ function Notifications({ onClose }) {
                                                     className="flex items-center justify-between w-full p-3 rounded-md border border-[var(--light-primary)] bg-[var(--white)]"
                                                 >
                                                     <span className="text-[var(--black)] text-sm font-medium">
-                                                        {formatUsername(
-                                                            user.Username,
-                                                        )}
+                                                        {displayName(user)}
                                                     </span>
                                                     <button
                                                         type="button"

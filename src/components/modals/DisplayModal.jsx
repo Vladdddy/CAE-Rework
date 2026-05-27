@@ -164,6 +164,18 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         : null;
     const rescheduledToDate = originalEntity?.DATE;
 
+    const convertedToTask =
+        taskInfo.ISLOGBOOK && taskInfo.CONVERTED_TO_TASK_ID
+            ? tasks?.find((t) => t.ID === taskInfo.CONVERTED_TO_TASK_ID)
+            : null;
+    const convertedToDate = convertedToTask?.DATE;
+
+    const sourceLogbook =
+        !taskInfo.ISLOGBOOK && taskInfo.FROM_LOGBOOK_ID
+            ? logbooks?.find((l) => l.ID === taskInfo.FROM_LOGBOOK_ID)
+            : null;
+    const sourceLogbookDate = sourceLogbook?.DATE;
+
     const isPmPlanTask = Boolean(taskInfo?.IS_PM_PLAN_TASK);
     const attachmentImages = taskInfo.ISLOGBOOK
         ? getLogbookImages(taskInfo.ID)
@@ -567,17 +579,25 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
         fetchTaskImages(taskInfo.ID);
     }, [fetchLogbookImages, fetchTaskImages, taskInfo.ID, taskInfo.ISLOGBOOK]);
 
+    const formatUsername = (user) => {
+        if (!user) return "";
+        const first = (user.firstname || "").trim();
+        const last = (user.lastname || "").trim();
+        if (first || last) {
+            return [
+                first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+                last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+            ]
+                .filter(Boolean)
+                .join(" ");
+        }
+        return user.Username || (user.FullName || "").trim() || "";
+    };
+
     const getUsernameById = (userId) => {
         const user = users.find((u) => u.ID === userId);
-        if (!user || !user.Username) return "N/A";
-
-        const parts = user.Username.split(".");
-        const firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-        const lastNameInitial = parts[1]
-            ? parts[1].charAt(0).toUpperCase()
-            : "";
-
-        return lastNameInitial ? `${firstName} ${lastNameInitial}` : firstName;
+        if (!user) return "N/A";
+        return formatUsername(user) || "N/A";
     };
 
     const formatDateTime = (dateTimeString) => {
@@ -1545,6 +1565,21 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                 {formatDate(rescheduledToDate)}
                                             </p>
                                         )}
+
+                                    {convertedToDate && (
+                                        <p className="text-sm text-[var(--primary)] font-semibold">
+                                            Entry convertita in task al{" "}
+                                            {formatDate(convertedToDate)}
+                                        </p>
+                                    )}
+
+                                    {sourceLogbookDate && (
+                                        <p className="text-sm text-[var(--primary)] font-semibold">
+                                            Task proveniente dalla entry in
+                                            data{" "}
+                                            {formatDate(sourceLogbookDate)}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-col gap-2 md:w-1/2 w-full">
@@ -2033,33 +2068,7 @@ function DisplayModal({ taskInfo, onClose, onSuccess }) {
                                                                 user.Username
                                                             }
                                                         >
-                                                            {user.Username.split(
-                                                                ".",
-                                                            )[0]
-                                                                .charAt(0)
-                                                                .toUpperCase() +
-                                                                user.Username.split(
-                                                                    ".",
-                                                                )[0].slice(1)}
-                                                            {user.Username.split(
-                                                                ".",
-                                                            )[1] && (
-                                                                <>
-                                                                    {" "}
-                                                                    {user.Username.split(
-                                                                        ".",
-                                                                    )[1]
-                                                                        .charAt(
-                                                                            0,
-                                                                        )
-                                                                        .toUpperCase() +
-                                                                        user.Username.split(
-                                                                            ".",
-                                                                        )[1].slice(
-                                                                            1,
-                                                                        )}
-                                                                </>
-                                                            )}
+                                                            {formatUsername(user)}
                                                         </label>
                                                     </div>
                                                 ))}

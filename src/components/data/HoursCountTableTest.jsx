@@ -65,15 +65,18 @@ function HoursCountTableTest({ selectedMonth }) {
     const selectedMonthIndex = date.getMonth(); // 0-based
 
     const formatUsername = (user) => {
-        const parts = user.split(".");
-        if (parts.length < 2) return user;
-        return (
-            parts[0].charAt(0).toUpperCase() +
-            parts[0].slice(1) +
-            " " +
-            parts[1].charAt(0).toUpperCase() +
-            parts[1].slice(1)
-        );
+        if (!user) return "";
+        const first = (user.firstname || "").trim();
+        const last = (user.lastname || "").trim();
+        if (first || last) {
+            return [
+                first ? first.charAt(0).toUpperCase() + first.slice(1) : "",
+                last ? last.charAt(0).toUpperCase() + last.slice(1) : "",
+            ]
+                .filter(Boolean)
+                .join(" ");
+        }
+        return user.Username || (user.FullName || "").trim() || "";
     };
 
     const calculateUserStats = (user) => {
@@ -90,7 +93,13 @@ function HoursCountTableTest({ selectedMonth }) {
         // Index 0 = January, 11 = December
         const monthlyHours = new Array(12).fill(0);
 
-        const fHours = user.Role === "Shift Leader" || user.Role === "Admin" ? 8 : 11;
+        const roleLower = (user.Role || "").trim().toLowerCase();
+        const fHours =
+            roleLower === "shift leader" ||
+            roleLower === "crew chief" ||
+            roleLower === "admin"
+                ? 8
+                : 11;
 
         userShifts.forEach((shift) => {
             const shiftDate = shift.SELECTED_DATE.split("T")[0];
@@ -110,11 +119,12 @@ function HoursCountTableTest({ selectedMonth }) {
         return { annualHours, annualDaysOff, annualVacationHours, monthlyHours };
     };
 
-    const adminUsers = orderedUsers.filter(
-        (user) => user.Role === "Admin" || user.Role === "Shift Leader",
-    );
+    const adminUsers = orderedUsers.filter((user) => {
+        const r = (user.Role || "").trim().toLowerCase();
+        return r === "admin" || r === "shift leader" || r === "crew chief";
+    });
     const employeeUsers = orderedUsers.filter(
-        (user) => user.Role === "Employee",
+        (user) => (user.Role || "").trim().toLowerCase() === "tech staff",
     );
 
     const renderRow = (user, keyPrefix) => {
@@ -128,7 +138,7 @@ function HoursCountTableTest({ selectedMonth }) {
                 {/* Name */}
                 <div className="bg-[var(--bento-bg)] border-r border-[var(--separator)] min-w-[200px] w-[200px]">
                     <p className="text-[var(--black)] text-sm p-4 text-start">
-                        {formatUsername(user.Username)}
+                        {formatUsername(user)}
                     </p>
                 </div>
                 {/* Days off */}
