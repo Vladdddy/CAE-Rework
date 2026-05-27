@@ -13,21 +13,10 @@ const COLUMNS = [
     "Eval Load",
 ];
 
-// Simulators that support mode switching; value = default mode keyword
-const MODE_SIMULATORS = {
-    "A109E FFS#1": "POWER",
-    "A109E FTD#1": "POWER",
-    "A109L FFS#1": "LUHS",
-    "A109L FTD#1": "LUHS",
-};
+export const A109_MODE_KEY = "a109Mode";
 
-// Each simulator shares training load options with the other members of its group
-const SIMULATOR_GROUPS = {
-    "A109E FFS#1": ["A109E FFS#1", "A109L FFS#1"],
-    "A109L FFS#1": ["A109E FFS#1", "A109L FFS#1"],
-    "A109E FTD#1": ["A109E FTD#1", "A109L FTD#1"],
-    "A109L FTD#1": ["A109E FTD#1", "A109L FTD#1"],
-};
+const A109E_SIMS = new Set(["A109E FFS#1", "A109E FTD#1"]);
+const A109L_SIMS = new Set(["A109L FFS#1", "A109L FTD#1"]);
 
 const normalizeFieldName = (value) =>
     String(value ?? "")
@@ -67,100 +56,69 @@ function TrainingLoad() {
         return saved !== null ? JSON.parse(saved) : true;
     });
     const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-    const [selectedTrainingLoads, setSelectedTrainingLoads] = useState({});
+    const [a109Mode, setA109Mode] = useState(
+        () => localStorage.getItem(A109_MODE_KEY) || "A109E",
+    );
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
     }, [isSidebarOpen]);
 
-    const groupedBySimulator = useMemo(() => {
-        const groups = {};
-        (trainingLoads || []).forEach((row) => {
-            const simName = getField(row, ["SIMULATORE", "Simulatore", "Simulator"]);
-            if (simName in MODE_SIMULATORS) {
-                if (!groups[simName]) groups[simName] = [];
-                groups[simName].push(row);
-            }
-        });
-        return groups;
-    }, [trainingLoads]);
+    const handleA109ModeChange = (mode) => {
+        setA109Mode(mode);
+        localStorage.setItem(A109_MODE_KEY, mode);
+    };
 
     const normalizedRows = useMemo(() => {
         const seenSimulators = new Set();
 
         return (trainingLoads || [])
-            .map((row, index) => {
-                const simName = getField(row, ["SIMULATORE", "Simulatore", "Simulator"]);
-
-                if (simName in MODE_SIMULATORS) {
-                    if (seenSimulators.has(simName)) return null;
-                    seenSimulators.add(simName);
-
-                    // Own row supplies the default training load and all non-TL column values
-                    const ownRows = groupedBySimulator[simName] || [];
-                    const ownRow = ownRows[0];
-
-                    // Collect training load options from all simulators in the same group
-                    const groupMembers = SIMULATOR_GROUPS[simName];
-                    const allGroupRows = groupMembers.flatMap(
-                        (member) => groupedBySimulator[member] || [],
-                    );
-                    const tlOptions = allGroupRows
-                        .map((r) => getField(r, ["Training Load", "Training_Load"], ""))
-                        .filter(
-                            (v, i, arr) =>
-                                v !== "---" && v !== "" && arr.indexOf(v) === i,
-                        );
-
-                    // Selected value, or fall back to this simulator's own training load
-                    const selectedTL = selectedTrainingLoads[simName];
-                    const displayTL =
-                        selectedTL && tlOptions.includes(selectedTL)
-                            ? selectedTL
-                            : getField(ownRow, ["Training Load", "Training_Load"]);
-
-                    return {
-                        id: simName,
-                        simulator: simName,
-                        trainingLoadOptions: tlOptions,
-                        trainingLoad: displayTL,
-                        debriefLoad: getField(ownRow, [
-                            "Debrief Load",
-                            "Debrief_Load",
-                            "Debrief Config",
-                            "DebriefConfig",
-                        ]),
-                        previousTrainingLoad: getField(ownRow, [
-                            "Previous Training Load",
-                            "Previous_Training_Load",
-                        ]),
-                        qtgVersion: getField(ownRow, ["QTG Tool version", "QTG_Tool_version"]),
-                        comments: getField(ownRow, ["Comments", "Comment"]),
-                        evalLoad: getField(ownRow, ["Eval Load", "Eval_Load"]),
-                    };
-                }
-
-                return {
-                    id: row.ID_SIM ?? row.Simulator ?? `${simName}-${index}`,
-                    simulator: simName,
-                    trainingLoad: getField(row, ["Training Load", "Training_Load"]),
-                    debriefLoad: getField(row, [
-                        "Debrief Load",
-                        "Debrief_Load",
-                        "Debrief Config",
-                        "DebriefConfig",
-                    ]),
-                    previousTrainingLoad: getField(row, [
-                        "Previous Training Load",
-                        "Previous_Training_Load",
-                    ]),
-                    qtgVersion: getField(row, ["QTG Tool version", "QTG_Tool_version"]),
-                    comments: getField(row, ["Comments", "Comment"]),
-                    evalLoad: getField(row, ["Eval Load", "Eval_Load"]),
-                };
+            .filter((row) => {
+                const simName = getField(row, [
+                    "SIMULATORE",
+                    "Simulatore",
+                    "Simulator",
+                ]);
+                if (A109E_SIMS.has(simName)) return a109Mode === "A109E";
+                if (A109L_SIMS.has(simName)) return a109Mode === "A109L";
+                return true;
             })
-            .filter(Boolean);
-    }, [trainingLoads, groupedBySimulator, selectedTrainingLoads]);
+            .filter((row) => {
+                const simName = getField(row, [
+                    "SIMULATORE",
+                    "Simulatore",
+                    "Simulator",
+                ]);
+                if (seenSimulators.has(simName)) return false;
+                seenSimulators.add(simName);
+                return true;
+            })
+            .map((row, index) => ({
+                id: row.ID_SIM ?? row.Simulator ?? `${row.SIMULATORE}-${index}`,
+                simulator: getField(row, [
+                    "SIMULATORE",
+                    "Simulatore",
+                    "Simulator",
+                ]),
+                trainingLoad: getField(row, ["Training Load", "Training_Load"]),
+                debriefLoad: getField(row, [
+                    "Debrief Load",
+                    "Debrief_Load",
+                    "Debrief Config",
+                    "DebriefConfig",
+                ]),
+                previousTrainingLoad: getField(row, [
+                    "Previous Training Load",
+                    "Previous_Training_Load",
+                ]),
+                qtgVersion: getField(row, [
+                    "QTG Tool version",
+                    "QTG_Tool_version",
+                ]),
+                comments: getField(row, ["Comments", "Comment"]),
+                evalLoad: getField(row, ["Eval Load", "Eval_Load"]),
+            }));
+    }, [trainingLoads, a109Mode]);
 
     return (
         <section className="flex h-screen">
@@ -184,6 +142,35 @@ function TrainingLoad() {
                             <h1 className="text-xl md:text-xl text-[var(--black)] font-semibold">
                                 Training Load List
                             </h1>
+
+                            <div className="flex items-center gap-2">
+                                <div className="flex rounded-md overflow-hidden border border-[var(--light-primary)]">
+                                    <button
+                                        onClick={() =>
+                                            handleA109ModeChange("A109E")
+                                        }
+                                        className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                                            a109Mode === "A109E"
+                                                ? "bg-[var(--primary)] text-white"
+                                                : "bg-[var(--pure-white)] text-[var(--black)] hover:bg-[var(--bento-bg)]"
+                                        }`}
+                                    >
+                                        A109E
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            handleA109ModeChange("A109L")
+                                        }
+                                        className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-[var(--light-primary)] ${
+                                            a109Mode === "A109L"
+                                                ? "bg-[var(--primary)] text-white"
+                                                : "bg-[var(--pure-white)] text-[var(--black)] hover:bg-[var(--bento-bg)]"
+                                        }`}
+                                    >
+                                        A109L
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {error && (
@@ -240,26 +227,7 @@ function TrainingLoad() {
                                                     {row.simulator}
                                                 </td>
                                                 <td className="px-4 py-3 border border-[var(--separator)] text-[var(--black)]">
-                                                    {row.trainingLoadOptions ? (
-                                                        <select
-                                                            value={row.trainingLoad}
-                                                            onChange={(e) =>
-                                                                setSelectedTrainingLoads((prev) => ({
-                                                                    ...prev,
-                                                                    [row.simulator]: e.target.value,
-                                                                }))
-                                                            }
-                                                            className="w-full bg-transparent border border-[var(--separator)] rounded px-2 py-1 text-sm text-[var(--black)] cursor-pointer focus:outline-none focus:border-[var(--primary)]"
-                                                        >
-                                                            {row.trainingLoadOptions.map((option) => (
-                                                                <option key={option} value={option}>
-                                                                    {option}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    ) : (
-                                                        row.trainingLoad
-                                                    )}
+                                                    {row.trainingLoad}
                                                 </td>
                                                 <td className="px-4 py-3 border border-[var(--separator)] text-[var(--black)]">
                                                     {row.debriefLoad}

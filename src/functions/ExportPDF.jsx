@@ -88,12 +88,18 @@ const getCanonicalSimulatorKey = (name) => {
         .toUpperCase()
         .replace(/\s+/g, "");
 
-    if (normalized === "FTD" || normalized.includes("A109EFTD#1")) {
-        return "FTD";
+    // Resolve which A109 variant is active (saved by the Training Load page toggle)
+    const a109Mode = localStorage.getItem("a109Mode") || "A109E";
+
+    if (a109Mode === "A109E") {
+        if (normalized === "FTD" || normalized.includes("A109EFTD#1")) return "FTD";
+        if (normalized === "109FFS" || normalized.includes("A109EFFS#1")) return "109FFS";
+    } else {
+        // A109L mode
+        if (normalized === "FTD" || normalized.includes("A109LFTD#1")) return "FTD";
+        if (normalized === "109FFS" || normalized.includes("A109LFFS#1")) return "109FFS";
     }
-    if (normalized === "109FFS" || normalized.includes("A109EFFS#1")) {
-        return "109FFS";
-    }
+
     if (normalized === "139#1" || normalized.includes("AW139FFS#1")) {
         return "139#1";
     }
