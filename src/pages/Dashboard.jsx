@@ -117,8 +117,14 @@ function Dashboard() {
             ...nightShiftTypes,
         ]),
     ];
-    const dayShiftEmployees = getUsersWithShifts("Tech Staff", dayShiftTypes);
-    const nightShiftEmployees = getUsersWithShifts("Tech Staff", nightShiftTypes);
+    const dayShiftEmployees = [
+        ...getUsersWithShifts("Tech Staff", dayShiftTypes),
+        ...getUsersWithShifts("Employee", dayShiftTypes),
+    ];
+    const nightShiftEmployees = [
+        ...getUsersWithShifts("Tech Staff", nightShiftTypes),
+        ...getUsersWithShifts("Employee", nightShiftTypes),
+    ];
 
     const SIMULATOR_MAP = {
         1: "109",
