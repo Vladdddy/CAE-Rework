@@ -10,6 +10,12 @@ export const TrainingLoadProvider = ({ children }) => {
 
     useEffect(() => {
         fetchTrainingLoads();
+
+        const interval = setInterval(() => {
+            fetchTrainingLoads(true); // Silent refresh
+        }, 3600000); // 3600000ms = 1 hour
+
+        return () => clearInterval(interval);
     }, []);
 
     const fetchTrainingLoads = async () => {
