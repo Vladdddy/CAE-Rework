@@ -5,7 +5,7 @@ import {
     GetTaskCountTime,
     GetLogbookCountTime,
 } from "../../functions/TaskLength.jsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUsers } from "./provider/userAPI/useUsers";
 import { useEmployeeShifts } from "./provider/employeeShiftsAPI/useEmployeeShifts";
 
@@ -21,9 +21,40 @@ function Table({
     const { users, loading: usersLoading } = useUsers();
     const { employeeShifts, loading: shiftsLoading } = useEmployeeShifts();
 
+    const [dayExpanded, setDayExpanded] = useState(false);
+    const [nightExpanded, setNightExpanded] = useState(false);
+    const [dayHasOverflow, setDayHasOverflow] = useState(false);
+    const [nightHasOverflow, setNightHasOverflow] = useState(false);
+    const dayScrollRef = useRef(null);
+    const nightScrollRef = useRef(null);
+
     useEffect(() => {
         setLocalDate(date);
+        setDayExpanded(false);
+        setNightExpanded(false);
     }, [date]);
+
+    useEffect(() => {
+        const el = dayScrollRef.current;
+        if (!el) return;
+        const check = () =>
+            setDayHasOverflow(el.scrollHeight > el.clientHeight);
+        check();
+        const ro = new ResizeObserver(check);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [taskList, logbookList, loading, dayExpanded]);
+
+    useEffect(() => {
+        const el = nightScrollRef.current;
+        if (!el) return;
+        const check = () =>
+            setNightHasOverflow(el.scrollHeight > el.clientHeight);
+        check();
+        const ro = new ResizeObserver(check);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [taskList, logbookList, loading, nightExpanded]);
 
     const dayShiftTypes = ["O", "D", "OP"];
     const nightShiftTypes = ["ON", "N", "OP"];
@@ -42,7 +73,11 @@ function Table({
 
     const getUsersWithShifts = (role, shiftTypes) => {
         return users
-            .filter((user) => (user.Role || "").trim().toLowerCase() === role.toLowerCase())
+            .filter(
+                (user) =>
+                    (user.Role || "").trim().toLowerCase() ===
+                    role.toLowerCase(),
+            )
             .filter((user) => {
                 const userShift = todayShifts.find(
                     (shift) => shift.EMPLOYEE_ID === user.ID,
@@ -163,23 +198,48 @@ function Table({
 
                     {/* Simulator grid */}
                     <div className="overflow-x-auto -mx-1 px-1">
-                        <div className="max-h-[calc(80vh-16rem)] overflow-y-auto pr-1">
-                            {loading ? (
-                                <div className="text-center text-sm text-[var(--gray)] py-4">
-                                    Caricamento...
-                                </div>
-                            ) : (
-                                <GetTableSimulators
-                                    type={
-                                        type === "tasks&logbook"
-                                            ? "table&logbook"
-                                            : "table"
-                                    }
-                                    time="Diurno"
-                                    date={date}
-                                    taskList={combinedList}
-                                    onDeleteSuccess={onDeleteSuccess}
-                                />
+                        <div className="relative">
+                            <div
+                                ref={dayScrollRef}
+                                className={`${dayExpanded ? "" : "max-h-[calc(80vh-16rem)]"} overflow-y-auto pr-1`}
+                            >
+                                {loading ? (
+                                    <div className="text-center text-sm text-[var(--gray)] py-4">
+                                        Caricamento...
+                                    </div>
+                                ) : (
+                                    <GetTableSimulators
+                                        type={
+                                            type === "tasks&logbook"
+                                                ? "table&logbook"
+                                                : "table"
+                                        }
+                                        time="Diurno"
+                                        date={date}
+                                        taskList={combinedList}
+                                        onDeleteSuccess={onDeleteSuccess}
+                                    />
+                                )}
+                            </div>
+                            {dayHasOverflow && !dayExpanded && (
+                                <button
+                                    onClick={() => setDayExpanded(true)}
+                                    className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-[var(--bg)] border border-[var(--light-primary)] text-[var(--primary)] rounded-full p-1 shadow-sm z-10 hover:bg-[var(--light-primary)] transition-colors"
+                                    title="Espandi"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="w-8 h-8"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </button>
                             )}
                         </div>
                     </div>
@@ -225,23 +285,48 @@ function Table({
 
                     {/* Simulator grid */}
                     <div className="overflow-x-auto -mx-1 px-1">
-                        <div className="max-h-[calc(80vh-20rem)] overflow-y-auto pr-1">
-                            {loading ? (
-                                <div className="text-center text-sm text-[var(--gray)] py-4">
-                                    Caricamento...
-                                </div>
-                            ) : (
-                                <GetTableSimulators
-                                    type={
-                                        type === "tasks&logbook"
-                                            ? "table&logbook"
-                                            : "table"
-                                    }
-                                    time="Notturno"
-                                    date={date}
-                                    taskList={combinedList}
-                                    onDeleteSuccess={onDeleteSuccess}
-                                />
+                        <div className="relative">
+                            <div
+                                ref={nightScrollRef}
+                                className={`${nightExpanded ? "" : "max-h-[calc(80vh-20rem)]"} overflow-y-auto pr-1`}
+                            >
+                                {loading ? (
+                                    <div className="text-center text-sm text-[var(--gray)] py-4">
+                                        Caricamento...
+                                    </div>
+                                ) : (
+                                    <GetTableSimulators
+                                        type={
+                                            type === "tasks&logbook"
+                                                ? "table&logbook"
+                                                : "table"
+                                        }
+                                        time="Notturno"
+                                        date={date}
+                                        taskList={combinedList}
+                                        onDeleteSuccess={onDeleteSuccess}
+                                    />
+                                )}
+                            </div>
+                            {nightHasOverflow && !nightExpanded && (
+                                <button
+                                    onClick={() => setNightExpanded(true)}
+                                    className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-[var(--bg)] border border-[var(--light-primary)] text-[var(--primary)] rounded-full p-1 shadow-sm z-10 hover:bg-[var(--light-primary)] transition-colors"
+                                    title="Espandi"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="w-8 h-8"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </button>
                             )}
                         </div>
                     </div>
