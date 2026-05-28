@@ -191,6 +191,8 @@ export const exportTasksToPDF = (
     const tasksForExport = tasks.filter((task) => {
         if (task?.IS_UNAVAILABLE === true || task?.TYPE === "Unavailable")
             return false;
+        if (task?.CATEGORY === "SL NOTE")
+            return false;
         return (task?.STATUS || "").trim() !== "Rischedulato";
     });
 

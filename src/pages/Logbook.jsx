@@ -6,9 +6,12 @@ import DatePickerComponent from "../functions/DatePicker.jsx";
 import Table from "../components/data/Table.jsx";
 import { useState, useEffect, useMemo, useRef } from "react";
 import LogbookIcon from "../assets/icons/logbook.tsx";
+import SimulatorIcon from "../assets/icons/simulator.tsx";
 import BackIcon from "../assets/icons/back.tsx";
 import CreateModal from "../components/modals/CreateModal.jsx";
+import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Popup from "../components/modals/Popup.jsx";
+import { GetTodayDate } from "../functions/CurrentTime.jsx";
 import { useTasks } from "../components/data/provider/taskAPI/useTasks";
 import { useUnavailableTasks } from "../components/data/provider/unavailableTaskAPI/useUnavailableTasks";
 import { useTaskSimOne } from "../components/data/provider/taskSimOneAPI/useTaskSimOne";
@@ -54,6 +57,7 @@ function Logbook() {
     });
     const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
     const [popupType, setPopupType] = useState("success");
     const [popupMessage, setPopupMessage] = useState("");
@@ -116,6 +120,14 @@ function Logbook() {
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+    };
+
+    const handleSimulatorClick = () => {
+        setIsSimulatorModalOpen(true);
+    };
+
+    const handleCloseSimulatorModal = () => {
+        setIsSimulatorModalOpen(false);
     };
 
     const handleSuccess = async (isSuccess, message) => {
@@ -560,6 +572,16 @@ function Logbook() {
         ];
     }, [tasks, unavailableTasks, pmPlanTasks, normalizedUnfinishedPmTasks]);
 
+    const morningReadinessAssignee = useMemo(() => {
+        const task = mergedTasks.find(
+            (t) =>
+                t.IS_PM_PLAN_TASK === true &&
+                t.TITLE?.toLowerCase() === "morning readiness" &&
+                t.ASSIGNED_TO,
+        );
+        return task?.ASSIGNED_TO ?? null;
+    }, [mergedTasks]);
+
     const mergedLogbooks = useMemo(() => {
         const normalizedUnavailableLogbooks = (unavailableLogbooks || []).map(
             (logbook) => ({ ...logbook, IS_UNAVAILABLE: true }),
@@ -732,16 +754,28 @@ function Logbook() {
 
                                     {/* Action bar: add button + view toggle */}
                                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
-                                        {/* Left: add entry button */}
-                                        {currentUserRole !== "View" && currentUserRole !== "Guest" && (
-                                            <button
-                                                className="btn tertiary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
-                                                onClick={handleTaskClick}
-                                            >
-                                                <LogbookIcon className="w-5 shrink-0" />
-                                                <p>Aggiungi entry</p>
-                                            </button>
-                                        )}
+                                        {/* Left: action buttons */}
+                                        <div className="flex flex-col md:flex-row items-center gap-4 flex-wrap">
+                                            {currentUserRole !== "View" && currentUserRole !== "Guest" && (
+                                                <button
+                                                    className="btn tertiary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
+                                                    onClick={handleTaskClick}
+                                                >
+                                                    <LogbookIcon className="w-5 shrink-0" />
+                                                    <p>Aggiungi entry</p>
+                                                </button>
+                                            )}
+
+                                            {GetTodayDate(startDate) === GetTodayDate(new Date()) && (
+                                                <button
+                                                    className="btn secondary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
+                                                    onClick={handleSimulatorClick}
+                                                >
+                                                    <SimulatorIcon className="w-6 shrink-0" />
+                                                    <p>Imposta simulatore</p>
+                                                </button>
+                                            )}
+                                        </div>
 
                                         {/* Right: view toggle */}
                                         <div className="overflow-x-auto pb-0.5">
@@ -829,6 +863,12 @@ function Logbook() {
                     onSuccess={handleSuccess}
                     type="logbook"
                     initialDate={startDate.toISOString().split("T")[0]}
+                />
+            )}
+            {isSimulatorModalOpen && (
+                <SimulatorModal
+                    onClose={handleCloseSimulatorModal}
+                    morningReadinessAssignee={morningReadinessAssignee}
                 />
             )}
 

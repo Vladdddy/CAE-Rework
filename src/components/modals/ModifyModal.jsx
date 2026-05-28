@@ -71,7 +71,9 @@ function ModifyModal({
     );
     const [titleError, setTitleError] = useState(false);
     const [importNotes, setImportNotes] = useState(isDuplicating ? "Si" : "No");
-    const [importAttachments, setImportAttachments] = useState(isDuplicating ? "Si" : "No");
+    const [importAttachments, setImportAttachments] = useState(
+        isDuplicating ? "Si" : "No",
+    );
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [attachmentError, setAttachmentError] = useState("");
     const { createNote, fetchNotes, notes } = useNotes();
@@ -831,6 +833,7 @@ function ModifyModal({
         "Routine Task": [
             "PM",
             "MR",
+            "DR",
             "MDR",
             "FDR",
             "Backup",
@@ -846,8 +849,8 @@ function ModifyModal({
             "Certification",
         ],
         COMMENT: [],
-        REPAIR: [],
-        Investigation: ["HW", "SW"],
+        BUILDING: [],
+        "SL NOTE": [],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
         Others: [
@@ -859,23 +862,6 @@ function ModifyModal({
             "EXTRA TASK",
         ],
     };
-
-    /* const troubleshootingDetails = [
-        "VISUAL",
-        "COMPUTER",
-        "AVIONIC",
-        "ENV",
-        "BUILDING",
-        "POWER LOSS",
-        "MOTION",
-        "INTERFACE",
-        "CONTROLS",
-        "VIBRATION",
-        "SOUND",
-        "COMMS",
-        "IOS",
-        "OTHERS",
-    ]; */
 
     const troubleshootingDetails = [
         "Visual",

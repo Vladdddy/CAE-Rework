@@ -95,7 +95,8 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                             </p>
                         </Link>
                         {(currentUserRole === "Admin" ||
-                            currentUserRole === "Shift Leader") && (
+                            currentUserRole === "Shift Leader" ||
+                            currentUserRole === "Employee") && (
                             <>
                                 <Link
                                     to="/tasks"
@@ -484,7 +485,8 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                             </Link>
 
                             {(currentUserRole === "Admin" ||
-                                currentUserRole === "Shift Leader") && (
+                                currentUserRole === "Shift Leader" ||
+                                currentUserRole === "Employee") && (
                                 <Link
                                     to="/tasks"
                                     className={`flex w-full flex-row items-center gap-2 transition-all duration-300 ${

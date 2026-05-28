@@ -428,6 +428,7 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
         "Routine Task": [
             "PM",
             "MR",
+            "DR",
             "MDR",
             "FDR",
             "Backup",
@@ -443,8 +444,8 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "Certification",
         ],
         COMMENT: [],
-        REPAIR: [],
-        Investigation: ["HW", "SW"],
+        BUILDING: [],
+        "SL NOTE": [],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
         Others: [
@@ -456,23 +457,6 @@ function CreateModal({ onClose, onSuccess, type, initialDate }) {
             "EXTRA TASK",
         ],
     };
-
-    /* const troubleshootingDetails = [
-        "VISUAL",
-        "COMPUTER",
-        "AVIONIC",
-        "ENV",
-        "BUILDING",
-        "POWER LOSS",
-        "MOTION",
-        "INTERFACE",
-        "CONTROLS",
-        "VIBRATION",
-        "SOUND",
-        "COMMS",
-        "IOS",
-        "OTHERS",
-    ]; */
 
     const troubleshootingDetails = [
         "Visual",

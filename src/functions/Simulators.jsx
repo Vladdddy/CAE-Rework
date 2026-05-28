@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import SimulatorModal from "../components/modals/SimulatorModal.jsx";
 import Task from "../components/data/Task.jsx";
 import { useSimulators } from "../components/data/provider/simulatorAPI/useSimulators.js";
+import { usePMTechComments } from "../components/data/provider/PMTechCommentsAPI/usePMTechComments.js";
 
 export function GetSimulators({
     type,
@@ -264,6 +265,7 @@ export function GetTableSimulators({
     const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState(false);
     const [selectedSimulator, setSelectedSimulator] = useState(null);
     const { simulators: dbSimulators, fetchSimulators } = useSimulators();
+    const { techComments } = usePMTechComments();
 
     useEffect(() => {
         fetchSimulators();
@@ -384,7 +386,7 @@ export function GetTableSimulators({
                             <div className="sticky top-0 z-10 flex items-start gap-1 pb-2">
                                 {/* Clock icon for simulator info */}
                                 {(() => {
-                                    if (type !== "table") return null;
+                                    if (type !== "table" && type !== "table&logbook") return null;
                                     if (!isToday) return null;
                                     return shouldShowSimulatorInfo ? (
                                         <div
@@ -507,6 +509,12 @@ export function GetTableSimulators({
                                                       isLogbook={task.ISLOGBOOK}
                                                       isFlagged={
                                                           task?.IS_FLAGGED
+                                                      }
+                                                      hasComments={
+                                                          task?.IS_PM_PLAN_TASK === true &&
+                                                          techComments.some(
+                                                              (c) => c.RecordID === task.ID,
+                                                          )
                                                       }
                                                   />
                                               ))}

@@ -387,6 +387,7 @@ function SearchModal({ onClose, onDeleteSuccess }) {
         "Routine Task": [
             "PM",
             "MR",
+            "DR",
             "MDR",
             "FDR",
             "Backup",
@@ -402,8 +403,8 @@ function SearchModal({ onClose, onDeleteSuccess }) {
             "Certification",
         ],
         COMMENT: [],
-        REPAIR: [],
-        Investigation: ["HW", "SW"],
+        BUILDING: [],
+        "SL NOTE": [],
         "Recurrent Issues": ["HW", "SW"],
         Troubleshooting: ["HW", "SW"],
         Others: [

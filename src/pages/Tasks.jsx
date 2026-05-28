@@ -271,6 +271,16 @@ function Tasks() {
         ];
     }, [tasks, unavailableTasks, pmPlanTasks, normalizedUnfinishedPmTasks]);
 
+    const morningReadinessAssignee = useMemo(() => {
+        const task = mergedTasks.find(
+            (t) =>
+                t.IS_PM_PLAN_TASK === true &&
+                t.TITLE?.toLowerCase() === "morning readiness" &&
+                t.ASSIGNED_TO,
+        );
+        return task?.ASSIGNED_TO ?? null;
+    }, [mergedTasks]);
+
     const getSelectedDateString = (currentDate) => {
         return (
             currentDate
@@ -479,7 +489,10 @@ function Tasks() {
                 />
             )}
             {isSimulatorModalOpen && (
-                <SimulatorModal onClose={handleCloseSimulatorModal} />
+                <SimulatorModal
+                    onClose={handleCloseSimulatorModal}
+                    morningReadinessAssignee={morningReadinessAssignee}
+                />
             )}
             {showPopup && <Popup type={popupType} message={popupMessage} />}
         </section>

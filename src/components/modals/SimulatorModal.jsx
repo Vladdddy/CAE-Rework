@@ -27,13 +27,21 @@ function SimulatorModal({
     assignee,
     creationDate,
     time,
+    morningReadinessAssignee,
 }) {
     const [name, setName] = useState(simulatorInfo || "FTD");
     const [startHour, setStartHour] = useState(toTimeInputValue(startTime));
     const [endHour, setEndHour] = useState(toTimeInputValue(endTime));
-    const [assignedTo, setAssignedTo] = useState(
-        assignee ? assignee.split(",").map((a) => a.trim()) : [],
-    );
+    const [assignedTo, setAssignedTo] = useState(() => {
+        if (assignee) return assignee.split(",").map((a) => a.trim());
+        if (morningReadinessAssignee) {
+            return morningReadinessAssignee
+                .split(",")
+                .map((a) => a.trim())
+                .filter(Boolean);
+        }
+        return [];
+    });
     const simulators = GetSimulatorsList();
     const { createSimulator, updateSimulator } = useSimulators();
     const { users } = useUsers();

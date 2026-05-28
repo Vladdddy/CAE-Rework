@@ -18,12 +18,12 @@ export function GetTaskCountTime({ filteredTasks, time, date, variant }) {
         // If no date provided, only filter by time
         if (!date) {
             return filteredTasks.filter((task) => {
-                return task.TIME === time;
+                return task.TIME === time && task.CATEGORY !== "SL NOTE";
             }).length;
         }
 
         return filteredTasks.filter((task) => {
-            return task.TIME === time && isSameDay(task.DATE, date);
+            return task.TIME === time && isSameDay(task.DATE, date) && task.CATEGORY !== "SL NOTE";
         }).length;
     };
 
