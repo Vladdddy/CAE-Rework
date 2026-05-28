@@ -18,12 +18,12 @@ export function GetTaskCountTime({ filteredTasks, time, date, variant }) {
         // If no date provided, only filter by time
         if (!date) {
             return filteredTasks.filter((task) => {
-                return task.TIME === time && task.CATEGORY !== "SL NOTE";
+                return task.TIME === time && task.CATEGORY !== "SL NOTE" && !task.IS_UNAVAILABLE;
             }).length;
         }
 
         return filteredTasks.filter((task) => {
-            return task.TIME === time && isSameDay(task.DATE, date) && task.CATEGORY !== "SL NOTE";
+            return task.TIME === time && isSameDay(task.DATE, date) && task.CATEGORY !== "SL NOTE" && !task.IS_UNAVAILABLE;
         }).length;
     };
 
@@ -68,12 +68,12 @@ export function GetLogbookCountTime({ filteredLogbooks, time, date }) {
         // If no date provided, only filter by time
         if (!date) {
             return filteredLogbooks.filter((logbook) => {
-                return logbook.TIME === time;
+                return logbook.TIME === time && !logbook.IS_UNAVAILABLE;
             }).length;
         }
 
         return filteredLogbooks.filter((logbook) => {
-            return logbook.TIME === time && isSameDay(logbook.DATE, date);
+            return logbook.TIME === time && isSameDay(logbook.DATE, date) && !logbook.IS_UNAVAILABLE;
         }).length;
     };
 

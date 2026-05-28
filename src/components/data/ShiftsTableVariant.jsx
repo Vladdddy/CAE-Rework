@@ -59,6 +59,7 @@ function ShiftsTable({
         return saved ? JSON.parse(saved) : {};
     });
     const [openColorPicker, setOpenColorPicker] = useState(null);
+    const [highlightedColorIndex, setHighlightedColorIndex] = useState(null);
 
     // Track POST and PUT changes
     const [postChanges, setPostChanges] = useState(() => {
@@ -652,6 +653,68 @@ function ShiftsTable({
     const allShiftOptions = ["--", ...shiftMeanings];
 
     const handleShiftKeyDown = (userIndex, dayIndex, e) => {
+        const user = orderedUsers[userIndex];
+        const cellKey = user
+            ? `${user.ID}-${formatDateStr(allDays[dayIndex])}`
+            : null;
+        const pickerOpen = cellKey && openColorPicker === cellKey;
+
+        if (e.key === "Alt") {
+            e.preventDefault();
+            if (!canEdit || !cellKey) return;
+            if (pickerOpen) {
+                setOpenColorPicker(null);
+                setHighlightedColorIndex(null);
+            } else {
+                setOpenColorPicker(cellKey);
+                const currentColor = cellColorChoices[cellKey] ?? null;
+                const allOpts = [...COLOR_OPTIONS, { id: null }];
+                const idx = allOpts.findIndex((o) => o.id === currentColor);
+                setHighlightedColorIndex(idx >= 0 ? idx : 0);
+            }
+            return;
+        }
+
+        if (pickerOpen) {
+            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                e.preventDefault();
+                const total = COLOR_OPTIONS.length + 1; // +1 for "Nessun colore"
+                setHighlightedColorIndex((prev) => {
+                    const cur = prev ?? 0;
+                    return e.key === "ArrowUp"
+                        ? Math.max(0, cur - 1)
+                        : Math.min(total - 1, cur + 1);
+                });
+                return;
+            }
+            if (e.key === "Enter") {
+                e.preventDefault();
+                if (highlightedColorIndex !== null) {
+                    if (highlightedColorIndex < COLOR_OPTIONS.length) {
+                        handleColorChoice(
+                            cellKey,
+                            COLOR_OPTIONS[highlightedColorIndex].id,
+                        );
+                    } else {
+                        setCellColorChoices((prev) => {
+                            const n = { ...prev };
+                            delete n[cellKey];
+                            return n;
+                        });
+                        setOpenColorPicker(null);
+                    }
+                    setHighlightedColorIndex(null);
+                }
+                return;
+            }
+            if (e.key === "Escape") {
+                e.preventDefault();
+                setOpenColorPicker(null);
+                setHighlightedColorIndex(null);
+                return;
+            }
+        }
+
         const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
         if (!navKeys.includes(e.key)) return;
         e.preventDefault();
@@ -666,6 +729,8 @@ function ShiftsTable({
             nextDay = Math.min(dayIndex + 1, allDays.length - 1);
 
         if (nextUser === userIndex && nextDay === dayIndex) return;
+        setOpenColorPicker(null);
+        setHighlightedColorIndex(null);
         setSelectedCell({ userIndex: nextUser, dayIndex: nextDay });
     };
 
@@ -1492,6 +1557,7 @@ function ShiftsTable({
                                                                             {COLOR_OPTIONS.map(
                                                                                 (
                                                                                     opt,
+                                                                                    optIdx,
                                                                                 ) => (
                                                                                     <button
                                                                                         key={
@@ -1503,7 +1569,7 @@ function ShiftsTable({
                                                                                                 opt.id,
                                                                                             )
                                                                                         }
-                                                                                        className={`flex items-center gap-2 w-full px-2 py-1 rounded-md hover:bg-gray-100 transition-colors ${chosen === opt.id ? "bg-gray-100" : ""}`}
+                                                                                        className={`flex items-center gap-2 w-full px-2 py-1 rounded-md hover:bg-gray-100 transition-colors ${chosen === opt.id ? "bg-gray-100" : ""} ${highlightedColorIndex === optIdx ? "outline outline-2 outline-blue-400" : ""}`}
                                                                                     >
                                                                                         <span
                                                                                             className={`w-6 h-6 rounded-full flex-shrink-0 ${opt.btnBg} `}
@@ -1536,7 +1602,7 @@ function ShiftsTable({
                                                                                         null,
                                                                                     );
                                                                                 }}
-                                                                                className={`flex items-center gap-2 w-full px-2 py-1 rounded-md hover:bg-gray-100 transition-colors ${!chosen ? "bg-gray-100" : ""}`}
+                                                                                className={`flex items-center gap-2 w-full px-2 py-1 rounded-md hover:bg-gray-100 transition-colors ${!chosen ? "bg-gray-100" : ""} ${highlightedColorIndex === COLOR_OPTIONS.length ? "outline outline-2 outline-blue-400" : ""}`}
                                                                             >
                                                                                 <span className="text-md text-[var(--gray)] whitespace-nowrap">
                                                                                     Nessun

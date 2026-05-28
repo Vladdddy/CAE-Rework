@@ -86,10 +86,10 @@ function Score() {
 
     const tableData = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
+        const STAFF_ROLES = ["tech staff", "employee"];
         return users
-            .filter(
-                (u) =>
-                    (u.Role || "").trim().toLowerCase() === "tech staff",
+            .filter((u) =>
+                STAFF_ROLES.includes((u.Role || "").trim().toLowerCase()),
             )
             .filter((u) => filter === "tutti" || todayShiftIds.has(u.ID))
             .map((u) => {

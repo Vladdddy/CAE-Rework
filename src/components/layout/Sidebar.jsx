@@ -226,7 +226,7 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                                 </Link>
                             </>
                         )}
-                        {(currentUserRole === "Admin" ||
+                        {/* {(currentUserRole === "Admin" ||
                             currentUserRole === "Shift Leader") && (
                             <>
                                 <Link
@@ -257,7 +257,7 @@ function Sidebar({ isMobileOpen = false, onMobileClose = () => {}, ...props }) {
                                     </p>
                                 </Link>
                             </>
-                        )}
+                        )} */}
                     </div>
                 </div>
 
