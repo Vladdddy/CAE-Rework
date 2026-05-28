@@ -44,6 +44,7 @@ function ShiftsTable({
     const [popup, setPopup] = useState({ show: false, type: "", message: "" });
     // Track if we're on mobile — initialize synchronously to avoid layout flash
     const [selectedUserIndex, setSelectedUserIndex] = useState(null);
+    const [selectedCell, setSelectedCell] = useState(null); // { userIndex, dayIndex }
     const [isMobile, setIsMobile] = useState(
         () => typeof window !== "undefined" && window.innerWidth < 768,
     );
@@ -535,6 +536,16 @@ function ShiftsTable({
         onVisibleMonthChange(visibleDay);
     }, [allDays, onVisibleMonthChange, numMonths]);
 
+    // Focus the select of the newly selected cell for keyboard navigation
+    useEffect(() => {
+        if (!selectedCell) return;
+        const { userIndex, dayIndex } = selectedCell;
+        const el = document.querySelector(
+            `[data-cell="${userIndex}-${dayIndex}"]`,
+        );
+        if (el) el.focus();
+    }, [selectedCell]);
+
     const formatUsername = (user) => {
         if (!user) return "";
         const first = (user.firstname || "").trim();
@@ -640,15 +651,22 @@ function ShiftsTable({
 
     const allShiftOptions = ["--", ...shiftMeanings];
 
-    const handleShiftKeyDown = (userIndex, dayIndex, currentValue, e) => {
-        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    const handleShiftKeyDown = (userIndex, dayIndex, e) => {
+        const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+        if (!navKeys.includes(e.key)) return;
         e.preventDefault();
-        const idx = allShiftOptions.indexOf(currentValue);
-        const next =
-            e.key === "ArrowDown"
-                ? Math.min(idx + 1, allShiftOptions.length - 1)
-                : Math.max(idx - 1, 0);
-        handleShiftChange(userIndex, dayIndex, allShiftOptions[next]);
+
+        let nextUser = userIndex;
+        let nextDay = dayIndex;
+        if (e.key === "ArrowUp") nextUser = Math.max(userIndex - 1, 0);
+        else if (e.key === "ArrowDown")
+            nextUser = Math.min(userIndex + 1, orderedUsers.length - 1);
+        else if (e.key === "ArrowLeft") nextDay = Math.max(dayIndex - 1, 0);
+        else if (e.key === "ArrowRight")
+            nextDay = Math.min(dayIndex + 1, allDays.length - 1);
+
+        if (nextUser === userIndex && nextDay === dayIndex) return;
+        setSelectedCell({ userIndex: nextUser, dayIndex: nextDay });
     };
 
     const handleShiftChange = (userIndex, dayIndex, value) => {
@@ -1532,6 +1550,7 @@ function ShiftsTable({
                                                         })()}
                                                     <div className="relative">
                                                         <select
+                                                            data-cell={`${userIndex}-${index}`}
                                                             value={getShiftValue(
                                                                 userIndex,
                                                                 index,
@@ -1544,19 +1563,22 @@ function ShiftsTable({
                                                                         .value,
                                                                 )
                                                             }
+                                                            onFocus={() =>
+                                                                setSelectedCell({
+                                                                    userIndex,
+                                                                    dayIndex:
+                                                                        index,
+                                                                })
+                                                            }
                                                             onKeyDown={(e) =>
                                                                 handleShiftKeyDown(
                                                                     userIndex,
                                                                     index,
-                                                                    getShiftValue(
-                                                                        userIndex,
-                                                                        index,
-                                                                    ),
                                                                     e,
                                                                 )
                                                             }
                                                             disabled={!canEdit}
-                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border border-[var(--light-primary)] rounded-md hover:border-[var(--separator)] focus:outline-[var(--gray)] focus:border-[var(--separator)] transition-all duration-200 ease-in-out w-full appearance-none ${canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "FND" ? "focus:text-black" : ""}`}
+                                                            className={`px-8 py-2 font-bold w-full text-center text-lg border rounded-md hover:border-[var(--separator)] focus:outline-none transition-all duration-200 ease-in-out w-full appearance-none ${canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${GetColorForShift(getShiftValue(userIndex, index))} ${getShiftValue(userIndex, index) === "R" ? "focus:text-black" : ""} ${getShiftValue(userIndex, index) === "FND" ? "focus:text-black" : ""} ${selectedCell?.userIndex === userIndex && selectedCell?.dayIndex === index ? "border-blue-500 ring-2 ring-blue-400" : "border-[var(--light-primary)]"}`}
                                                         >
                                                             <option value="--">
                                                                 --
