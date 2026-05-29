@@ -124,7 +124,7 @@ function HoursCountTableTest({ selectedMonth }) {
         return r === "admin" || r === "shift leader" || r === "crew chief";
     });
     const employeeUsers = orderedUsers.filter(
-        (user) => (user.Role || "").trim().toLowerCase() === "tech staff",
+        (user) => (user.Role || "").trim().toLowerCase() === "employee",
     );
 
     const renderRow = (user, keyPrefix) => {

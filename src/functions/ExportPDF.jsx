@@ -641,6 +641,7 @@ export const exportTasksToPDF = (
                     const translatedStatus =
                         statusTranslations[status] || status;
                     const isCompleted = status === "Completato";
+                    const isConverted = status === "Convertito in task";
                     let statusText = `Status: ${translatedStatus}`;
                     if (isCompleted && task.COMPLETED_BY != null) {
                         const completedByUser = users.find(
@@ -653,8 +654,8 @@ export const exportTasksToPDF = (
                     doc.setFontSize(8.5);
                     doc.setFont(undefined, "bold");
                     doc.setTextColor(
-                        isCompleted ? 0 : 200,
-                        isCompleted ? 140 : 0,
+                        isCompleted || isConverted ? 0 : 200,
+                        isCompleted || isConverted ? 140 : 0,
                         0,
                     );
                     doc.text(statusText, cardX + 14, by);
@@ -867,6 +868,7 @@ export const exportTasksToPDF = (
                             const translatedStatus =
                                 statusTranslations[status] || status;
                             const isCompleted = status === "Completato";
+                            const isConverted = status === "Convertito in task";
                             let statusText = `Status: ${translatedStatus}`;
                             if (isCompleted && task.COMPLETED_BY != null) {
                                 const completedByUser = users.find(
@@ -879,8 +881,8 @@ export const exportTasksToPDF = (
                             doc.setFontSize(8.5);
                             doc.setFont(undefined, "bold");
                             doc.setTextColor(
-                                isCompleted ? 0 : 200,
-                                isCompleted ? 140 : 0,
+                                isCompleted || isConverted ? 0 : 200,
+                                isCompleted || isConverted ? 140 : 0,
                                 0,
                             );
                             doc.text(statusText, margin + 14, y);

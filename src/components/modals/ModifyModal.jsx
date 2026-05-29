@@ -70,9 +70,9 @@ function ModifyModal({
             : new Date().toISOString().split("T")[0],
     );
     const [titleError, setTitleError] = useState(false);
-    const [importNotes, setImportNotes] = useState(isDuplicating ? "Si" : "No");
+    const [importNotes, setImportNotes] = useState(isDuplicating || isConverting ? "Si" : "No");
     const [importAttachments, setImportAttachments] = useState(
-        isDuplicating ? "Si" : "No",
+        isDuplicating || isConverting ? "Si" : "No",
     );
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [attachmentError, setAttachmentError] = useState("");
@@ -615,6 +615,17 @@ function ModifyModal({
                             note.DESCRIPTION,
                             "creato",
                         );
+                    }
+                }
+
+                // Copy attachments from logbook to new task if user selected "Si"
+                if (importAttachments === "Si" && createdTaskId) {
+                    const copyResult = await copyTaskImages(
+                        task.ID,
+                        createdTaskId,
+                    );
+                    if (!copyResult.success) {
+                        attachmentsUploadedSuccessfully = false;
                     }
                 }
 
@@ -1277,7 +1288,7 @@ function ModifyModal({
                         </div>
                     )}
 
-                    {isDuplicating && (
+                    {(isDuplicating || isConverting) && (
                         <div className="flex flex-col gap-1">
                             <h3 className="text-sm text-[var(--gray)]">
                                 Importare allegati
