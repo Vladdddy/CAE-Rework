@@ -5,8 +5,8 @@ import CloseIcon from "../../assets/icons/close.tsx";
 function ShiftLegend() {
     const [showLegend, setShowLegend] = useState(false);
     const [position, setPosition] = useState(() => ({
-        x: Math.max(16, window.innerWidth - 356),
-        y: 16, // mt-4 is typically 1rem = 16px
+        x: Math.max(16, window.innerWidth - 620),
+        y: 16,
     }));
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -28,8 +28,34 @@ function ShiftLegend() {
         FND: "Ferie Non Disponibile",
     };
 
+    const bgMeanings = [
+        {
+            style: { backgroundColor: "var(--light-primary)" },
+            label: "Fine settimana",
+        },
+        {
+            style: { backgroundColor: "var(--weekend-cells)" },
+            label: "Oggi",
+        },
+        {
+            style: { backgroundColor: "var(--holiday-cells)" },
+            label: "Festività",
+        },
+        {
+            tailwind: "bg-green-500",
+            label: "Turno aggiunto",
+        },
+        {
+            tailwind: "bg-green-200",
+            label: "Turno cambiato",
+        },
+        {
+            tailwind: "bg-violet-400",
+            label: "Turno tolto",
+        },
+    ];
+
     const handleMouseDown = (e) => {
-        // Only allow dragging from the header area
         if (e.target.closest(".legend-header")) {
             setIsDragging(true);
             setDragOffset({
@@ -52,7 +78,6 @@ function ShiftLegend() {
         setIsDragging(false);
     };
 
-    // Add/remove event listeners for dragging
     useEffect(() => {
         if (isDragging) {
             window.addEventListener("mousemove", handleMouseMove);
@@ -70,7 +95,7 @@ function ShiftLegend() {
     useEffect(() => {
         const handleResize = () => {
             setPosition((prev) => ({
-                x: Math.min(prev.x, Math.max(16, window.innerWidth - 356)),
+                x: Math.min(prev.x, Math.max(16, window.innerWidth - 620)),
                 y: Math.max(16, prev.y),
             }));
         };
@@ -79,42 +104,6 @@ function ShiftLegend() {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    /*return (
-        <div
-            className={`flex flex-col justify-between items-start text-center bg-[var(--white)] border border-[var(--light-primary)] rounded-xl px-2 py-4 transition-all duration-300 ${showLegend ? "gap-8 w-auto" : "gap-0 w-fit"}`}
-        >
-            <button
-                className="flex flex-row justify-center items-center text-center gap-1 text-[var(--gray)] cursor-pointer hover:text-[var(--black)] transition-all duration-200"
-                onClick={() => setShowLegend((prev) => !prev)}
-            >
-                <p className="text-md">Leggenda turni</p>
-                <ArrowIcon
-                    className={`w-6 transition-transform duration-300 ${showLegend ? "rotate-[-90deg]" : "rotate-90"}`}
-                />
-            </button>
-            <div
-                className={` overflow-y-auto pr-8 overflow-hidden transition-all duration-300 ${showLegend ? "max-h-[calc(100vh-20rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
-            >
-                <div className="flex flex-col justify-between w-auto items-start text-center gap-4 ">
-                    {Object.entries(shiftMeanings).map(([shift, meaning]) => (
-                        <div
-                            key={shift}
-                            className="flex flex-row justify-start items-center text-center gap-4"
-                        >
-                            <p
-                                className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg ${GetColorForShift(shift)}`}
-                            >
-                                {shift}
-                            </p>
-                            <p className="text-[var(--black)] text-sm">
-                                {meaning}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );*/
     return (
         <div className="relative">
             <button
@@ -124,37 +113,68 @@ function ShiftLegend() {
                 <p className="text-md">Legenda turni</p>
             </button>
             <div
-                className={`fixed z-40 bg-[var(--white)] w-[90vw] max-w-[340px] p-4 py-0 rounded-lg overflow-y-auto pr-2 overflow-hidden transition-opacity duration-300 shadow-lg border border-[var(--separator)] ${showLegend ? "max-h-[calc(100vh-12rem)] opacity-100" : "max-h-0 w-0 opacity-0"}`}
+                className={`fixed z-40 bg-[var(--white)] w-[90vw] max-w-[600px] p-4 py-0 rounded-lg overflow-y-auto overflow-x-hidden transition-opacity duration-300 shadow-lg border border-[var(--separator)] ${showLegend ? "opacity-100" : "max-h-0 w-0 opacity-0"}`}
                 style={{
-                    left: `${Math.max(16, Math.min(position.x, window.innerWidth - 356))}px`,
+                    left: `${Math.max(16, Math.min(position.x, window.innerWidth - 620))}px`,
                     top: `${position.y}px`,
                     cursor: isDragging ? "grabbing" : "default",
                 }}
                 onMouseDown={handleMouseDown}
             >
-                <div className="legend-header flex flex-col justify-between w-auto items-start text-center cursor-grab select-none">
-                    <div className="sticky top-0 bg-[var(--white)] flex items-center justify-between text-lg mb-2 text-[var(--black)] font-semibold border-b border-[var(--light-primary)] text-start w-full py-4">
+                <div className="legend-header flex flex-col w-full cursor-grab select-none">
+                    {/* Header */}
+                    <div className="sticky top-0 bg-[var(--white)] flex items-center justify-between text-lg mb-3 text-[var(--black)] font-semibold border-b border-[var(--light-primary)] text-start w-full py-4">
                         Legenda Turni
                         <CloseIcon
                             className="w-6 text-[var(--gray)] cursor-pointer hover:text-[var(--black)] transition-all duration-200"
                             onClick={() => setShowLegend(false)}
                         />
                     </div>
-                    {Object.entries(shiftMeanings).map(([shift, meaning]) => (
-                        <div
-                            key={shift}
-                            className="flex flex-row justify-start items-center text-center gap-4 py-2"
-                        >
-                            <p
-                                className={`flex flex-col justify-center items-center rounded-lg px-1 py-1 w-12 h-12 font-bold text-lg ${GetColorForShift(shift)}`}
+
+                    {/* Shift codes — 2 per row */}
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 pb-3">
+                        {Object.entries(shiftMeanings).map(
+                            ([shift, meaning]) => (
+                                <div
+                                    key={shift}
+                                    className="flex flex-row items-center gap-3"
+                                >
+                                    <p
+                                        className={`flex-shrink-0 flex items-center justify-center rounded-lg w-10 h-10 font-bold text-base ${GetColorForShift(shift)}`}
+                                    >
+                                        {shift === "CG" ? "CD" : shift}
+                                    </p>
+                                    <p className="text-[var(--black)] text-sm">
+                                        {meaning}
+                                    </p>
+                                </div>
+                            ),
+                        )}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-[var(--separator)] my-2" />
+
+                    {/* Background color meanings — 2 per row */}
+                    <p className="text-sm font-semibold text-[var(--gray)] mb-2">
+                        Colori di sfondo
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 pb-4">
+                        {bgMeanings.map(({ style, tailwind, label }) => (
+                            <div
+                                key={label}
+                                className="flex flex-row items-center gap-3"
                             >
-                                {shift === "CG" ? "CD" : shift}
-                            </p>
-                            <p className="text-[var(--black)] text-sm">
-                                {meaning}
-                            </p>
-                        </div>
-                    ))}
+                                <div
+                                    className={`flex-shrink-0 w-10 h-10 rounded-lg border border-[var(--separator)] ${tailwind ?? ""}`}
+                                    style={style}
+                                />
+                                <p className="text-[var(--black)] text-sm">
+                                    {label}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
