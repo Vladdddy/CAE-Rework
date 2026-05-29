@@ -670,7 +670,7 @@ function Logbook() {
                     pdfBase64,
                     fileName: result.fileName,
                     subject: `${timeFilter === "Diurno" ? "Day" : "Night"} ${day}/${month}/${year}`,
-                    message: `In allegato il ${pdfTitle} del ${formattedDate}.`,
+                    message: `Hi All,\nAttached the details about the activities performed ${timeFilter === "Diurno" ? "today" : "tonight"}.\n\nRegards,\nTech Team.`,
                     site: "RS",
                 }),
             });
