@@ -187,6 +187,7 @@ export const exportTasksToPDF = (
     users = [],
     showStatus = true,
     isDayReport = false,
+    returnBlob = false,
 ) => {
     const tasksForExport = tasks.filter((task) => {
         if (task?.IS_UNAVAILABLE === true || task?.TYPE === "Unavailable")
@@ -947,6 +948,11 @@ export const exportTasksToPDF = (
     const fileName = date
         ? `${filePrefix}_${formatDate(date).replace(/\//g, "-")}.pdf`
         : `${filePrefix}_${new Date().getTime()}.pdf`;
+
+    if (returnBlob) {
+        return { blob: doc.output("blob"), fileName, count: tasksForExport.length };
+    }
+
     doc.save(fileName);
 
     return tasksForExport.length;

@@ -41,7 +41,8 @@ function Logbook() {
         loading: unavailableLoading,
         fetchTasks: fetchUnavailableTasks,
     } = useUnavailableTasks();
-    const { taskSimOne, unfinishedPmTasks, fetchUnfinishedPmTasks } = useTaskSimOne();
+    const { taskSimOne, unfinishedPmTasks, fetchUnfinishedPmTasks } =
+        useTaskSimOne();
     const { techComments } = usePMTechComments();
     const {
         logbooks: unavailableLogbooks,
@@ -69,8 +70,10 @@ function Logbook() {
     const [viewDays, setViewDays] = useState(1);
     const [showExportReportMenu, setShowExportReportMenu] = useState(false);
     const [showExportActivityMenu, setShowExportActivityMenu] = useState(false);
+    const [showEmailMenu, setShowEmailMenu] = useState(false);
     const exportReportMenuRef = useRef(null);
     const exportActivityMenuRef = useRef(null);
+    const emailMenuRef = useRef(null);
 
     useEffect(() => {
         localStorage.setItem("sidebarOpen", JSON.stringify(isSidebarOpen));
@@ -90,16 +93,22 @@ function Logbook() {
             ) {
                 setShowExportActivityMenu(false);
             }
+            if (
+                emailMenuRef.current &&
+                !emailMenuRef.current.contains(event.target)
+            ) {
+                setShowEmailMenu(false);
+            }
         };
 
-        if (showExportReportMenu || showExportActivityMenu) {
+        if (showExportReportMenu || showExportActivityMenu || showEmailMenu) {
             document.addEventListener("mousedown", handleClickOutside);
         }
 
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [showExportReportMenu, showExportActivityMenu]);
+    }, [showExportReportMenu, showExportActivityMenu, showEmailMenu]);
 
     const handleDayClick = (day) => {
         setSelectedDay(day);
@@ -200,9 +209,7 @@ function Logbook() {
                         TIME: getPmPlanTime(task),
                         TITLE: task["Task"] || "PM Task",
                         ASSIGNED_TO: isDone
-                            ? task["Task Performed By"] ||
-                              task["Tech id"] ||
-                              ""
+                            ? task["Task Performed By"] || task["Tech id"] || ""
                             : resolvePmAssignees(task["AssignedTo"]),
                         STATUS: isDone ? "Completato" : "Non completato",
                         IS_PM_PLAN_TASK: true,
@@ -430,6 +437,264 @@ function Logbook() {
         }
     };
 
+    const handleEmailPDF = async (timeFilter = null) => {
+        try {
+            const normalizedUnavailableTasks = (unavailableTasks || []).map(
+                (task) => ({ ...task, IS_UNAVAILABLE: true }),
+            );
+
+            const resolvePmAssignees = (raw) => {
+                const ids =
+                    typeof raw === "number"
+                        ? [raw]
+                        : typeof raw === "string"
+                          ? raw
+                                .split(",")
+                                .map((v) => Number(v.trim()))
+                                .filter(Number.isInteger)
+                          : [];
+                return (
+                    ids
+                        .map((id) => users.find((u) => u.ID === id)?.Username)
+                        .filter(Boolean)
+                        .join(", ") || ""
+                );
+            };
+
+            const normalizedPmTasks = (taskSimOne || [])
+                .filter((task) => {
+                    const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                    return simulatorId && SIMULATOR_MAP[simulatorId];
+                })
+                .map((task) => {
+                    const simulatorId = task["ID_sim"] ?? task.SIMULATOR;
+                    const taskDone = task["Task done"] ?? task["Task Done"];
+                    const isDone =
+                        taskDone !== undefined &&
+                        taskDone !== null &&
+                        Boolean(taskDone);
+                    return {
+                        ...task,
+                        ID: task["ID_task"] ?? task.ID,
+                        SIMULATOR: SIMULATOR_MAP[simulatorId],
+                        DATE: task["Scheduled on"] ?? task.DATE,
+                        TIME: getPmPlanTime(task),
+                        TITLE: task["Task"] || "PM Task",
+                        ASSIGNED_TO: isDone
+                            ? task["Task Performed By"] || task["Tech id"] || ""
+                            : resolvePmAssignees(task["AssignedTo"]),
+                        STATUS: isDone ? "Completato" : "Non completato",
+                        IS_PM_PLAN_TASK: true,
+                    };
+                });
+
+            const allTasksForExport = [
+                ...(tasks || []),
+                ...normalizedUnavailableTasks,
+                ...normalizedPmTasks,
+            ];
+            const normalizedUnavailableLogbooks = (
+                unavailableLogbooks || []
+            ).map((logbook) => ({
+                ...logbook,
+                IS_UNAVAILABLE: true,
+            }));
+            const allLogbooksForExport = [
+                ...(logbooks || []),
+                ...normalizedUnavailableLogbooks,
+            ];
+
+            const selectedDate = new Date(startDate);
+            selectedDate.setHours(0, 0, 0, 0);
+
+            const tasksForDate = allTasksForExport.filter((task) => {
+                const taskDate = new Date(task.DATE);
+                taskDate.setHours(0, 0, 0, 0);
+                return taskDate.getTime() === selectedDate.getTime();
+            });
+
+            const logbooksForDate = allLogbooksForExport.filter((logbook) => {
+                const logbookDate = new Date(logbook.DATE);
+                logbookDate.setHours(0, 0, 0, 0);
+                return logbookDate.getTime() === selectedDate.getTime();
+            });
+
+            let itemsToExport = [...tasksForDate, ...logbooksForDate];
+
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+            const day = String(selectedDate.getDate()).padStart(2, "0");
+            const formattedDate = `${year}-${month}-${day}`;
+
+            const simulatorsToExport = (todaySimulators || []).filter((sim) => {
+                if (!sim.CREATION_DATE) return false;
+                const simDate = new Date(sim.CREATION_DATE);
+                const simFormattedDate = `${simDate.getFullYear()}-${String(simDate.getMonth() + 1).padStart(2, "0")}-${String(simDate.getDate()).padStart(2, "0")}`;
+                return simFormattedDate === formattedDate;
+            });
+
+            if (timeFilter) {
+                itemsToExport = itemsToExport.filter(
+                    (item) => item.TIME === timeFilter,
+                );
+            }
+
+            const statusPriority = {
+                Completato: 1,
+                "In corso": 2,
+                "Non completato": 3,
+            };
+            itemsToExport.sort(
+                (a, b) =>
+                    (statusPriority[a.STATUS] || 999) -
+                    (statusPriority[b.STATUS] || 999),
+            );
+
+            const API_URL = import.meta.env.VITE_API_URL;
+            const notesMap = {};
+
+            await Promise.all(
+                itemsToExport.map(async (item) => {
+                    try {
+                        const isUnavailableTask =
+                            item?.TYPE === "Unavailable" ||
+                            item?.IS_UNAVAILABLE === true;
+                        const notesEntityId =
+                            !item.ISLOGBOOK && isUnavailableTask
+                                ? item?.ORIGINAL_TASK_ID || item.ID
+                                : item.ID;
+                        const endpoint = item.ISLOGBOOK
+                            ? `${API_URL}/notesLogbook/${item.ID}`
+                            : `${API_URL}/notes/${notesEntityId}`;
+                        const notesKey = item.ISLOGBOOK
+                            ? `logbook_${item.ID}`
+                            : notesEntityId;
+                        const response = await fetch(endpoint);
+                        if (response.ok)
+                            notesMap[notesKey] = await response.json();
+                    } catch (error) {
+                        console.error(
+                            `Failed to fetch notes for item ${item.ID}:`,
+                            error,
+                        );
+                    }
+                }),
+            );
+
+            const noteCutoff = new Date();
+            noteCutoff.setDate(noteCutoff.getDate() - 1);
+            noteCutoff.setHours(19, 30, 0, 0);
+            Object.keys(notesMap).forEach((key) => {
+                notesMap[key] = notesMap[key].filter((note) => {
+                    if (!note.CREATEDDATE) return true;
+                    return new Date(note.CREATEDDATE) >= noteCutoff;
+                });
+            });
+
+            itemsToExport.forEach((item) => {
+                if (!item.IS_PM_PLAN_TASK) return;
+                const pmComments = (techComments || []).filter(
+                    (c) => c.RecordID === item.ID,
+                );
+                if (pmComments.length > 0) {
+                    const normalized = pmComments.map((c) => ({
+                        DESCRIPTION: c.TechComment,
+                        AUTHOR_OVERRIDE: c.TechName,
+                        TYPE: "pm_comment",
+                    }));
+                    notesMap[item.ID] = [
+                        ...(notesMap[item.ID] || []),
+                        ...normalized,
+                    ];
+                }
+            });
+
+            itemsToExport = itemsToExport.filter((item) => {
+                if (!item.IS_PM_PLAN_TASK) return true;
+                if (
+                    (item.TITLE || "")
+                        .trim()
+                        .toLowerCase()
+                        .startsWith("morning readiness")
+                )
+                    return true;
+                const notes = (notesMap[item.ID] || []).filter(
+                    (n) => n.TYPE !== "automatico",
+                );
+                return notes.length > 0;
+            });
+
+            const undefinedItems = itemsToExport.filter(
+                (item) => item.STATUS === "Da definire",
+            );
+            if (undefinedItems.length > 0) {
+                setPopupType("error");
+                setPopupMessage(
+                    `Impossibile inviare: ci sono ${undefinedItems.length} attività con stato "Da definire"`,
+                );
+                setShowPopup(true);
+                setTimeout(() => setShowPopup(false), 4000);
+                setShowEmailMenu(false);
+                return;
+            }
+
+            const pdfTitle =
+                timeFilter === "Diurno" ? "Day Report" : "Night Report";
+
+            const result = exportTasksToPDF(
+                itemsToExport,
+                startDate,
+                simulatorsToExport,
+                trainingLoads,
+                pdfTitle,
+                notesMap,
+                users,
+                true,
+                timeFilter === "Diurno",
+                true,
+            );
+
+            if (!result || !result.blob) {
+                throw new Error("PDF generation failed");
+            }
+
+            const arrayBuffer = await result.blob.arrayBuffer();
+            const pdfBase64 = btoa(
+                String.fromCharCode(...new Uint8Array(arrayBuffer)),
+            );
+
+            const emailResponse = await fetch(`${API_URL}/email/send-pdf`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    pdfBase64,
+                    fileName: result.fileName,
+                    subject: `${timeFilter === "Diurno" ? "Day" : "Night"} ${day}/${month}/${year}`,
+                    message: `In allegato il ${pdfTitle} del ${formattedDate}.`,
+                    site: "RS",
+                }),
+            });
+
+            if (!emailResponse.ok)
+                throw new Error(
+                    `Email server responded with ${emailResponse.status}`,
+                );
+
+            setPopupType("success");
+            setPopupMessage("Email inviata con successo");
+            setShowPopup(true);
+            setTimeout(() => setShowPopup(false), 3000);
+            setShowEmailMenu(false);
+        } catch (error) {
+            console.error("Errore durante l'invio dell'email:", error);
+            setPopupType("error");
+            setPopupMessage("Errore durante l'invio dell'email");
+            setShowPopup(true);
+            setTimeout(() => setShowPopup(false), 3000);
+            setShowEmailMenu(false);
+        }
+    };
+
     const datesList = useMemo(() => {
         return Array.from({ length: viewDays }).map((_, index) => {
             const currentDate = new Date(startDate);
@@ -460,7 +725,9 @@ function Logbook() {
                     ? String(scheduledOn).split("T")[0]
                     : null;
                 const isOverdue =
-                    !isDone && scheduledDateStr && scheduledDateStr < todayDateStr;
+                    !isDone &&
+                    scheduledDateStr &&
+                    scheduledDateStr < todayDateStr;
                 return !isOverdue;
             })
             .map((task) => {
@@ -741,6 +1008,18 @@ function Logbook() {
                                             )
                                         }
                                     />
+                                    <ExportDropdown
+                                        label="Manda email"
+                                        menuRef={emailMenuRef}
+                                        isOpen={showEmailMenu}
+                                        setIsOpen={setShowEmailMenu}
+                                        onDiurno={() =>
+                                            handleEmailPDF("Diurno")
+                                        }
+                                        onNotturno={() =>
+                                            handleEmailPDF("Notturno")
+                                        }
+                                    />
                                 </div>
                             </div>
 
@@ -756,20 +1035,26 @@ function Logbook() {
                                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
                                         {/* Left: action buttons */}
                                         <div className="flex flex-col md:flex-row items-center gap-4 flex-wrap">
-                                            {currentUserRole !== "View" && currentUserRole !== "Guest" && (
-                                                <button
-                                                    className="btn tertiary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
-                                                    onClick={handleTaskClick}
-                                                >
-                                                    <LogbookIcon className="w-5 shrink-0" />
-                                                    <p>Aggiungi entry</p>
-                                                </button>
-                                            )}
+                                            {currentUserRole !== "View" &&
+                                                currentUserRole !== "Guest" && (
+                                                    <button
+                                                        className="btn tertiary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
+                                                        onClick={
+                                                            handleTaskClick
+                                                        }
+                                                    >
+                                                        <LogbookIcon className="w-5 shrink-0" />
+                                                        <p>Aggiungi entry</p>
+                                                    </button>
+                                                )}
 
-                                            {GetTodayDate(startDate) === GetTodayDate(new Date()) && (
+                                            {GetTodayDate(startDate) ===
+                                                GetTodayDate(new Date()) && (
                                                 <button
                                                     className="btn secondary flex gap-2 items-center text-sm w-full md:w-fit justify-center"
-                                                    onClick={handleSimulatorClick}
+                                                    onClick={
+                                                        handleSimulatorClick
+                                                    }
                                                 >
                                                     <SimulatorIcon className="w-6 shrink-0" />
                                                     <p>Imposta simulatore</p>
